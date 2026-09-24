@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "custom_components" / "cyd_studio"))
 
 from generator.layout import (  # noqa: E402
     header_elements,
+    overlay_layout,
     page_layout,
     tab_elements,
     widget_elements,
@@ -113,7 +114,13 @@ def main() -> None:
                 "expected": tab_elements(icons, labels, Rect(0, 0, w, h)),
             }
         )
-    out = {"layouts": layouts, "elements": elements, "tabs": tabs}
+    overlays = []
+    for w, h in [*SCREENS, (200, 150)]:
+        lay = overlay_layout(w, h)
+        overlays.append(
+            {"input": {"w": w, "h": h}, "expected": {"panel": lay["panel"].as_list(), "elements": lay["elements"]}}
+        )
+    out = {"layouts": layouts, "elements": elements, "tabs": tabs, "overlays": overlays}
     path = ROOT / "tests" / "layout_cases.json"
     path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"wrote {len(layouts)} layouts, {len(elements)} element cases, {len(tabs)} tab cases to {path}")

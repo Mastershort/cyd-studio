@@ -6,7 +6,7 @@ import itertools
 import json
 from pathlib import Path
 
-from generator.layout import Rect, header_elements, page_layout, split, tab_elements, widget_elements
+from generator.layout import Rect, header_elements, overlay_layout, page_layout, split, tab_elements, widget_elements
 
 CASES = json.loads((Path(__file__).parent / "layout_cases.json").read_text(encoding="utf-8"))
 
@@ -53,3 +53,9 @@ def test_grid_cells_do_not_overlap_and_fill_width() -> None:
                 assert last_x + last_w == length
                 for (x1, w1), (x2, _) in itertools.pairwise(cells):
                     assert x1 + w1 + gap == x2
+
+
+def test_overlays() -> None:
+    for case in CASES["overlays"]:
+        lay = overlay_layout(case["input"]["w"], case["input"]["h"])
+        assert {"panel": lay["panel"].as_list(), "elements": lay["elements"]} == case["expected"]

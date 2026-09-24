@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .board import resolve_board
-from .context import Context, cpp_str
-from .emit import Comment, Lambda, Raw, Secret, dump
-from .layout import HEADER_PAD_X, header_elements, nav_pages, page_layout, tab_elements
+from .context import ON_STATES, Context, cpp_str
+from .emit import Block, Comment, Lambda, Raw, Secret, dump
+from .layout import HEADER_PAD_X, header_elements, nav_pages, overlay_layout, page_layout, tab_elements
 from .memory import MemoryEstimate, estimate
 from .model import Issue, normalize, safe_id, validate
 from .theme import resolve_theme
@@ -20,7 +20,7 @@ from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import page_show
 
-GENERATOR_VERSION = "0.1.0"
+GENERATOR_VERSION = "0.2.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -251,6 +251,7 @@ def _document(ctx: Context) -> dict[Any, Any]:
     screensaver = s.get("screensaver", {})
     if screensaver.get("enabled"):
         glob.append({"id": "cyd_dimmed", "type": "bool", "restore_value": False, "initial_value": "false"})
+    glob.extend(_helper_globals(ctx))
     doc["globals"] = glob
 
     # time
@@ -394,8 +395,202 @@ def _document(ctx: Context) -> dict[Any, Any]:
     return doc
 
 
+STATE_HELPER_TYPE = (
+    "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, "
+    "const char *, const char *, uint32_t, uint32_t)>"
+)
+PERCENT_TEXT = 'char buf[12];\nsnprintf(buf, sizeof(buf), "%d %%", (int) lroundf({v}));\nreturn std::string(buf);'
+
+
+def _helper_globals(ctx: Context) -> list[Any]:
+    """Shared C++ helpers, so each tile needs one line of code instead of its own copy of the logic."""
+    out: list[Any] = []
+    if "state" in ctx.helpers:
+        s = ctx.strings
+        names = [(k, s[k]) for k in ("on", "off", "open", "closed", "locked", "unlocked")]
+        mapping = "\n".join(f'  else if (x == "{k}") text = {cpp_str(v)};' for k, v in names)
+        on_expr = " || ".join(f'x == "{st}"' for st in ON_STATES)
+        code = "\n".join(
+            [
+                "[](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,",
+                "    const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {",
+                "  // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.",
+                "  // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only",
+                f"  const bool on = {on_expr};",
+                "  if (tile != nullptr) {",
+                "    lv_obj_set_state(tile, LV_STATE_CHECKED, on);",
+                '    lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");',
+                "  }",
+                "  if (icon != nullptr)",
+                "    lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);",
+                "  if (label == nullptr) return;",
+                "  std::string text;",
+                "  if (on && kind > 0 && !std::isnan(value)) {",
+                "    char buf[12];",
+                '    snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(kind == 1 ? value * 100.0f / 255.0f : value));',
+                "    text = buf;",
+                "  }",
+                f'  else if (x == "unavailable") text = {cpp_str(s["unavailable"])};',
+                f'  else if (x.empty() || x == "unknown") text = {cpp_str(s["unknown"])};',
+                f'  else if (x == "opening") text = {cpp_str(s["opening"])};',
+                f'  else if (x == "closing") text = {cpp_str(s["closing"])};',
+                "  else if (on && text_on != nullptr) text = text_on;",
+                "  else if (!on && text_off != nullptr) text = text_off;",
+                mapping,
+                "  else text = x;",
+                "  lv_label_set_text(label, text.c_str());",
+                "}",
+            ]
+        )
+        out.append(
+            {"id": "cyd_tile_state", "type": STATE_HELPER_TYPE, "restore_value": False, "initial_value": Block(code)}
+        )
+    if "overlay" in ctx.helpers:
+        percent = "\n".join(
+            [
+                "[](const std::string &state, float value, int kind) -> float {",
+                "  // Start value of the slider in percent (lights and fans: 0 when off)",
+                "  if (std::isnan(value)) return 0.0f;",
+                '  if (kind != 2 && state != "on") return 0.0f;',
+                "  return kind == 1 ? value * 100.0f / 255.0f : value;",
+                "}",
+            ]
+        )
+        out.append(
+            {
+                "id": "cyd_percent",
+                "type": "std::function<float(const std::string &, float, int)>",
+                "restore_value": False,
+                "initial_value": Block(percent),
+            }
+        )
+        out.append({"id": "cyd_ov_entity", "type": "std::string", "restore_value": False})
+        out.append({"id": "cyd_ov_kind", "type": "int", "restore_value": False, "initial_value": "0"})
+    return out
+
+
+def _overlay_script() -> dict[str, Any]:
+    """Fill and show the value overlay for the tile that was long pressed."""
+    return {
+        "id": "cyd_overlay_open",
+        "mode": "restart",
+        "parameters": {"entity": "string", "title": "string", "kind": "int", "value": "float"},
+        "then": [
+            {"lambda": Lambda("id(cyd_ov_entity) = entity;\nid(cyd_ov_kind) = kind;")},
+            {"lvgl.label.update": {"id": "cyd_ov_title", "text": Lambda("return title;")}},
+            {"lvgl.slider.update": {"id": "cyd_ov_slider", "value": Lambda("return value;")}},
+            {"lvgl.label.update": {"id": "cyd_ov_value", "text": Lambda(PERCENT_TEXT.format(v="value"))}},
+            {"lvgl.widget.show": "cyd_overlay"},
+        ],
+    }
+
+
+SLIDER_ACTIONS = (
+    (1, "light.turn_on", "brightness_pct"),
+    (2, "cover.set_cover_position", "position"),
+    (3, "fan.set_percentage", "percentage"),
+)
+
+
+def _overlay_widget(ctx: Context, width: int, height: int) -> dict[str, Any]:
+    """Shared value overlay (hidden) in the top layer; a long press on a tile opens it."""
+    lay = overlay_layout(width, height, ctx.font_sizes, ctx.icon_sizes)
+    panel = lay["panel"]
+    hide = [{"lvgl.widget.hide": "cyd_overlay"}]
+    children: list[Any] = []
+    for el in lay["elements"]:
+        if el["role"] == "title":
+            children.append(ctx.label(el, "cyd_ov_title", ""))
+        elif el["role"] == "close":
+            close = ctx.label(el, "cyd_ov_close", "mdi:close")
+            if close:
+                close["label"]["on_short_click"] = hide
+                children.append(close)
+        elif el["role"] == "value":
+            ctx.fonts.text_font(el["size"], "0123456789 %")
+            children.append(ctx.label(el, "cyd_ov_value", ""))
+        elif el["role"] == "slider":
+            ctx.objects += 1
+            send = [
+                {
+                    "if": {
+                        "condition": {"lambda": Lambda(f"return id(cyd_ov_kind) == {kind};")},
+                        "then": [
+                            {
+                                "homeassistant.action": {
+                                    "action": action,
+                                    "data": {
+                                        "entity_id": Lambda("return id(cyd_ov_entity);"),
+                                        key: Lambda("return to_string((int) lroundf(x));"),
+                                    },
+                                }
+                            }
+                        ],
+                    }
+                }
+                for kind, action, key in SLIDER_ACTIONS
+            ]
+            children.append(
+                {
+                    "slider": {
+                        "id": "cyd_ov_slider",
+                        "align": el["align"],
+                        "x": el["x"],
+                        "y": el["y"],
+                        "width": el["width"],
+                        "height": el["height"],
+                        "min_value": 0,
+                        "max_value": 100,
+                        "value": 0,
+                        "bg_color": ctx.color("border"),
+                        "bg_opa": "COVER",
+                        "indicator": {"bg_color": ctx.color("accent"), "bg_opa": "COVER"},
+                        "knob": {"bg_color": ctx.color("text"), "bg_opa": "COVER", "pad_all": 4},
+                        "on_value": [
+                            {"lvgl.label.update": {"id": "cyd_ov_value", "text": Lambda(PERCENT_TEXT.format(v="x"))}}
+                        ],
+                        "on_release": send,
+                    }
+                }
+            )
+    ctx.objects += 2
+    return {
+        "obj": {
+            "id": "cyd_overlay",
+            "x": 0,
+            "y": 0,
+            "width": width,
+            "height": height,
+            "bg_color": Raw("0x000000"),
+            "bg_opa": "60%",
+            "border_width": 0,
+            "radius": 0,
+            "pad_all": 0,
+            "hidden": True,
+            "scrollable": False,
+            "on_short_click": hide,
+            "widgets": [
+                {
+                    "obj": {
+                        "id": "cyd_ov_panel",
+                        "x": panel.x,
+                        "y": panel.y,
+                        "width": panel.w,
+                        "height": panel.h,
+                        "styles": "cyd_tile",
+                        "scrollable": False,
+                        "widgets": [c for c in children if c],
+                    }
+                }
+            ],
+        }
+    }
+
+
 def _scripts(ctx: Context, pages: list[dict[str, Any]]) -> list[Any]:
     scripts: list[Any] = []
+    if "overlay" in ctx.helpers:
+        scripts.append(_overlay_script())
     if ctx.time_updates:
         scripts.append({"id": "cyd_update_time", "mode": "restart", "then": ctx.time_updates})
     scripts.append(
@@ -473,6 +668,10 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
                 "shadow_width": 0,
             },
             {"id": "cyd_tab", "bg_opa": "TRANSP", "border_width": 0, "radius": 0, "pad_all": 0, "shadow_width": 0},
+        ]
+        + [
+            {"id": sid, "text_font": font, "text_color": Raw(color), **({"text_align": align} if align else {})}
+            for (font, color, align), sid in ctx.label_styles.items()
         ],
     }
     idle: list[Any] = []
@@ -716,6 +915,8 @@ def _top_layer(ctx: Context, pages: list[dict[str, Any]], width: int, height: in
                 }
             }
         )
+    if "overlay" in ctx.helpers:
+        widgets.append(_overlay_widget(ctx, width, height))
     ctx.page_actions = actions
     return widgets
 

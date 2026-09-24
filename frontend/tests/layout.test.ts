@@ -2,13 +2,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { headerElements, pageLayout, tabElements, widgetElements } from "../src/layout";
+import { headerElements, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
 import type { Project } from "../src/types";
 
 interface Cases {
   layouts: { input: { project: Project; width: number; height: number }; expected: Record<string, unknown> }[];
   elements: { input: { type: string; w: number; h: number; props: Record<string, unknown> }; expected: unknown[] }[];
   tabs: { input: { icons: boolean; labels: boolean; tab: number[] }; expected: unknown[] }[];
+  overlays: { input: { w: number; h: number }; expected: { panel: number[]; elements: unknown[] } }[];
 }
 
 const cases = JSON.parse(readFileSync(resolve(__dirname, "../../tests/layout_cases.json"), "utf8")) as Cases;
@@ -41,6 +42,13 @@ describe("layout parity with generator/layout.py", () => {
     for (const c of cases.tabs) {
       const [x, y, w, h] = c.input.tab;
       expect(tabElements(c.input.icons, c.input.labels, { x, y, w, h })).toEqual(c.expected);
+    }
+  });
+
+  it("overlay layout", () => {
+    for (const c of cases.overlays) {
+      const lay = overlayLayout(c.input.w, c.input.h);
+      expect({ panel: list(lay.panel), elements: lay.elements }).toEqual(c.expected);
     }
   });
 });

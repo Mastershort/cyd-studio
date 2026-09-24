@@ -4,33 +4,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..context import ON_STATES, Context, cpp_str
-from ..emit import Lambda, Raw
+from ..context import Context, cpp_str
+from ..emit import Lambda
 from ..layout import Rect
 from .common import box, elements, fallback_label, page_show, widget_id
 
-
-def _is_on_expr() -> str:
-    return " || ".join(f'x == "{s}"' for s in ON_STATES)
-
-
-def _state_text_lambda(ctx: Context, text_on: str | None = None, text_off: str | None = None) -> Lambda:
-    s = ctx.strings
-    mapping = [
-        ("on", text_on or s["on"]),
-        ("off", text_off or s["off"]),
-        ("open", text_on or s["open"]),
-        ("closed", text_off or s["closed"]),
-        ("opening", s["opening"]),
-        ("closing", s["closing"]),
-        ("locked", text_off or s["locked"]),
-        ("unlocked", text_on or s["unlocked"]),
-        ("unavailable", s["unavailable"]),
-    ]
-    lines = [f'if (x == "{state}") return std::string({cpp_str(text)});' for state, text in mapping]
-    lines.append(f'if (x.empty() || x == "unknown") return std::string({cpp_str(s["unknown"])});')
-    lines.append("return x;")
-    return Lambda("\n".join(lines))
+# Attribute that holds the tile's value, and how the device helper interprets it:
+# 1 = light brightness 0..255, 2 = cover position 0..100, 3 = fan percentage 0..100
+VALUE_ATTRIBUTES: dict[str, tuple[str, int]] = {
+    "light": ("brightness", 1),
+    "cover": ("current_position", 2),
+    "fan": ("percentage", 3),
+}
 
 
 def _register_state_texts(ctx: Context, size: int, *texts: str) -> None:
@@ -38,62 +23,113 @@ def _register_state_texts(ctx: Context, size: int, *texts: str) -> None:
     ctx.fonts.text_font(
         size,
         "".join(texts)
+        + "0123456789 %"
         + "".join(
             s[k] for k in ("on", "off", "open", "closed", "opening", "closing", "locked", "unlocked", "unavailable")
         ),
     )
 
 
-def _icon_color_update(icon_id: str, on_color: str, off_color: str) -> dict[str, Any]:
-    """Color the icon label by state."""
-    return {
-        "if": {
-            "condition": {"lambda": Lambda(f"return {_is_on_expr()};")},
-            "then": [{"lvgl.label.update": {"id": icon_id, "text_color": Raw(on_color)}}],
-            "else": [{"lvgl.label.update": {"id": icon_id, "text_color": Raw(off_color)}}],
-        }
-    }
+def _state_call(
+    tile: str | None,
+    icon: str | None,
+    label: str | None,
+    x: str,
+    value: str,
+    kind: int,
+    text_on: str | None,
+    text_off: str | None,
+    color_on: str,
+    color_off: str,
+) -> dict[str, Any]:
+    """One-line call of the shared helper ``cyd_tile_state`` (see generate._state_helper)."""
+
+    def ptr(obj_id: str | None) -> str:
+        return f"id({obj_id})" if obj_id else "nullptr"
+
+    def text(value: str | None) -> str:
+        return cpp_str(value) if value else "nullptr"
+
+    args = [ptr(tile), ptr(icon), ptr(label), x, value, str(kind), text(text_on), text(text_off), color_on, color_off]
+    return {"lambda": Lambda(f"id(cyd_tile_state)({', '.join(args)});")}
+
+
+def _wire_state(
+    ctx: Context,
+    entity: str,
+    tile: str | None,
+    icon: str | None,
+    label: str | None,
+    kind: int,
+    attribute: str | None,
+    text_on: str | None,
+    text_off: str | None,
+    color_on: str,
+    color_off: str,
+) -> tuple[str, str | None]:
+    """Mirror the entity (and optionally its value attribute) and update the tile on every change."""
+    ctx.helpers.add("state")
+    src = ctx.source("text", entity)
+    attr = ctx.source("number", entity, attribute) if attribute else None
+    value_now = f"id({attr.id}).state" if attr else "NAN"
+    src.actions.append(_state_call(tile, icon, label, "x", value_now, kind, text_on, text_off, color_on, color_off))
+    if attr:
+        attr.actions.append(
+            _state_call(tile, icon, label, f"id({src.id}).state", "x", kind, text_on, text_off, color_on, color_off)
+        )
+    return src.id, attr.id if attr else None
 
 
 def toggle_tile(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:
-    """Tile that toggles an entity."""
+    """Tile that toggles an entity; optional value line and long press slider."""
     wid = widget_id(page, widget)
     props = widget.get("props", {})
     entity = widget["entity"]
+    domain = entity.split(".", 1)[0]
     label_text = props.get("label") or fallback_label(entity)
+    attribute, kind = VALUE_ATTRIBUTES.get(domain, (None, 0))
+    slider = kind > 0 and props.get("long_press", "slider") == "slider"
+    show_value = kind > 0 and props.get("show_value", True)
     children = []
-    has_icon = has_state = False
+    icon_id = state_id = None
     for el in elements(ctx, widget, rect):
         if el["role"] == "icon":
             icon = ctx.label(el, f"{wid}_icon", props.get("icon", ""))
-            has_icon = icon is not None
+            icon_id = f"{wid}_icon" if icon else None
             children.append(icon)
         elif el["role"] == "label":
             children.append(ctx.label(el, f"{wid}_label", label_text))
         elif el["role"] == "state":
             _register_state_texts(ctx, el["size"])
             children.append(ctx.label(el, f"{wid}_state", ctx.strings["unknown"]))
-            has_state = True
+            state_id = f"{wid}_state"
 
-    src = ctx.source("text", entity)
-    src.actions.append(
-        {
-            "lvgl.widget.update": {
-                "id": wid,
-                "state": {
-                    "checked": Lambda(f"return {_is_on_expr()};"),
-                    "disabled": Lambda('return x == "unavailable";'),
-                },
+    src_id, attr_id = _wire_state(
+        ctx, entity, wid, icon_id, state_id, kind if show_value else 0,
+        attribute if (show_value or slider) else None,
+        None, None, ctx.color_hex("on"), ctx.color_hex("off"),
+    )  # fmt: skip
+
+    extra: dict[str, Any] = {
+        "on_short_click": [
+            {"homeassistant.action": {"action": "homeassistant.toggle", "data": {"entity_id": ctx.ent(entity)}}}
+        ]
+    }
+    if slider and attr_id:
+        ctx.helpers.add("overlay")
+        ctx.fonts.text_font(ctx.font_sizes.get("m", 16), label_text)
+        extra["on_long_press"] = [
+            {
+                "script.execute": {
+                    "id": "cyd_overlay_open",
+                    "entity": ctx.ent(entity),
+                    "title": label_text,
+                    "kind": kind,
+                    "value": Lambda(f"return id(cyd_percent)(id({src_id}).state, id({attr_id}).state, {kind});"),
+                }
             }
-        }
-    )
-    if has_icon:
-        src.actions.append(_icon_color_update(f"{wid}_icon", ctx.color_hex("on"), ctx.color_hex("off")))
-    if has_state:
-        src.actions.append({"lvgl.label.update": {"id": f"{wid}_state", "text": _state_text_lambda(ctx)}})
-
-    on_click = [{"homeassistant.action": {"action": "homeassistant.toggle", "data": {"entity_id": ctx.ent(entity)}}}]
-    return [box(ctx, "button", wid, rect, children, clickable=True, style=None, on_short_click=on_click)]
+        ]
+    return [box(ctx, "button", wid, rect, children, clickable=True, style=None, **extra)]
 
 
 def sensor_value(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:
@@ -153,23 +189,19 @@ def binary_indicator(ctx: Context, page: dict[str, Any], widget: dict[str, Any],
     text_on = props.get("text_on") or ctx.strings["on"]
     text_off = props.get("text_off") or ctx.strings["off"]
     children = []
-    has_icon = False
+    icon_id = state_id = None
     for el in elements(ctx, widget, rect):
         if el["role"] == "icon":
             icon = ctx.label(el, f"{wid}_icon", props.get("icon", ""))
-            has_icon = icon is not None
+            icon_id = f"{wid}_icon" if icon else None
             children.append(icon)
         elif el["role"] == "label":
             children.append(ctx.label(el, None, label_text))
         elif el["role"] == "state":
             _register_state_texts(ctx, el["size"], text_on, text_off)
             children.append(ctx.label(el, f"{wid}_state", ctx.strings["unknown"]))
+            state_id = f"{wid}_state"
 
-    src = ctx.source("text", entity)
     on_color = ctx.color_hex("error") if props.get("alert_on", True) else ctx.color_hex("accent")
-    if has_icon:
-        src.actions.append(_icon_color_update(f"{wid}_icon", on_color, ctx.color_hex("on")))
-    src.actions.append(
-        {"lvgl.label.update": {"id": f"{wid}_state", "text": _state_text_lambda(ctx, text_on, text_off)}}
-    )
+    _wire_state(ctx, entity, None, icon_id, state_id, 0, None, text_on, text_off, on_color, ctx.color_hex("on"))
     return [box(ctx, "obj", wid, rect, children, clickable=False)]

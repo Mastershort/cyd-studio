@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "id": "golden-reference-home-like",
+  "name": "Office",
+  "device_name": "smartdisplay",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "mastershort_dark",
+  "grid": {
+    "cols": 4,
+    "rows": 3,
+    "gap": 8,
+    "padding": 8
+  },
+  "settings": {
+    "screensaver": {
+      "enabled": true,
+      "after_s": 10,
+      "action": "dim"
+    },
+    "brightness_night": 40,
+    "api_key": "zGm1uI0T3MdsCWDhYxJ9t3iX0N9kfjN7l6BUk4kP1Ro="
+  },
+  "navigation": {
+    "style": "none",
+    "swipe": false
+  },
+  "pages": [
+    {
+      "id": "home",
+      "name": "Office",
+      "icon": "mdi:home",
+      "widgets": [
+        {
+          "id": "t1",
+          "type": "toggle_tile",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "light.wohnzimmer_schrank",
+          "props": {
+            "label": "Schrank",
+            "icon": "mdi:wardrobe"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "toggle_tile",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "light.wohnzimmer_licht",
+          "props": {
+            "label": "Deckenlicht",
+            "icon": "mdi:ceiling-light"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "toggle_tile",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "light.retro_lampe",
+          "props": {
+            "label": "Retro",
+            "icon": "mdi:globe-light"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "toggle_tile",
+          "x": 2,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "light.desk_ambient",
+          "props": {
+            "label": "Ambient",
+            "icon": "mdi:led-strip-variant"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "toggle_tile",
+          "x": 0,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "cover.wohnzimmer_fenster",
+          "props": {
+            "label": "Rollladen",
+            "icon": "mdi:window-shutter"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "toggle_tile",
+          "x": 2,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "fan.air_purifier",
+          "props": {
+            "label": "Ventilator",
+            "icon": "mdi:air-purifier"
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "updated": "2026-09-24"
+  }
+}

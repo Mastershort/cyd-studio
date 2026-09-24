@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.1.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
 # Projekt: Hallway · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -56,6 +56,43 @@ globals:
     type: int
     restore_value: false
     initial_value: "0"
+  - id: cyd_tile_state
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
+    restore_value: false
+    initial_value: |-
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,
+          const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {
+        // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.
+        // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only
+        const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        if (tile != nullptr) {
+          lv_obj_set_state(tile, LV_STATE_CHECKED, on);
+          lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
+        }
+        if (icon != nullptr)
+          lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);
+        if (label == nullptr) return;
+        std::string text;
+        if (on && kind > 0 && !std::isnan(value)) {
+          char buf[12];
+          snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(kind == 1 ? value * 100.0f / 255.0f : value));
+          text = buf;
+        }
+        else if (x == "unavailable") text = "Unavailable";
+        else if (x.empty() || x == "unknown") text = "–";
+        else if (x == "opening") text = "Opening";
+        else if (x == "closing") text = "Closing";
+        else if (on && text_on != nullptr) text = text_on;
+        else if (!on && text_off != nullptr) text = text_off;
+        else if (x == "on") text = "On";
+        else if (x == "off") text = "Off";
+        else if (x == "open") text = "Open";
+        else if (x == "closed") text = "Closed";
+        else if (x == "locked") text = "Locked";
+        else if (x == "unlocked") text = "Unlocked";
+        else text = x;
+        lv_label_set_text(label, text.c_str());
+      }
 
 time:
   - platform: homeassistant
@@ -171,63 +208,15 @@ text_sensor:
     entity_id: "${ent_binary_sensor_front_door}"
     on_value:
       then:
-        - if:
-            condition:
-              lambda: !lambda |-
-                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
-            then:
-              - lvgl.label.update:
-                  id: w_main_door_icon
-                  text_color: 0xEF4444
-            else:
-              - lvgl.label.update:
-                  id: w_main_door_icon
-                  text_color: 0xA3E635
-        - lvgl.label.update:
-            id: w_main_door_state
-            text: !lambda |-
-              if (x == "on") return std::string("Open");
-              if (x == "off") return std::string("Closed");
-              if (x == "open") return std::string("Open");
-              if (x == "closed") return std::string("Closed");
-              if (x == "opening") return std::string("Opening");
-              if (x == "closing") return std::string("Closing");
-              if (x == "locked") return std::string("Closed");
-              if (x == "unlocked") return std::string("Open");
-              if (x == "unavailable") return std::string("Unavailable");
-              if (x.empty() || x == "unknown") return std::string("–");
-              return x;
+        - lambda: !lambda |-
+            id(cyd_tile_state)(nullptr, id(w_main_door_icon), id(w_main_door_state), x, NAN, 0, "Open", "Closed", 0xEF4444, 0xA3E635);
   - platform: homeassistant
     id: ha_lock_front_door
     entity_id: "${ent_lock_front_door}"
     on_value:
       then:
-        - if:
-            condition:
-              lambda: !lambda |-
-                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
-            then:
-              - lvgl.label.update:
-                  id: w_main_lock_icon
-                  text_color: 0xF472B6
-            else:
-              - lvgl.label.update:
-                  id: w_main_lock_icon
-                  text_color: 0xA3E635
-        - lvgl.label.update:
-            id: w_main_lock_state
-            text: !lambda |-
-              if (x == "on") return std::string("On");
-              if (x == "off") return std::string("Off");
-              if (x == "open") return std::string("On");
-              if (x == "closed") return std::string("Off");
-              if (x == "opening") return std::string("Opening");
-              if (x == "closing") return std::string("Closing");
-              if (x == "locked") return std::string("Off");
-              if (x == "unlocked") return std::string("On");
-              if (x == "unavailable") return std::string("Unavailable");
-              if (x.empty() || x == "unknown") return std::string("–");
-              return x;
+        - lambda: !lambda |-
+            id(cyd_tile_state)(nullptr, id(w_main_lock_icon), id(w_main_lock_state), x, NAN, 0, "On", "Off", 0xF472B6, 0xA3E635);
   - platform: homeassistant
     id: ha_sensor_outside_condition
     entity_id: "${ent_sensor_outside_condition}"
@@ -402,6 +391,40 @@ lvgl:
       radius: 0
       pad_all: 0
       shadow_width: 0
+    - id: cyd_text_1
+      text_font: font_28
+      text_color: 0xE6EDF3
+      text_align: CENTER
+    - id: cyd_text_2
+      text_font: icons_28
+      text_color: 0x8B98A5
+    - id: cyd_text_3
+      text_font: font_14
+      text_color: 0xE6EDF3
+    - id: cyd_text_4
+      text_font: font_12
+      text_color: 0x8B98A5
+    - id: cyd_text_5
+      text_font: font_20
+      text_color: 0xE6EDF3
+    - id: cyd_text_6
+      text_font: icons_28
+      text_color: 0xF472B6
+    - id: cyd_text_7
+      text_font: icons_20
+      text_color: 0xF472B6
+    - id: cyd_text_8
+      text_font: font_28
+      text_color: 0xE6EDF3
+    - id: cyd_text_9
+      text_font: font_16
+      text_color: 0x8B98A5
+    - id: cyd_text_10
+      text_font: icons_20
+      text_color: 0x22D3EE
+    - id: cyd_text_11
+      text_font: icons_20
+      text_color: 0x8B98A5
   on_idle:
     - timeout: 30s
       then:
@@ -428,19 +451,13 @@ lvgl:
             - label:
                 id: cyd_title
                 align: LEFT_MID
-                x: 0
-                y: 0
-                text_font: font_14
+                styles: cyd_text_3
                 text: Main
-                text_color: 0xE6EDF3
             - label:
                 id: cyd_header_time
                 align: RIGHT_MID
-                x: 0
-                y: 0
-                text_font: font_14
+                styles: cyd_text_3
                 text: "--:--"
-                text_color: 0xE6EDF3
       - obj:
           id: cyd_tabbar
           x: 0
@@ -465,11 +482,8 @@ lvgl:
                   - label:
                       id: cyd_tab_main_icon
                       align: CENTER
-                      x: 0
-                      y: 0
-                      text_font: icons_20
+                      styles: cyd_text_10
                       text: "\U000F02DC"
-                      text_color: 0x22D3EE
             - button:
                 id: cyd_tab_info
                 x: 120
@@ -484,11 +498,8 @@ lvgl:
                   - label:
                       id: cyd_tab_info_icon
                       align: CENTER
-                      x: 0
-                      y: 0
-                      text_font: icons_20
+                      styles: cyd_text_11
                       text: "\U000F02FC"
-                      text_color: 0x8B98A5
   pages:
     - id: page_main
       bg_color: 0x0A0E14
@@ -521,14 +532,10 @@ lvgl:
               - label:
                   id: w_main_c_time
                   align: CENTER
-                  x: 0
-                  y: 0
-                  text_font: font_28
                   width: 216
                   long_mode: DOT
-                  text_align: CENTER
+                  styles: cyd_text_1
                   text: "--:--"
-                  text_color: 0xE6EDF3
         - obj:
             id: w_main_door
             x: 6
@@ -542,32 +549,23 @@ lvgl:
               - label:
                   id: w_main_door_icon
                   align: LEFT_MID
-                  x: 0
-                  y: 0
-                  text_font: icons_28
+                  styles: cyd_text_2
                   text: "\U000F081A"
-                  text_color: 0x8B98A5
               - label:
                   align: TOP_LEFT
                   x: 34
-                  y: 0
-                  text_font: font_14
                   width: 182
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_3
                   text: "Front door"
-                  text_color: 0xE6EDF3
               - label:
                   id: w_main_door_state
                   align: BOTTOM_LEFT
                   x: 34
-                  y: 0
-                  text_font: font_12
                   width: 182
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_4
                   text: "–"
-                  text_color: 0x8B98A5
         - obj:
             id: w_main_lock
             x: 6
@@ -581,32 +579,23 @@ lvgl:
               - label:
                   id: w_main_lock_icon
                   align: LEFT_MID
-                  x: 0
-                  y: 0
-                  text_font: icons_28
+                  styles: cyd_text_2
                   text: "\U000F033E"
-                  text_color: 0x8B98A5
               - label:
                   align: TOP_LEFT
                   x: 34
-                  y: 0
-                  text_font: font_14
                   width: 65
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_3
                   text: Lock
-                  text_color: 0xE6EDF3
               - label:
                   id: w_main_lock_state
                   align: BOTTOM_LEFT
                   x: 34
-                  y: 0
-                  text_font: font_12
                   width: 65
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_4
                   text: "–"
-                  text_color: 0x8B98A5
         - obj:
             id: w_main_power
             x: 123
@@ -620,24 +609,16 @@ lvgl:
               - label:
                   id: w_main_power_value
                   align: TOP_LEFT
-                  x: 0
-                  y: 0
-                  text_font: font_20
                   width: 99
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_5
                   text: "--"
-                  text_color: 0xE6EDF3
               - label:
                   align: BOTTOM_LEFT
-                  x: 0
-                  y: 0
-                  text_font: font_12
                   width: 99
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_4
                   text: Power
-                  text_color: 0x8B98A5
         - button:
             id: w_main_all_off
             x: 6
@@ -654,21 +635,15 @@ lvgl:
             widgets:
               - label:
                   align: LEFT_MID
-                  x: 0
-                  y: 0
-                  text_font: icons_28
+                  styles: cyd_text_6
                   text: "\U000F0425"
-                  text_color: 0xF472B6
               - label:
                   align: LEFT_MID
                   x: 34
-                  y: 0
-                  text_font: font_14
                   width: 182
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_3
                   text: "All off"
-                  text_color: 0xE6EDF3
     - id: page_info
       bg_color: 0x0A0E14
       bg_opa: COVER
@@ -699,32 +674,21 @@ lvgl:
             widgets:
               - label:
                   align: TOP_LEFT
-                  x: 0
-                  y: 0
-                  text_font: font_12
                   width: 190
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_4
                   text: Outside
-                  text_color: 0x8B98A5
               - label:
                   align: TOP_RIGHT
-                  x: 0
-                  y: 0
-                  text_font: icons_20
+                  styles: cyd_text_7
                   text: "\U000F0595"
-                  text_color: 0xF472B6
               - label:
                   id: w_info_weather_value
                   align: BOTTOM_LEFT
-                  x: 0
-                  y: 0
-                  text_font: font_28
                   width: 216
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_8
                   text: "--"
-                  text_color: 0xE6EDF3
         - obj:
             id: w_info_note
             x: 6
@@ -737,14 +701,10 @@ lvgl:
             widgets:
               - label:
                   align: CENTER
-                  x: 0
-                  y: 0
-                  text_font: font_28
                   width: 216
                   long_mode: DOT
-                  text_align: CENTER
+                  styles: cyd_text_1
                   text: "Have a nice day!"
-                  text_color: 0xE6EDF3
     - id: page_hidden
       skip: true
       bg_color: 0x0A0E14
@@ -768,15 +728,11 @@ lvgl:
             widgets:
               - label:
                   align: LEFT_MID
-                  x: 0
-                  y: 0
-                  text_font: font_16
                   width: 216
                   long_mode: DOT
-                  text_align: LEFT
+                  styles: cyd_text_9
                   text: Service
-                  text_color: 0x8B98A5
-# cyd_studio_checksum: e37daf62c2d10e7a
+# cyd_studio_checksum: 91c023485eb257fa
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/7VWXW/rNgz9K5n2mhSu06W9eRsGDBuw4Q7Ywx6GwqBtxhYqS4YkJ82K/PeRkuw4

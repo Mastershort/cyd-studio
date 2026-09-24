@@ -397,3 +397,34 @@ def tab_elements(
     else:
         els.append(_el("text", "label", "CENTER", 0, 0, fs["xs"], "nav", tab.w - 2, "center"))
     return els
+
+
+# ---------------------------------------------------------------------------
+# Value overlay (long press on a tile: brightness / position / fan speed)
+# ---------------------------------------------------------------------------
+OVERLAY_MAX_W = 240
+OVERLAY_MAX_H = 150
+OVERLAY_MARGIN = 16
+SLIDER_H = 18
+
+
+def overlay_layout(
+    width: int, height: int, font_sizes: dict[str, int] | None = None, icon_sizes: dict[str, int] | None = None
+) -> dict[str, Any]:
+    """Panel rectangle and inner elements of the value overlay (content box = panel inset TILE_PAD)."""
+    fs = {**DEFAULT_FONT_SIZES, **(font_sizes or {})}
+    ics = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
+    pw = min(width - 2 * OVERLAY_MARGIN, OVERLAY_MAX_W)
+    ph = min(height - 2 * OVERLAY_MARGIN, OVERLAY_MAX_H)
+    panel = Rect((width - pw) // 2, (height - ph) // 2, pw, ph)
+    cw = pw - 2 * TILE_PAD
+    elements = [
+        _el("text", "title", "TOP_LEFT", 0, 0, fs["m"], "text", max(cw - ics["s"] - ELEMENT_GAP, 1)),
+        _el("icon", "close", "TOP_RIGHT", 0, 0, ics["s"], "text_muted"),
+        _el("text", "value", "CENTER", 0, -(SLIDER_H // 2), fs["xl"], "text", cw, "center"),
+        {
+            **_el("slider", "slider", "BOTTOM_MID", 0, -(SLIDER_H // 2), 0, "accent", cw - 2 * SLIDER_H),
+            "height": SLIDER_H,
+        },
+    ]
+    return {"panel": panel, "elements": elements}

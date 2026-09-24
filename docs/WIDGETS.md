@@ -14,7 +14,7 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 
 | Typ | Entität | Gerät | Zustände |
 |---|---|---|---|
-| `toggle_tile` | light, switch, input_boolean, fan, cover | `button`, `checked` bei an/offen, `disabled` bei nicht verfügbar; Tippen → `homeassistant.toggle` | Icon grün/grau, Zustandstext An/Aus/Offen/…/Nicht verfügbar |
+| `toggle_tile` | light, switch, input_boolean, fan, cover | `button`, `checked` bei an/offen, `disabled` bei nicht verfügbar; Tippen → `homeassistant.toggle`; **lange drücken → Regler** (Licht: Helligkeit, Rollladen: Position, Lüfter: Stufe) | Icon grün/grau; Zustandstext An/Aus/…, bei Licht/Rollladen/Lüfter wahlweise der Wert in % |
 | `sensor_value` | sensor, input_number, number | `obj` mit Wert (Nachkommastellen, Einheit); optional Tippen → Seite | `--` bei unbekannt/nicht verfügbar (NaN) |
 | `binary_indicator` | binary_sensor u. a. | `obj`, Icon rot (Warnung) bzw. Akzent wenn an, grün wenn aus | eigene Texte für an/aus |
 | `clock` | – | Uhrzeit (HH:mm, HH:mm:ss, h:mm a) + Datum (DE/EN), Zeit von HA | `--:--` bis zur Zeitsynchronisierung |
@@ -22,6 +22,17 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 | `scene_button` | scene, script, button, input_button, automation | `button`; Tippen → `homeassistant.action` mit `action` + `data` | – |
 | `page_button` | – | `button`; Tippen → Seite (Animation) | – |
 | `page_title` | – | Seitenname, auf Unterseiten mit Zurück-Pfeil | – |
+
+**Regler-Overlay** (ab 0.2): ein gemeinsames, verstecktes Overlay im `top_layer` (Layout aus
+`overlay_layout()`), geöffnet vom Skript `cyd_overlay_open(entity, title, kind, value)`. Beim
+Loslassen des Reglers sendet das Gerät `light.turn_on` (`brightness_pct`),
+`cover.set_cover_position` (`position`) bzw. `fan.set_percentage` (`percentage`).
+Nur Kacheln mit Regler oder Wertanzeige abonnieren das jeweilige Attribut (`brightness`,
+`current_position`, `percentage`).
+
+**Gemeinsame Gerätelogik:** Zustand, Farbe und Text aller Schalter- und Status-Kacheln setzt
+eine einzige C++-Hilfsfunktion `cyd_tile_state` (in `globals`, als `std::function`), die jede
+Kachel mit einer Zeile aufruft. Beschriftungen teilen sich LVGL-Styles (`cyd_text_N`).
 
 Globale Elemente (im `top_layer`): Kopfzeile mit Seitentitel (+ Zurück-Pfeil auf Unterseiten),
 Uhr, Text; Tab-Leiste mit Icon/Beschriftung je Hauptseite.

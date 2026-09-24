@@ -45,6 +45,13 @@ class Lambda:
 
 
 @dataclass(frozen=True)
+class Block:
+    """Multi-line string emitted as literal block scalar (``|-``), e.g. C++ in globals."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class Raw:
     """Emit the value verbatim (e.g. hex colors ``0x22D3EE``)."""
 
@@ -104,7 +111,7 @@ def scalar(value: Any) -> str:
 
 
 def _is_scalar(value: Any) -> bool:
-    return not isinstance(value, (dict, list, Lambda))
+    return not isinstance(value, dict | list | Lambda | Block)
 
 
 def _lambda_lines(code: str, indent: str) -> list[str]:
@@ -127,6 +134,8 @@ def _emit_entry(prefix: str, value: Any, indent: str) -> list[str]:
     """Emit ``prefix`` (``key:`` or ``-``) followed by ``value``."""
     if isinstance(value, Lambda):
         return [f"{prefix} !lambda |-", *_lambda_lines(value.code, indent)]
+    if isinstance(value, Block):
+        return [f"{prefix} |-", *_lambda_lines(value.text, indent)]
     if isinstance(value, dict):
         if not value:
             return [f"{prefix} {{}}"]

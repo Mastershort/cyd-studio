@@ -31,6 +31,22 @@ async function main() {
       root.append(figure);
     }
   }
+  // Long press overlay on the reference layout (value 80 %)
+  const ref = goldens.find((g) => g.name === "reference_home_like");
+  if (ref) {
+    const project = normalize(ref.project);
+    const board = boards.find((b) => b.id === project.board)!;
+    const theme = themes.find((t) => t.id === project.theme)!;
+    const resolved = resolveBoard(board, project.board_variant, project.orientation);
+    const canvas = document.createElement("canvas");
+    canvas.dataset.snapshot = "reference_home_like--overlay";
+    renderScreen(canvas, {
+      project, board: resolved, theme, pageId: project.pages[0].id, state: sampleState(project), now: FIXED_NOW,
+      overlay: { title: "Schrank", value: 80 },
+    });
+    canvas.style.width = `${resolved.width * 2}px`;
+    root.append(canvas);
+  }
   document.body.dataset.ready = "1";
 }
 

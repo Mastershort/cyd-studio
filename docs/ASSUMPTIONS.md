@@ -69,6 +69,17 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
 - Kopfzeile und Tab-Leiste liegen im LVGL-`top_layer` und werden einmal (anhand der Startseite)
   angelegt. `page.show_header` wird deshalb in Phase 1 nicht im UI angeboten.
 
+## Gemeinsame Gerätelogik (ab 0.2)
+
+- LVGL-Widget-IDs sind in ESPHome-Lambdas `lv_obj_t *` (nicht zusammengesetzte Widgets,
+  `esphome/components/lvgl/widgets/__init__.py`). Die Zustandslogik steht daher einmal als
+  `std::function` in `globals` (`cyd_tile_state`, `cyd_percent`) und nutzt die LVGL-C-API
+  (`lv_obj_set_state`, `lv_obj_set_style_text_color`, `lv_label_set_text`). Mit ESPHome 2026.9 /
+  LVGL 9.5 kompiliert (`reference_home_like`, `multipage`).
+- `homeassistant.action`: `action` und `data` sind templatebar – der Regler schickt Entität und Wert
+  aus `globals` (`cyd_ov_entity`, `cyd_ov_kind`).
+- Slider-Trigger (`on_value`, `on_release`) liefern den Wert als `float x`.
+
 ## Entitäten im Gerät
 
 - Schalter-/Status-Kacheln spiegeln die Entität als `text_sensor` (Plattform `homeassistant`),

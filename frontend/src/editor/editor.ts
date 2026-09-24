@@ -9,7 +9,7 @@ import {
 } from "../model";
 import { iconChar } from "../preview/icons";
 import { ICON_FAMILY } from "../preview/fonts";
-import { isOn, sampleState, type HitRegion, type StateResolver } from "../preview/renderer";
+import { VALUE_ATTRIBUTES, isOn, sampleState, tileValuePercent, type HitRegion, type StateResolver } from "../preview/renderer";
 import { WIDGET_DND_TYPE, type CydScreen } from "../preview/screen";
 import "../preview/screen";
 import "./pickers";
@@ -41,6 +41,8 @@ export class CydEditor extends LitElement {
     _night: { state: true },
     _realActions: { state: true },
     _sim: { state: true },
+    _simAttr: { state: true },
+    _overlay: { state: true },
     _saveState: { state: true },
     _issues: { state: true },
     _showExport: { state: true },
@@ -64,6 +66,8 @@ export class CydEditor extends LitElement {
   declare _night: boolean;
   declare _realActions: boolean;
   declare _sim: Record<string, string>;
+  declare _simAttr: Record<string, Record<string, unknown>>;
+  declare _overlay: { entity: string; title: string; kind: number; value: number } | null;
   declare _saveState: "saved" | "saving" | "dirty" | "error";
   declare _issues: Issue[];
   declare _showExport: boolean;
@@ -88,6 +92,8 @@ export class CydEditor extends LitElement {
     this._night = false;
     this._realActions = false;
     this._sim = {};
+    this._simAttr = {};
+    this._overlay = null;
     this._saveState = "saved";
     this._issues = [];
     this._showExport = false;
@@ -322,14 +328,33 @@ export class CydEditor extends LitElement {
     return (id: string): HassEntity | undefined => {
       const base = sample ? sample(id) : this.hass?.states[id];
       const sim = this._sim[id];
-      if (sim) return { entity_id: id, state: sim, attributes: base?.attributes ?? {} };
-      return base;
+      const attrs = { ...(base?.attributes ?? {}), ...(this._simAttr[id] ?? {}) };
+      if (sim) return { entity_id: id, state: sim, attributes: attrs };
+      return base ? { ...base, attributes: attrs } : base;
     };
   }
 
-  private onPreviewTap(ev: CustomEvent<{ hit: HitRegion }>) {
-    const { hit } = ev.detail;
+  private onPreviewTap(ev: CustomEvent<{ hit: HitRegion; long: boolean; point: { x: number; y: number } }>) {
+    const { hit, long, point } = ev.detail;
     const project = this._project!;
+    if (this._overlay) {
+      if (hit.kind === "overlay-close") this._overlay = null;
+      else if (hit.kind === "overlay-slider") this.setOverlayValue(((point.x - hit.rect.x) * 100) / hit.rect.w);
+      return;
+    }
+    if (long) {
+      const w = this.page?.widgets.find((x) => x.id === hit.id);
+      const spec = w?.entity ? VALUE_ATTRIBUTES[w.entity.split(".")[0]] : undefined;
+      if (w && hit.kind === "widget" && w.type === "toggle_tile" && spec && (w.props.long_press ?? "slider") === "slider") {
+        const ent = this.stateResolver()(w.entity!);
+        const on = spec[1] === 2 || ent?.state === "on";
+        this._overlay = {
+          entity: w.entity!, kind: spec[1], title: String(w.props.label || ent?.attributes.friendly_name || w.entity),
+          value: on ? tileValuePercent(w.entity, ent) ?? 0 : 0,
+        };
+        return;
+      }
+    }
     if (hit.kind === "tab" || hit.kind === "back") {
       this._pageId = hit.id;
       return;
@@ -353,6 +378,26 @@ export class CydEditor extends LitElement {
     } else if (w.type === "scene_button" && this._realActions && this.info?.preview_real_actions && w.action?.service) {
       const [domain, service] = w.action.service.split(".");
       void this.hass.callService(domain, service, w.action.target ? { entity_id: w.action.target, ...(w.action.data ?? {}) } : w.action.data);
+    }
+  }
+
+  /** Slider released in the preview: update the simulated state (and call HA when real actions are on). */
+  private setOverlayValue(raw: number) {
+    const ov = this._overlay;
+    if (!ov) return;
+    const value = Math.max(0, Math.min(100, Math.round(raw)));
+    this._overlay = { ...ov, value };
+    const [attr] = VALUE_ATTRIBUTES[ov.entity.split(".")[0]];
+    const stored = ov.kind === 1 ? Math.round((value * 255) / 100) : value;
+    this._simAttr = { ...this._simAttr, [ov.entity]: { ...(this._simAttr[ov.entity] ?? {}), [attr]: stored } };
+    const onState = ov.kind === 2 ? (value > 0 ? "open" : "closed") : value > 0 ? "on" : "off";
+    this._sim = { ...this._sim, [ov.entity]: onState };
+    if (this._realActions && this.info?.preview_real_actions) {
+      const calls: Record<number, [string, string, string]> = {
+        1: ["light", "turn_on", "brightness_pct"], 2: ["cover", "set_cover_position", "position"], 3: ["fan", "set_percentage", "percentage"],
+      };
+      const [domain, service, key] = calls[ov.kind];
+      void this.hass.callService(domain, service, { entity_id: ov.entity, [key]: value });
     }
   }
 
@@ -447,7 +492,7 @@ export class CydEditor extends LitElement {
         <span class="title">${p.name}</span>
         <button ?disabled=${!this.undoStack.length} title="Strg+Z" @click=${() => this.undo()}>↶ ${t("undo")}</button>
         <button ?disabled=${!this.redoStack.length} title="Strg+Y" @click=${() => this.redo()}>↷ ${t("redo")}</button>
-        <button class=${this._mode === "preview" ? "on" : ""} @click=${() => { this._mode = this._mode === "edit" ? "preview" : "edit"; this._selected = []; }}>
+        <button class=${this._mode === "preview" ? "on" : ""} @click=${() => { this._mode = this._mode === "edit" ? "preview" : "edit"; this._selected = []; this._overlay = null; }}>
           ${this._mode === "edit" ? "▶ " + t("preview_mode") : "✎ " + t("edit_mode")}</button>
         <button class=${this._sample ? "on" : ""} @click=${() => (this._sample = !this._sample)}>${this._sample ? t("sample_data") : t("live_data")}</button>
         <button class=${this._night ? "on" : ""} @click=${() => (this._night = !this._night)}>☾ ${t("night_view")}</button>
@@ -467,6 +512,7 @@ export class CydEditor extends LitElement {
           ${board && themed ? html`<cyd-screen .project=${p} .board=${board} .theme=${themed} .pageId=${this._pageId}
             .state=${this.stateResolver()} .mode=${this._mode} .selected=${this._selected} .scale=${this.fitScale()}
             .night=${this._night} .now=${this._now}
+            .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value } : null}
             @select=${(e: CustomEvent<{ ids: string[] }>) => (this._selected = e.detail.ids)}
             @widget-change=${(e: CustomEvent<{ id: string; changes: Partial<Widget> }>) => this.editWidget(e.detail.id, (w) => Object.assign(w, e.detail.changes))}
             @widget-add=${(e: CustomEvent<{ type: string; x: number; y: number }>) => this.addWidget(e.detail.type, e.detail)}

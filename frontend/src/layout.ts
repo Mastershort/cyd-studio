@@ -25,7 +25,7 @@ export interface Rect {
 }
 
 export interface Element {
-  kind: "icon" | "text";
+  kind: "icon" | "text" | "slider";
   role: string;
   align: string;
   x: number;
@@ -34,6 +34,8 @@ export interface Element {
   size: number;
   color: string;
   text_align: string;
+  /** only for kind "slider" */
+  height?: number;
 }
 
 const fdiv = (a: number, b: number): number => Math.floor(a / b);
@@ -174,7 +176,7 @@ export function cellAt(content: Rect, grid: Grid, px: number, py: number): { x: 
 // Inner elements of widgets
 // ---------------------------------------------------------------------------
 
-function el(kind: "icon" | "text", role: string, align: string, x: number, y: number, size: number, color: string,
+function el(kind: "icon" | "text" | "slider", role: string, align: string, x: number, y: number, size: number, color: string,
   width: number | null = null, textAlign = "left"): Element {
   return { kind, role, align, x, y, width, size, color, text_align: textAlign };
 }
@@ -343,4 +345,29 @@ export function alignChild(parent: Rect, w: number, h: number, align: string, x:
   };
   const [bx, by] = table[align] ?? [0, 0];
   return { x: parent.x + bx + x, y: parent.y + by + y };
+}
+
+// ---------------------------------------------------------------------------
+// Value overlay (long press on a tile: brightness / position / fan speed)
+// ---------------------------------------------------------------------------
+export const OVERLAY_MAX_W = 240;
+export const OVERLAY_MAX_H = 150;
+export const OVERLAY_MARGIN = 16;
+export const SLIDER_H = 18;
+
+export function overlayLayout(width: number, height: number, fontSizes: Record<string, number> = {},
+  iconSizes: Record<string, number> = {}): { panel: Rect; elements: Element[] } {
+  const fs = { ...DEFAULT_FONT_SIZES, ...fontSizes };
+  const ics = { ...DEFAULT_ICON_SIZES, ...iconSizes };
+  const pw = Math.min(width - 2 * OVERLAY_MARGIN, OVERLAY_MAX_W);
+  const ph = Math.min(height - 2 * OVERLAY_MARGIN, OVERLAY_MAX_H);
+  const panel = { x: fdiv(width - pw, 2), y: fdiv(height - ph, 2), w: pw, h: ph };
+  const cw = pw - 2 * TILE_PAD;
+  const elements: Element[] = [
+    el("text", "title", "TOP_LEFT", 0, 0, fs.m, "text", Math.max(cw - ics.s - ELEMENT_GAP, 1)),
+    el("icon", "close", "TOP_RIGHT", 0, 0, ics.s, "text_muted"),
+    el("text", "value", "CENTER", 0, -fdiv(SLIDER_H, 2), fs.xl, "text", cw, "center"),
+    { ...el("slider", "slider", "BOTTOM_MID", 0, -fdiv(SLIDER_H, 2), 0, "accent", cw - 2 * SLIDER_H), height: SLIDER_H },
+  ];
+  return { panel, elements };
 }

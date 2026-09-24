@@ -1,6 +1,6 @@
 # ======================================================================
 # Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
-# Projekt: SmartDisplay · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Projekt: Office · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
 # Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
@@ -16,11 +16,13 @@
 
 substitutions:
   device_name: smartdisplay
-  friendly_name: SmartDisplay
-  ent_light_ambient_light: light.ambient_light
-  ent_light_ceiling_light: light.ceiling_light
-  ent_light_desk_lamp: light.desk_lamp
-  ent_light_globe_lamp: light.globe_lamp
+  friendly_name: Office
+  ent_cover_wohnzimmer_fenster: cover.wohnzimmer_fenster
+  ent_fan_air_purifier: fan.air_purifier
+  ent_light_desk_ambient: light.desk_ambient
+  ent_light_retro_lampe: light.retro_lampe
+  ent_light_wohnzimmer_licht: light.wohnzimmer_licht
+  ent_light_wohnzimmer_schrank: light.wohnzimmer_schrank
 
 esphome:
   name: "${device_name}"
@@ -54,7 +56,7 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
-    ssid: "SmartDisplay Fallback"
+    ssid: "Office Fallback"
 
 captive_portal:
 
@@ -63,6 +65,10 @@ globals:
     type: int
     restore_value: false
     initial_value: "0"
+  - id: cyd_dimmed
+    type: bool
+    restore_value: false
+    initial_value: "false"
   - id: cyd_tile_state
     type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
     restore_value: false
@@ -173,6 +179,17 @@ touchscreen:
       swap_xy: false
       mirror_x: true
       mirror_y: false
+    on_touch:
+      - if:
+          condition:
+            lambda: !lambda |-
+              return id(cyd_dimmed);
+          then:
+            - lambda: !lambda |-
+                id(cyd_dimmed) = false;
+            - light.turn_on:
+                id: backlight
+                brightness: "100%"
 
 output:
   - platform: ledc
@@ -196,67 +213,97 @@ sensor:
     update_interval: 60s
     entity_category: diagnostic
   - platform: homeassistant
-    id: ha_light_desk_lamp_brightness_num
-    entity_id: "${ent_light_desk_lamp}"
+    id: ha_light_wohnzimmer_schrank_brightness_num
+    entity_id: "${ent_light_wohnzimmer_schrank}"
     attribute: brightness
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn1), id(w_lockscreen_btn1_icon), nullptr, id(ha_light_desk_lamp).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_state), id(ha_light_wohnzimmer_schrank).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_ceiling_light_brightness_num
-    entity_id: "${ent_light_ceiling_light}"
+    id: ha_light_wohnzimmer_licht_brightness_num
+    entity_id: "${ent_light_wohnzimmer_licht}"
     attribute: brightness
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn2), id(w_lockscreen_btn2_icon), nullptr, id(ha_light_ceiling_light).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_state), id(ha_light_wohnzimmer_licht).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_globe_lamp_brightness_num
-    entity_id: "${ent_light_globe_lamp}"
+    id: ha_light_retro_lampe_brightness_num
+    entity_id: "${ent_light_retro_lampe}"
     attribute: brightness
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn3), id(w_lockscreen_btn3_icon), nullptr, id(ha_light_globe_lamp).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_state), id(ha_light_retro_lampe).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_ambient_light_brightness_num
-    entity_id: "${ent_light_ambient_light}"
+    id: ha_light_desk_ambient_brightness_num
+    entity_id: "${ent_light_desk_ambient}"
     attribute: brightness
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn4), id(w_lockscreen_btn4_icon), nullptr, id(ha_light_ambient_light).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_state), id(ha_light_desk_ambient).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+  - platform: homeassistant
+    id: ha_cover_wohnzimmer_fenster_current_position_num
+    entity_id: "${ent_cover_wohnzimmer_fenster}"
+    attribute: current_position
+    on_value:
+      then:
+        - lambda: !lambda |-
+            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_state), id(ha_cover_wohnzimmer_fenster).state, x, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+  - platform: homeassistant
+    id: ha_fan_air_purifier_percentage_num
+    entity_id: "${ent_fan_air_purifier}"
+    attribute: percentage
+    on_value:
+      then:
+        - lambda: !lambda |-
+            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_state), id(ha_fan_air_purifier).state, x, 3, nullptr, nullptr, 0xA3E635, 0x8B98A5);
 
 text_sensor:
   - platform: homeassistant
-    id: ha_light_desk_lamp
-    entity_id: "${ent_light_desk_lamp}"
+    id: ha_light_wohnzimmer_schrank
+    entity_id: "${ent_light_wohnzimmer_schrank}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn1), id(w_lockscreen_btn1_icon), nullptr, x, id(ha_light_desk_lamp_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_state), x, id(ha_light_wohnzimmer_schrank_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_ceiling_light
-    entity_id: "${ent_light_ceiling_light}"
+    id: ha_light_wohnzimmer_licht
+    entity_id: "${ent_light_wohnzimmer_licht}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn2), id(w_lockscreen_btn2_icon), nullptr, x, id(ha_light_ceiling_light_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_state), x, id(ha_light_wohnzimmer_licht_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_globe_lamp
-    entity_id: "${ent_light_globe_lamp}"
+    id: ha_light_retro_lampe
+    entity_id: "${ent_light_retro_lampe}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn3), id(w_lockscreen_btn3_icon), nullptr, x, id(ha_light_globe_lamp_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_state), x, id(ha_light_retro_lampe_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
   - platform: homeassistant
-    id: ha_light_ambient_light
-    entity_id: "${ent_light_ambient_light}"
+    id: ha_light_desk_ambient
+    entity_id: "${ent_light_desk_ambient}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_lockscreen_btn4), id(w_lockscreen_btn4_icon), nullptr, x, id(ha_light_ambient_light_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_state), x, id(ha_light_desk_ambient_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+  - platform: homeassistant
+    id: ha_cover_wohnzimmer_fenster
+    entity_id: "${ent_cover_wohnzimmer_fenster}"
+    on_value:
+      then:
+        - lambda: !lambda |-
+            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_state), x, id(ha_cover_wohnzimmer_fenster_current_position_num).state, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+  - platform: homeassistant
+    id: ha_fan_air_purifier
+    entity_id: "${ent_fan_air_purifier}"
+    on_value:
+      then:
+        - lambda: !lambda |-
+            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_state), x, id(ha_fan_air_purifier_percentage_num).state, 3, nullptr, nullptr, 0xA3E635, 0x8B98A5);
 
 button:
   - platform: restart
@@ -264,6 +311,12 @@ button:
     entity_category: diagnostic
 
 font:
+  - file: "gfonts://Montserrat@500"
+    id: font_12
+    size: 12
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
   - file: "gfonts://Montserrat@500"
     id: font_14
     size: 14
@@ -282,12 +335,6 @@ font:
     bpp: 4
     glyphs:
       - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
-  - file: "gfonts://Montserrat@500"
-    id: font_40
-    size: 40
-    bpp: 4
-    glyphs:
-      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_20
     size: 20
@@ -299,7 +346,7 @@ font:
     size: 28
     bpp: 4
     glyphs:
-      - "\U000F066F\U000F0769\U000F095F\U000F1051"
+      - "\U000F066F\U000F0769\U000F0D44\U000F0F90\U000F1051\U000F111C"
 
 script:
   - id: cyd_overlay_open
@@ -332,21 +379,11 @@ script:
     mode: restart
     then:
       - lvgl.label.update:
-          id: w_lockscreen_clock_time
+          id: cyd_header_time
           text: !lambda |-
             auto now = id(ha_time).now();
             if (!now.is_valid()) return std::string("--:--");
             return now.strftime("%H:%M");
-      - lvgl.label.update:
-          id: w_lockscreen_clock_date
-          text: !lambda |-
-            static const char *const days[] = {"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
-            static const char *const months[] = {"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"};
-            auto now = id(ha_time).now();
-            if (!now.is_valid()) return std::string("");
-            char buf[48];
-            snprintf(buf, sizeof(buf), "%s, %d. %s", days[now.day_of_week - 1], now.day_of_month, months[now.month - 1]);
-            return std::string(buf);
   - id: cyd_on_page
     mode: restart
     parameters:
@@ -355,6 +392,12 @@ script:
     then:
       - lambda: !lambda |-
           id(cyd_page) = page;
+      - lvgl.label.update:
+          id: cyd_title
+          text: !lambda |-
+            static const char *const names[] = {"Office"};
+            if (page < 0 || page >= 1) return std::string("");
+            return std::string(names[page]);
 
 lvgl:
   displays:
@@ -416,31 +459,64 @@ lvgl:
       pad_all: 0
       shadow_width: 0
     - id: cyd_text_1
-      text_font: font_40
-      text_color: 0xE6EDF3
-      text_align: CENTER
-    - id: cyd_text_2
-      text_font: font_14
-      text_color: 0x8B98A5
-      text_align: CENTER
-    - id: cyd_text_3
       text_font: icons_28
       text_color: 0x8B98A5
-    - id: cyd_text_4
+    - id: cyd_text_2
       text_font: font_14
       text_color: 0xE6EDF3
-    - id: cyd_text_5
+    - id: cyd_text_3
+      text_font: font_12
+      text_color: 0x8B98A5
+    - id: cyd_text_4
       text_font: font_16
       text_color: 0xE6EDF3
-    - id: cyd_text_6
+    - id: cyd_text_5
       text_font: icons_20
       text_color: 0x8B98A5
-    - id: cyd_text_7
+    - id: cyd_text_6
       text_font: font_28
       text_color: 0xE6EDF3
       text_align: CENTER
+  on_idle:
+    - timeout: 30s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) != 0;
+            then:
+              - lvgl.page.show: page_home
+    - timeout: 10s
+      then:
+        - lambda: !lambda |-
+            id(cyd_dimmed) = true;
+        - light.turn_on:
+            id: backlight
+            brightness: "40%"
   top_layer:
     widgets:
+      - obj:
+          id: cyd_header
+          x: 0
+          y: 0
+          width: 320
+          height: 28
+          styles: cyd_bar
+          pad_left: 6
+          pad_right: 6
+          scrollable: false
+          clickable: false
+          widgets:
+            - label:
+                id: cyd_title
+                align: LEFT_MID
+                styles: cyd_text_2
+                text: Office
+            - label:
+                id: cyd_header_time
+                align: RIGHT_MID
+                styles: cyd_text_2
+                text: "--:--"
       - obj:
           id: cyd_overlay
           x: 0
@@ -471,12 +547,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 202
                       long_mode: DOT
-                      styles: cyd_text_5
+                      styles: cyd_text_4
                       text: ""
                   - label:
                       id: cyd_ov_close
                       align: TOP_RIGHT
-                      styles: cyd_text_6
+                      styles: cyd_text_5
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_overlay
@@ -486,7 +562,7 @@ lvgl:
                       y: -9
                       width: 228
                       long_mode: DOT
-                      styles: cyd_text_7
+                      styles: cyd_text_6
                       text: ""
                   - slider:
                       id: cyd_ov_slider
@@ -552,7 +628,7 @@ lvgl:
                                     percentage: !lambda |-
                                       return to_string((int) lroundf(x));
   pages:
-    - id: page_lockscreen
+    - id: page_home
       bg_color: 0x0A0E14
       bg_opa: COVER
       pad_all: 0
@@ -562,180 +638,275 @@ lvgl:
             page: 0
             root: 0
       widgets:
-        - obj:
-            id: w_lockscreen_clock
+        - button:
+            id: w_home_t1
             x: 8
-            y: 8
-            width: 304
-            height: 146
-            styles: cyd_plain
+            y: 36
+            width: 148
+            height: 60
             scrollable: false
-            clickable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_wohnzimmer_schrank}"
+            on_long_press:
+              - script.execute:
+                  id: cyd_overlay_open
+                  entity: "${ent_light_wohnzimmer_schrank}"
+                  title: Schrank
+                  kind: 1
+                  value: !lambda |-
+                    return id(cyd_percent)(id(ha_light_wohnzimmer_schrank).state, id(ha_light_wohnzimmer_schrank_brightness_num).state, 1);
             widgets:
               - label:
-                  id: w_lockscreen_clock_time
-                  align: CENTER
-                  y: -9
-                  width: 292
-                  long_mode: DOT
+                  id: w_home_t1_icon
+                  align: LEFT_MID
                   styles: cyd_text_1
-                  text: "--:--"
+                  text: "\U000F0F90"
               - label:
-                  id: w_lockscreen_clock_date
-                  align: CENTER
-                  y: 24
-                  width: 292
+                  id: w_home_t1_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
                   long_mode: DOT
                   styles: cyd_text_2
-                  text: ""
-        - button:
-            id: w_lockscreen_btn1
-            x: 8
-            y: 162
-            width: 70
-            height: 70
-            scrollable: false
-            on_short_click:
-              - homeassistant.action:
-                  action: homeassistant.toggle
-                  data:
-                    entity_id: "${ent_light_desk_lamp}"
-            on_long_press:
-              - script.execute:
-                  id: cyd_overlay_open
-                  entity: "${ent_light_desk_lamp}"
-                  title: Desk
-                  kind: 1
-                  value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_desk_lamp).state, id(ha_light_desk_lamp_brightness_num).state, 1);
-            widgets:
+                  text: Schrank
               - label:
-                  id: w_lockscreen_btn1_icon
-                  align: TOP_LEFT
-                  styles: cyd_text_3
-                  text: "\U000F095F"
-              - label:
-                  id: w_lockscreen_btn1_label
+                  id: w_home_t1_state
                   align: BOTTOM_LEFT
-                  width: 58
+                  x: 34
+                  width: 102
                   long_mode: DOT
-                  styles: cyd_text_4
-                  text: Desk
+                  styles: cyd_text_3
+                  text: "–"
         - button:
-            id: w_lockscreen_btn2
-            x: 86
-            y: 162
-            width: 70
-            height: 70
+            id: w_home_t2
+            x: 164
+            y: 36
+            width: 148
+            height: 60
             scrollable: false
             on_short_click:
               - homeassistant.action:
                   action: homeassistant.toggle
                   data:
-                    entity_id: "${ent_light_ceiling_light}"
+                    entity_id: "${ent_light_wohnzimmer_licht}"
             on_long_press:
               - script.execute:
                   id: cyd_overlay_open
-                  entity: "${ent_light_ceiling_light}"
-                  title: Ceiling
+                  entity: "${ent_light_wohnzimmer_licht}"
+                  title: Deckenlicht
                   kind: 1
                   value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_ceiling_light).state, id(ha_light_ceiling_light_brightness_num).state, 1);
+                    return id(cyd_percent)(id(ha_light_wohnzimmer_licht).state, id(ha_light_wohnzimmer_licht_brightness_num).state, 1);
             widgets:
               - label:
-                  id: w_lockscreen_btn2_icon
-                  align: TOP_LEFT
-                  styles: cyd_text_3
+                  id: w_home_t2_icon
+                  align: LEFT_MID
+                  styles: cyd_text_1
                   text: "\U000F0769"
               - label:
-                  id: w_lockscreen_btn2_label
-                  align: BOTTOM_LEFT
-                  width: 58
+                  id: w_home_t2_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
                   long_mode: DOT
-                  styles: cyd_text_4
-                  text: Ceiling
+                  styles: cyd_text_2
+                  text: Deckenlicht
+              - label:
+                  id: w_home_t2_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "–"
         - button:
-            id: w_lockscreen_btn3
-            x: 164
-            y: 162
-            width: 70
-            height: 70
+            id: w_home_t3
+            x: 8
+            y: 104
+            width: 148
+            height: 60
             scrollable: false
             on_short_click:
               - homeassistant.action:
                   action: homeassistant.toggle
                   data:
-                    entity_id: "${ent_light_globe_lamp}"
+                    entity_id: "${ent_light_retro_lampe}"
             on_long_press:
               - script.execute:
                   id: cyd_overlay_open
-                  entity: "${ent_light_globe_lamp}"
-                  title: Globe
+                  entity: "${ent_light_retro_lampe}"
+                  title: Retro
                   kind: 1
                   value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_globe_lamp).state, id(ha_light_globe_lamp_brightness_num).state, 1);
+                    return id(cyd_percent)(id(ha_light_retro_lampe).state, id(ha_light_retro_lampe_brightness_num).state, 1);
             widgets:
               - label:
-                  id: w_lockscreen_btn3_icon
-                  align: TOP_LEFT
-                  styles: cyd_text_3
+                  id: w_home_t3_icon
+                  align: LEFT_MID
+                  styles: cyd_text_1
                   text: "\U000F066F"
               - label:
-                  id: w_lockscreen_btn3_label
-                  align: BOTTOM_LEFT
-                  width: 58
+                  id: w_home_t3_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
                   long_mode: DOT
-                  styles: cyd_text_4
-                  text: Globe
+                  styles: cyd_text_2
+                  text: Retro
+              - label:
+                  id: w_home_t3_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "–"
         - button:
-            id: w_lockscreen_btn4
-            x: 242
-            y: 162
-            width: 70
-            height: 70
+            id: w_home_t4
+            x: 164
+            y: 104
+            width: 148
+            height: 60
             scrollable: false
             on_short_click:
               - homeassistant.action:
                   action: homeassistant.toggle
                   data:
-                    entity_id: "${ent_light_ambient_light}"
+                    entity_id: "${ent_light_desk_ambient}"
             on_long_press:
               - script.execute:
                   id: cyd_overlay_open
-                  entity: "${ent_light_ambient_light}"
+                  entity: "${ent_light_desk_ambient}"
                   title: Ambient
                   kind: 1
                   value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_ambient_light).state, id(ha_light_ambient_light_brightness_num).state, 1);
+                    return id(cyd_percent)(id(ha_light_desk_ambient).state, id(ha_light_desk_ambient_brightness_num).state, 1);
             widgets:
               - label:
-                  id: w_lockscreen_btn4_icon
-                  align: TOP_LEFT
-                  styles: cyd_text_3
+                  id: w_home_t4_icon
+                  align: LEFT_MID
+                  styles: cyd_text_1
                   text: "\U000F1051"
               - label:
-                  id: w_lockscreen_btn4_label
-                  align: BOTTOM_LEFT
-                  width: 58
+                  id: w_home_t4_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
                   long_mode: DOT
-                  styles: cyd_text_4
+                  styles: cyd_text_2
                   text: Ambient
-# cyd_studio_checksum: a70a4269a64ab7b4
+              - label:
+                  id: w_home_t4_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "–"
+        - button:
+            id: w_home_t5
+            x: 8
+            y: 172
+            width: 148
+            height: 60
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_cover_wohnzimmer_fenster}"
+            on_long_press:
+              - script.execute:
+                  id: cyd_overlay_open
+                  entity: "${ent_cover_wohnzimmer_fenster}"
+                  title: Rollladen
+                  kind: 2
+                  value: !lambda |-
+                    return id(cyd_percent)(id(ha_cover_wohnzimmer_fenster).state, id(ha_cover_wohnzimmer_fenster_current_position_num).state, 2);
+            widgets:
+              - label:
+                  id: w_home_t5_icon
+                  align: LEFT_MID
+                  styles: cyd_text_1
+                  text: "\U000F111C"
+              - label:
+                  id: w_home_t5_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: Rollladen
+              - label:
+                  id: w_home_t5_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "–"
+        - button:
+            id: w_home_t6
+            x: 164
+            y: 172
+            width: 148
+            height: 60
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_fan_air_purifier}"
+            on_long_press:
+              - script.execute:
+                  id: cyd_overlay_open
+                  entity: "${ent_fan_air_purifier}"
+                  title: Ventilator
+                  kind: 3
+                  value: !lambda |-
+                    return id(cyd_percent)(id(ha_fan_air_purifier).state, id(ha_fan_air_purifier_percentage_num).state, 3);
+            widgets:
+              - label:
+                  id: w_home_t6_icon
+                  align: LEFT_MID
+                  styles: cyd_text_1
+                  text: "\U000F0D44"
+              - label:
+                  id: w_home_t6_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: Ventilator
+              - label:
+                  id: w_home_t6_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "–"
+# cyd_studio_checksum: 319c00e25785d753
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/52V3Y7bNhCF34XXdiBLWzcroBdtFkhaoEHRH7RFsRBG0khmTZEESdm7WfjdM0NR
-#   st3Evdg7geLMfDwzPHwRtQHXilKgt0W+zu+K3Gf5WydW05/qAE6CDqLUo1Ir0eJBNlhpGJCC/AAu
-#   tNJbBc8U0StTgxLli+iMCej4CzXUCqlCB8rjSuxQ9jtKV2xX4ijbHoMX5T+PJ/4D7f/H5G8vY14E
-#   KNlrwlDYBSofni1DWeixCjIoFKfVeZOLOZZdjTLNXpweT1S5d7Lluo1RlPiOFsCKkopZaFup+/jt
-#   zJF+FrSdN4veqBb12mGHDnWD63oMwWhPFQYMwOlG20LgY4g8y7fr7J7kJSSRxPuNxXtYxNNwkD0E
-#   aTTH7syAFZ+Ej0ekvnGImrb5nTlWsuFKZXAjphUFNarzUnhWHKmNRo45Sj5zUjNAXYOrrPFyqkad
-#   JvSBtXGgl1WvZMvRRwe2AmdGPXeEzmCcRB0SrlCgW9+A5e0MPbWHZa3MAZ3jRGmAGJ0ihlaWsQNJ
-#   zqszSl1dqjGdiVQyY2DluVtnFS3lr6Wi+jvphghADVkGNqozj9aUKcgBKVXl5z2XM0WhMjzPf3Y0
-#   dImwSbjWGeunGXcDMNCHD+UwzK3hli9tkJ8Y8elJcduvBo+Kxkl7EmW2ElQv41mdiwvFw/qmRb+n
-#   zg5WRJJNIqmD3lyCXEjKEesUEUeC1h9obabzIeLNXUxIwfS94jujcALbXIDlXwFrUCq6F5VKd+oa
-#   Lr8Bl6LWc9QM+G5afxXj5iYjmxF+Xb3iBmAM+QLvPa++Ci6/CQdDzffnhoB3N/jIE9c+OGnXsyuf
-#   Kb+fMr6Ks0icj6dHKmzsaKMnU6pmhwPEbR5DoCZFJLCy2iOf5tP7YTP+mP1e/Nz6d38+7P5++uk+
-#   FPKv7OP9vvv347dq+8Mf+7v9L5tfzXf8pEQT1ug93ROK32TZ1aJOPv8Nn0v34+R/0YXir2ow7CT/
-#   vaWdI/cil83LLIv2QZ4TFr/zZnQN5zFdxx63c0gSKdI6f0OPUDD0K9uWRcaX1GEYna6i/UJHbxi7
-#   BEG6vq7ik/Tl67ToPfqz4JOXeThMLxo0ySlbyU6xZN5S6ut8J7ajTk4yV7SkaiC/SI4yeqw8Uu6Q
-#   vJ6fr0BN4vMN4Ckt4bhA8rq9SL8WD+bmnU6fAe8dJOr0BwAA
+# cyd_studio_project: H4sIAAAAAAAC/41VXY/bNhD8L3y2DrLsujkBeUgboEiApkX6kRbBgVhJK4kVRQokZedy8H/vLiXb
+#   cq5G740iubvD2dHskygsuErkAv2wyZJsu8l8mr1yYjWdyD04BSaI3Ixar0SFe1WiNNAjBfkeXKiU
+#   HzQ8UkSjbQFa5E+itjag4xUaKDRShRq0x5VoUTUtpdvsVuKgqgaDF/nnhyOfQPVNTHDjIiR7tQx5
+#   EqBVYwiFxjpQ9fA4MKYBGpRBBY3iuLpccjHH+VapbdmJ48ORCjdOVVy2tJoSb2kDBpFTsQGqSpkm
+#   rp090OGGrvNl0VhdoUkc1ujQlJi0tsdEqw6pRo8BOOE4VBD4HSJLs12S3hO/BErM7P1S18Sl4O+9
+#   aiAoaziKM0l+BV3hNV3wrT1IVVrjT5zEHQ0F6stWeNQcY6yJMQfFL51pD1AU4ORgvZrqUHtDsD0z
+#   4sCcd71WFUcfHAwSnB3NqXWE2zqFJsxAhQZT+RIGvs5wp6YwmdLu0TlONKuGoVNEX6l8flEk8bQ2
+#   csnA9BpSlB0DM83dec7ZAMT7WZaRjpOApgRB9UgZpD/dWUqHQlV45EewLO4OtjVfVd+jk75siY+O
+#   KrQiX89Aw5orOjt4btDiNQf6RZwtGFBsBm3/Nic4nrUWbNNo1qSOzJKQV+KLyNOVIAQpi/Q2HK3K
+#   KNslmOwGmBKVJrkmepb6CdFbLDs0U6b/RZXdROUwOEua62PHl4A2NwCxH+AzOB85z0vpWf8HkAp9
+#   J6EvWIzfINneQEJukvjg1JCc/OyC582c6YXUXCMqWerLhtVoPFvfNa7vbulHmcoeEt+OYQo6k2S1
+#   1iRn81KisitYNZg7UPS/j07V6hmc3Q04FJIsQk5g/uS8GoJ1LyUpI2d9oBp2GIfo7/SLli32EEF4
+#   DIGEGqvDoGSHjPnrT/16fJf+vvm58j9+etv+/eX9fdiov9IP9139z4fv9e6HP7pt9+v6o33N4yk6
+#   ukHvZQXclzS92jTT0Nim/A7TjJOhRnOLR7K3bFAX0iaXqB2ZIhl2lqdp9CbqbzjbqLejKzmPrWu2
+#   ztYhWY8mUrM7GmjB0lG6yzcpE0U/zOiMjH4OdWBzoQlCeFxTyDjfno/HaGSePHb0F9/1pUOSFeyn
+#   8Qjl7MCVYv8+p15T6qvReWTTq9VEs6RsugCaerNBjh6lR0od5hHCszBQk/h9PbCKCY0LRK/rxHx0
+#   tnZu3vH4L0gqaKpACAAA

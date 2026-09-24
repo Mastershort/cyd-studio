@@ -2,7 +2,7 @@
 // Uses the same layout functions as the generator (src/layout.ts == generator/layout.py)
 // and mirrors the LVGL styles written by generator/generate.py.
 import {
-  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight,
+  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight, overlayLayout,
   navPages, pageLayout, tabElements, widgetElements, type Element, type Rect,
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
@@ -22,10 +22,12 @@ export interface RenderInput {
   now: Date;
   pressed?: string | null;
   night?: boolean;
+  /** value overlay opened by a long press (same layout as the device) */
+  overlay?: { title: string; value: number } | null;
 }
 
 export interface HitRegion {
-  kind: "widget" | "tab" | "back";
+  kind: "widget" | "tab" | "back" | "overlay-close" | "overlay-slider" | "overlay-panel";
   id: string;
   rect: Rect;
 }
@@ -179,6 +181,7 @@ export function renderScreen(canvas: HTMLCanvasElement, input: RenderInput): Hit
     hits.push({ kind: "widget", id: w.id, rect });
   }
   renderTopLayer(p, input, page, hits);
+  if (input.overlay) renderOverlay(p, input, input.overlay, hits);
   if (input.night) {
     const night = project.settings?.brightness_night ?? 25;
     ctx.fillStyle = `rgba(0,0,0,${1 - Math.max(night, 5) / 100})`;
@@ -212,7 +215,10 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
         if (el.role === "icon") p.element(content, el, String(props.icon ?? ""), on ? p.color("on") : p.color("off"));
         else if (el.role === "label") p.element(content, el, String(props.label || fallbackLabel(w.entity)), p.color(el.color));
-        else if (el.role === "state") p.element(content, el, stateText(st, strings), p.color(el.color));
+        else if (el.role === "state") {
+          const pct = (props.show_value ?? true) ? tileValuePercent(w.entity, entity) : null;
+          p.element(content, el, on && pct !== null ? `${pct} %` : stateText(st, strings), p.color(el.color));
+        }
       }
       break;
     }
@@ -351,7 +357,11 @@ export function sampleState(project: Project): StateResolver {
       if (domain === "sensor" || domain === "input_number" || domain === "number") state = String(20 + ((i * 7) % 10) + 0.5);
       if (domain === "cover") state = i % 2 === 0 ? "open" : "closed";
       if (domain === "binary_sensor") state = "off";
-      values.set(w.entity, { entity_id: w.entity, state, attributes: {} });
+      const attributes: Record<string, unknown> = {};
+      if (domain === "light" && state === "on") attributes.brightness = 204;
+      if (domain === "cover") attributes.current_position = state === "open" ? 60 : 0;
+      if (domain === "fan" && state === "on") attributes.percentage = 50;
+      values.set(w.entity, { entity_id: w.entity, state, attributes });
       i++;
     }
   }
@@ -359,3 +369,53 @@ export function sampleState(project: Project): StateResolver {
 }
 
 export const lineHeightOf = lineHeight;
+
+/** Attribute holding the tile value per domain, and its kind (1 = brightness 0..255). Mirrors generator VALUE_ATTRIBUTES. */
+export const VALUE_ATTRIBUTES: Record<string, [string, number]> = {
+  light: ["brightness", 1],
+  cover: ["current_position", 2],
+  fan: ["percentage", 3],
+};
+
+/** Value in percent shown on a tile (null when the domain has no value or it is unknown). */
+export function tileValuePercent(entityId: string | null | undefined, entity: HassEntity | undefined): number | null {
+  if (!entityId || !entity) return null;
+  const spec = VALUE_ATTRIBUTES[entityId.split(".")[0]];
+  if (!spec) return null;
+  const raw = Number(entity.attributes[spec[0]]);
+  if (entity.attributes[spec[0]] === undefined || entity.attributes[spec[0]] === null || Number.isNaN(raw)) return null;
+  return Math.round(spec[1] === 1 ? (raw * 100) / 255 : raw);
+}
+
+function renderOverlay(p: Painter, input: RenderInput, ov: { title: string; value: number }, hits: HitRegion[]): void {
+  const { board, theme } = input;
+  const ctx = p.ctx;
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(0, 0, board.width, board.height);
+  hits.push({ kind: "overlay-close", id: "backdrop", rect: { x: 0, y: 0, w: board.width, h: board.height } });
+  const { panel, elements } = overlayLayout(board.width, board.height, theme.font_sizes, theme.icon_sizes);
+  p.box(panel, p.color("tile"), p.color("border"), theme.radius ?? 8, theme.border_width ?? 0);
+  hits.push({ kind: "overlay-panel", id: "panel", rect: panel });
+  const content = inset(panel, TILE_PAD);
+  const value = Math.max(0, Math.min(100, Math.round(ov.value)));
+  for (const el of elements) {
+    if (el.role === "title") p.element(content, el, ov.title, p.color(el.color));
+    else if (el.role === "close") {
+      const r = p.element(content, el, "mdi:close", p.color(el.color));
+      if (r) hits.push({ kind: "overlay-close", id: "close", rect: r });
+    } else if (el.role === "value") p.element(content, el, `${value} %`, p.color(el.color));
+    else if (el.role === "slider") {
+      const w = el.width ?? 100;
+      const h = el.height ?? 18;
+      const pos = alignChild(content, w, h, el.align, el.x, el.y);
+      const track = { x: pos.x, y: pos.y, w, h };
+      const r = Math.floor(h / 2);
+      p.box(track, p.color("border"), null, r, 0);
+      const filled = Math.round((w * value) / 100);
+      if (filled > 0) p.box({ ...track, w: Math.max(filled, h) }, p.color("accent"), null, r, 0);
+      const knob = h + 8;
+      p.box({ x: pos.x + filled - Math.floor(knob / 2), y: pos.y - 4, w: knob, h: knob }, p.color("text"), null, knob, 0);
+      hits.push({ kind: "overlay-slider", id: "slider", rect: track });
+    }
+  }
+}

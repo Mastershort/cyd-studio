@@ -2,16 +2,64 @@
   "type": "toggle_tile",
   "name": "Schalter-Kachel",
   "name_en": "Toggle tile",
-  "description": "Icon, Name und Zustand – tippen schaltet um",
-  "description_en": "Icon, name and state – tap to toggle",
+  "description": "Icon, Name und Zustand – tippen schaltet um, lange drücken öffnet den Regler",
+  "description_en": "Icon, name and state – tap to toggle, long press opens the slider",
   "icon": "mdi:toggle-switch",
-  "domains": ["light", "switch", "input_boolean", "fan", "cover"],
+  "domains": [
+    "light",
+    "switch",
+    "input_boolean",
+    "fan",
+    "cover"
+  ],
   "entity": "required",
-  "default_size": {"w": 2, "h": 1},
-  "min_size": {"w": 1, "h": 1},
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
   "props": [
-    {"key": "label", "type": "text", "default": "", "label": "Beschriftung", "label_en": "Label"},
-    {"key": "icon", "type": "icon", "default": "mdi:lightbulb", "label": "Icon", "label_en": "Icon"},
-    {"key": "show_state", "type": "bool", "default": true, "label": "Zustand anzeigen", "label_en": "Show state"}
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "icon",
+      "type": "icon",
+      "default": "mdi:lightbulb",
+      "label": "Icon",
+      "label_en": "Icon"
+    },
+    {
+      "key": "show_state",
+      "type": "bool",
+      "default": true,
+      "label": "Zustand anzeigen",
+      "label_en": "Show state"
+    },
+    {
+      "key": "show_value",
+      "type": "bool",
+      "default": true,
+      "label": "Helligkeit/Position/Stufe statt „An“ zeigen",
+      "label_en": "Show brightness/position/speed instead of \"On\""
+    },
+    {
+      "key": "long_press",
+      "type": "select",
+      "default": "slider",
+      "options": [
+        "slider",
+        "none"
+      ],
+      "label": "Lange drücken (Licht, Rollladen, Lüfter)",
+      "label_en": "Long press (light, cover, fan)"
+    }
   ]
 }

@@ -117,6 +117,8 @@ class Context:
         self.strings = STRINGS[self.lang]
         self.page_ids = {p["id"]: f"page_{safe_id(p['id'])}" for p in project["pages"]}
         self.entities: dict[str, str] = {}
+        self.helpers: set[str] = set()
+        self.label_styles: dict[tuple[str, str, str | None], str] = {}
         self.page_actions: list[Any] = []
 
     def ent(self, entity: str) -> str:
@@ -173,32 +175,41 @@ class Context:
         """Add a generator warning."""
         self.issues.append(Issue("warning", code, de, en, page, widget))
 
+    def label_style(self, font_id: str, color: str, text_align: str | None) -> str:
+        """Shared style for labels with the same font, color and alignment (keeps the YAML short)."""
+        key = (font_id, color, text_align)
+        if key not in self.label_styles:
+            self.label_styles[key] = f"cyd_text_{len(self.label_styles) + 1}"
+        return self.label_styles[key]
+
     def label(
         self, el: dict[str, Any], obj_id: str | None, text: str, color: Raw | None = None
     ) -> dict[str, Any] | None:
-        """Turn a layout element into an LVGL label widget."""
+        """Turn a layout element into an LVGL label widget (defaults such as x/y = 0 are left out)."""
         self.objects += 1
         conf: dict[str, Any] = {}
         if obj_id:
             conf["id"] = obj_id
         conf["align"] = el["align"]
-        conf["x"] = el["x"]
-        conf["y"] = el["y"]
+        if el["x"]:
+            conf["x"] = el["x"]
+        if el["y"]:
+            conf["y"] = el["y"]
+        text_align: str | None = None
         if el["kind"] == "icon":
             found = self.fonts.icon_font(el["size"], text)
             if found is None:
                 self.objects -= 1
                 self.warn("icon_unknown", f"Unbekanntes Icon: {text}", f"Unknown icon: {text}")
                 return None
-            font_id, glyph = found
-            conf["text_font"] = font_id
-            conf["text"] = glyph
+            font_id, value = found
         else:
-            conf["text_font"] = self.fonts.text_font(el["size"], text)
+            font_id, value = self.fonts.text_font(el["size"], text), text
             if el.get("width"):
                 conf["width"] = el["width"]
                 conf["long_mode"] = "DOT"
-                conf["text_align"] = LV_TEXT_ALIGN.get(el.get("text_align", "left"), "LEFT")
-            conf["text"] = text
-        conf["text_color"] = color or self.color(el["color"])
+                align = LV_TEXT_ALIGN.get(el.get("text_align", "left"), "LEFT")
+                text_align = None if align == "LEFT" else align
+        conf["styles"] = self.label_style(font_id, (color or self.color(el["color"])).text, text_align)
+        conf["text"] = value
         return {"label": conf}

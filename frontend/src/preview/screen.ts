@@ -30,6 +30,7 @@ export class CydScreen extends LitElement {
     scale: { type: Number },
     night: { type: Boolean },
     now: { attribute: false },
+    overlay: { attribute: false },
     _drag: { state: true },
     _dropCell: { state: true },
     _pressed: { state: true },
@@ -45,6 +46,7 @@ export class CydScreen extends LitElement {
   declare scale: number;
   declare night: boolean;
   declare now: Date;
+  declare overlay: { title: string; value: number } | null;
   declare _drag: DragState | null;
   declare _dropCell: { x: number; y: number } | null;
   declare _pressed: string | null;
@@ -59,6 +61,7 @@ export class CydScreen extends LitElement {
     this.scale = 2;
     this.night = false;
     this.now = new Date();
+    this.overlay = null;
     this._drag = null;
     this._dropCell = null;
     this._pressed = null;
@@ -85,6 +88,7 @@ export class CydScreen extends LitElement {
     this.hits = renderScreen(canvas, {
       project: this.project, board: this.board, theme: this.theme, pageId: this.pageId,
       state: this.state, now: this.now, pressed: this._pressed, night: this.night,
+      overlay: this.mode === "preview" ? this.overlay : null,
     });
   }
 
@@ -228,8 +232,10 @@ export class CydScreen extends LitElement {
 
   // -- preview mode ---------------------------------------------------------
   private hitAt(x: number, y: number): HitRegion | null {
-    // top layer (tabs, back) wins over page widgets
-    const order = [...this.hits].sort((a, b) => (a.kind === "widget" ? 1 : 0) - (b.kind === "widget" ? 1 : 0));
+    // overlay first (most specific part), then top layer (tabs, back), then page widgets
+    const rank = (h: HitRegion) => ({ "overlay-slider": 0, "overlay-close": h.id === "close" ? 1 : 3, "overlay-panel": 2 } as Record<string, number>)[h.kind]
+      ?? (h.kind === "widget" ? 5 : 4);
+    const order = [...this.hits].sort((a, b) => rank(a) - rank(b));
     return order.find((h) => x >= h.rect.x && x < h.rect.x + h.rect.w && y >= h.rect.y && y < h.rect.y + h.rect.h) ?? null;
   }
 
@@ -255,7 +261,7 @@ export class CydScreen extends LitElement {
     }
     const hit = this.hitAt(pt.x, pt.y);
     if (hit && start.hit && hit.id === start.hit.id && hit.kind === start.hit.kind) {
-      this.emit("preview-tap", { hit, long: Date.now() - start.t > 500 });
+      this.emit("preview-tap", { hit, long: Date.now() - start.t > 500, point: pt });
     }
   }
 
