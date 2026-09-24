@@ -41,6 +41,7 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 | `qr_code` | optional sensor, input_text, text | LVGL-QR-Code aus Text oder Entität (schwarz auf weiß) |
 | `divider`, `spacer` | – | Linie bzw. leerer Platz (auf dem Gerät kein Objekt) |
 | `button_grid` | – | 2–6 Tasten mit Icon/Text und eigener Aktion (leer = passend zum Ziel: Szene, Skript, Taste …) |
+| `media_player` | media_player | Titel (`media_title`, sonst Beschriftung), Interpret (`media_artist`, sonst Zustand), ⏮ ⏯ ⏭ (`media_previous_track` / `media_play_pause` / `media_next_track`, das Icon wechselt bei Wiedergabe auf Pause), Lautstärke-Regler (`volume_set`) wenn Platz ist (ab 0.11) |
 
 Zeitstempel wandelt die Hilfsfunktion `cyd_parse_time` (ISO 8601 inkl. Zeitzone, ohne Zone = Ortszeit)
 in UTC-Sekunden um; `cyd_parse_duration` liest `H:MM:SS`.

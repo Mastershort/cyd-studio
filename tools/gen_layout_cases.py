@@ -61,10 +61,11 @@ WIDGET_TYPES = [
     "divider",
     "button_grid",
     "notification_area",
+    "media_player",
 ]
 PROPS = [
     {"icon": "mdi:lightbulb", "show_state": True, "show_date": True, "size": "xl", "align": "center"},
-    {"icon": "", "show_state": False, "show_date": False, "size": "m", "align": "left"},
+    {"icon": "", "show_state": False, "show_date": False, "size": "m", "align": "left", "show_volume": False},
     {"icon": "mdi:home", "_has_back": True, "size": "l", "align": "right", "muted": True},
     {"icon": "mdi:lightbulb", "icon_circle": True, "text_size": "m", "show_state": True},
     {"icon": "mdi:fan", "icon_circle": True, "text_size": "l", "show_date": False},

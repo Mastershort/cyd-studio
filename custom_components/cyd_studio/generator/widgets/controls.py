@@ -41,9 +41,9 @@ def _map_lambda(var: str, mapping: dict[str, str], default: str) -> str:
 
 
 def _small_button(ctx: Context, el: dict[str, Any], icon: str, style: dict[str, Any],
-                  on_click: list[Any]) -> dict[str, Any] | None:  # fmt: skip
-    """Small button (styles cyd_small_btn) with a centered icon."""
-    label = ctx.label({**el, "kind": "icon", "align": "CENTER", "x": 0, "y": 0, "width": None}, None, icon,
+                  on_click: list[Any], icon_id: str | None = None) -> dict[str, Any] | None:  # fmt: skip
+    """Small button (styles cyd_small_btn) with a centered icon (icon_id: to change the icon later)."""
+    label = ctx.label({**el, "kind": "icon", "align": "CENTER", "x": 0, "y": 0, "width": None}, icon_id, icon,
                       ctx.hex(style["icon_on"]))  # fmt: skip
     if label is None:
         return None

@@ -150,6 +150,50 @@
           }
         }
       ]
+    },
+    {
+      "id": "media",
+      "name": "Musik",
+      "icon": "mdi:music",
+      "widgets": [
+        {
+          "id": "mp",
+          "type": "media_player",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 2,
+          "entity": "media_player.wohnzimmer",
+          "props": {
+            "label": "Wohnzimmer"
+          }
+        },
+        {
+          "id": "mp2",
+          "type": "media_player",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "media_player.kueche",
+          "props": {
+            "show_volume": false
+          },
+          "style": {
+            "text_weight": "bold"
+          }
+        },
+        {
+          "id": "mp3",
+          "type": "media_player",
+          "x": 2,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "media_player.bad",
+          "props": {}
+        }
+      ]
     }
   ],
   "meta": {

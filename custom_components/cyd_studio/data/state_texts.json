@@ -114,5 +114,39 @@
   "climate_unknown": {
     "de": "–",
     "en": "–"
+  },
+  "media": {
+    "playing": {
+      "de": "Wiedergabe",
+      "en": "Playing"
+    },
+    "paused": {
+      "de": "Pausiert",
+      "en": "Paused"
+    },
+    "idle": {
+      "de": "Bereit",
+      "en": "Idle"
+    },
+    "on": {
+      "de": "An",
+      "en": "On"
+    },
+    "off": {
+      "de": "Aus",
+      "en": "Off"
+    },
+    "standby": {
+      "de": "Standby",
+      "en": "Standby"
+    },
+    "buffering": {
+      "de": "Lädt …",
+      "en": "Buffering …"
+    },
+    "unavailable": {
+      "de": "Nicht verfügbar",
+      "en": "Unavailable"
+    }
   }
 }

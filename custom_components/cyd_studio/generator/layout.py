@@ -358,6 +358,50 @@ def _widget_elements(
             els.append(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"))
         return els
 
+    if wtype == "media_player":
+        # title + artist, previous / play-pause / next, optional volume slider underneath
+        lines = lh_t + lh_xs
+        if ch >= lines + ELEMENT_GAP + 24:
+            els.append(_el("text", "title", "TOP_LEFT", 0, 0, text_size, "text", cw))
+            els.append(_el("text", "artist", "TOP_LEFT", 0, lh_t, fs["xs"], "text_muted", cw))
+            rest = ch - lines - ELEMENT_GAP
+            vol_h = TILE_SLIDER_H + ELEMENT_GAP + 4
+            volume = bool(props.get("show_volume", True)) and rest >= 24 + vol_h
+            bh = min(rest - (vol_h if volume else 0), SMALL_BUTTON_MAX)
+            by = -vol_h if volume else 0
+            isz = ics["m"] if bh >= ics["m"] + 8 else ics["s"]
+            for i, role in enumerate(("prev", "play", "next")):
+                bx, bw = split(0, cw, 3, ELEMENT_GAP, i)
+                els.append(sized("button", role, "BOTTOM_LEFT", bx, by, bw, bh, isz, "accent"))
+            if volume:
+                els.append(
+                    sized("slider", "volume", "BOTTOM_MID", 0, -2, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent")
+                )
+        elif ch >= lh_t + 2 + 20:
+            # medium (e.g. 2x1): title over the full width, the buttons underneath (2 px apart)
+            els.append(_el("text", "title", "TOP_LEFT", 0, 0, text_size, "text", cw))
+            bh = min(ch - lh_t - 2, SMALL_BUTTON_MAX)
+            isz = ics["m"] if bh >= ics["m"] + 8 else ics["s"]
+            for i, role in enumerate(("prev", "play", "next")):
+                bx, bw = split(0, cw, 3, ELEMENT_GAP, i)
+                els.append(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"))
+        else:
+            # flat: as many buttons (play first) as leave at least half the width for the title
+            bs = max(min(ch, 28), 16)
+            roles = ("prev", "play", "next")
+            count = next((n for n in (3, 2) if cw - n * (bs + ELEMENT_GAP) >= cw // 2), 1)
+            shown = roles[1:2] if count == 1 else roles[3 - count :]
+            tw = max(cw - count * (bs + ELEMENT_GAP), 1)
+            if ch >= lines:
+                els.append(_el("text", "title", "TOP_LEFT", 0, 0, text_size, "text", tw))
+                els.append(_el("text", "artist", "BOTTOM_LEFT", 0, 0, fs["xs"], "text_muted", tw))
+            else:
+                els.append(_el("text", "title", "LEFT_MID", 0, 0, text_size, "text", tw))
+            for i, role in enumerate(shown):
+                x = (i - (len(shown) - 1)) * (bs + ELEMENT_GAP)
+                els.append(sized("button", role, "RIGHT_MID", x, 0, bs, bs, ics["s"], "accent"))
+        return els
+
     if wtype in ("climate", "number_stepper", "select"):
         tall = ch >= 2 * lh_xs + line_height(fs["l"]) + 2 * ELEMENT_GAP
         rows = 2 * lh_xs if tall else lh_xs

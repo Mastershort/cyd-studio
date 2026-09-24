@@ -102,6 +102,16 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
   (die Seitenleisten-Adresse; `/hassio/ingress/<Kennung>` liefert in aktuellen HA-Versionen 404).
   Ohne Supervisor wird der Link ausgeblendet.
 
+## Mediaplayer (ab 0.11)
+
+- Titel und Interpret kommen als Text aus Home Assistant und können beliebige Zeichen enthalten.
+  Die Schrift auf dem Gerät hat nur feste Zeichen (ASCII, Umlaute, gängige Sonderzeichen);
+  andere Zeichen (z. B. Japanisch, Emoji) erscheinen als leer. Das lässt sich nicht vorab
+  berechnen, weil die Titel erst zur Laufzeit bekannt sind.
+- Drei Größen: groß (Titel, Interpret, drei Knöpfe, Lautstärke), mittel (Titel über drei Knöpfen),
+  flach (Titel/Interpret links, rechts so viele Knöpfe, dass der Titel die halbe Breite behält –
+  bei 2×1 meist Play/Pause und Weiter).
+
 ## Schrift & Icons pro Widget (ab 0.10)
 
 - Fette Schrift ist Montserrat 700 (`gfonts://Montserrat@700`). Eine fette Schrift einer Größe enthält

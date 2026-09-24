@@ -21,7 +21,9 @@ substitutions:
   ent_cover_rollo: cover.rollo
   ent_input_number_soll: input_number.soll
   ent_light_decke: light.decke
+  ent_media_player_bad: media_player.bad
   ent_media_player_kueche: media_player.kueche
+  ent_media_player_wohnzimmer: media_player.wohnzimmer
   ent_sensor_co2: sensor.co2
   ent_sensor_feuchte: sensor.feuchte
   ent_sensor_pv_leistung: sensor.pv_leistung
@@ -68,6 +70,12 @@ api:
                 return page == "Steuern" || page == "steuer";
             then:
               - lvgl.page.show: page_steuer
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Musik" || page == "media";
+            then:
+              - lvgl.page.show: page_media
     - action: show_message
       variables:
         title: string
@@ -412,6 +420,16 @@ sensor:
               char buf[24];
               snprintf(buf, sizeof(buf), "%.0f", x);
               return std::string(buf) + " ppm";
+  - platform: homeassistant
+    id: ha_media_player_wohnzimmer_volume_level_num
+    entity_id: "${ent_media_player_wohnzimmer}"
+    attribute: volume_level
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_media_mp_volume
+            value: !lambda |-
+              return std::isnan(x) ? 0.0f : x * 100.0f;
 
 text_sensor:
   - platform: homeassistant
@@ -492,6 +510,25 @@ text_sensor:
               char buf[16];
               snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(cur));
               return std::string(buf);
+        - lvgl.label.update:
+            id: w_media_mp2_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_kueche_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_kueche).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
+        - lvgl.label.update:
+            id: w_media_mp2_play_icon
+            text: !lambda |-
+              return std::string(x == "playing" ? "󰏤" : "󰐊");
   - platform: homeassistant
     id: ha_weather_home
     entity_id: "${ent_weather_home}"
@@ -543,6 +580,150 @@ text_sensor:
               char buf[64];
               snprintf(buf, sizeof(buf), "%s · %d %%", t.c_str(), (int) lroundf(h));
               return std::string(buf);
+  - platform: homeassistant
+    id: ha_media_player_wohnzimmer
+    entity_id: "${ent_media_player_wohnzimmer}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_wohnzimmer_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_wohnzimmer).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
+        - lvgl.label.update:
+            id: w_media_mp_play_icon
+            text: !lambda |-
+              return std::string(x == "playing" ? "󰏤" : "󰐊");
+  - platform: homeassistant
+    id: ha_media_player_wohnzimmer_media_title
+    entity_id: "${ent_media_player_wohnzimmer}"
+    attribute: media_title
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp_title
+            text: !lambda |-
+              if (x.empty() || x == "unknown" || x == "unavailable") return std::string("Wohnzimmer");
+              return x;
+  - platform: homeassistant
+    id: ha_media_player_wohnzimmer_media_artist
+    entity_id: "${ent_media_player_wohnzimmer}"
+    attribute: media_artist
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_wohnzimmer_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_wohnzimmer).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
+  - platform: homeassistant
+    id: ha_media_player_kueche_media_title
+    entity_id: "${ent_media_player_kueche}"
+    attribute: media_title
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp2_title
+            text: !lambda |-
+              if (x.empty() || x == "unknown" || x == "unavailable") return std::string("Kueche");
+              return x;
+  - platform: homeassistant
+    id: ha_media_player_kueche_media_artist
+    entity_id: "${ent_media_player_kueche}"
+    attribute: media_artist
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp2_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_kueche_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_kueche).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
+  - platform: homeassistant
+    id: ha_media_player_bad
+    entity_id: "${ent_media_player_bad}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp3_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_bad_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_bad).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
+        - lvgl.label.update:
+            id: w_media_mp3_play_icon
+            text: !lambda |-
+              return std::string(x == "playing" ? "󰏤" : "󰐊");
+  - platform: homeassistant
+    id: ha_media_player_bad_media_title
+    entity_id: "${ent_media_player_bad}"
+    attribute: media_title
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp3_title
+            text: !lambda |-
+              if (x.empty() || x == "unknown" || x == "unavailable") return std::string("Bad");
+              return x;
+  - platform: homeassistant
+    id: ha_media_player_bad_media_artist
+    entity_id: "${ent_media_player_bad}"
+    attribute: media_artist
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_media_mp3_artist
+            text: !lambda |-
+              const std::string a = id(ha_media_player_bad_media_artist).state;
+              if (!a.empty() && a != "unknown" && a != "unavailable") return a;
+              const std::string st = id(ha_media_player_bad).state;
+              if (st == "playing") return std::string("Wiedergabe");
+              if (st == "paused") return std::string("Pausiert");
+              if (st == "idle") return std::string("Bereit");
+              if (st == "on") return std::string("An");
+              if (st == "off") return std::string("Aus");
+              if (st == "standby") return std::string("Standby");
+              if (st == "buffering") return std::string("Lädt …");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("Nicht verfügbar");
 
 button:
   - platform: restart
@@ -555,9 +736,15 @@ font:
     size: 12
     bpp: 4
     glyphs:
-      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·₂"
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·…₂"
   - file: "gfonts://Montserrat@500"
     id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@700"
+    id: font_14_b
     size: 14
     bpp: 4
     glyphs:
@@ -579,7 +766,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0045\U000F005D\U000F009F\U000F0374\U000F0393\U000F0415\U000F04DB\U000F062E"
+      - "\U000F0045\U000F005D\U000F009F\U000F0374\U000F0393\U000F03E4\U000F040A\U000F0415\U000F04AD\U000F04AE\U000F04DB\U000F062E\U000F075A"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -635,8 +822,8 @@ script:
       - lvgl.label.update:
           id: cyd_title
           text: !lambda |-
-            static const char *const names[] = {"Klima", "Steuern"};
-            if (page < 0 || page >= 2) return std::string("");
+            static const char *const names[] = {"Klima", "Steuern", "Musik"};
+            if (page < 0 || page >= 3) return std::string("");
             return std::string(names[page]);
       - if:
           condition:
@@ -673,6 +860,24 @@ script:
                 text_color: 0x8B98A5
             - lvgl.label.update:
                 id: cyd_tab_steuer_label
+                text_color: 0x8B98A5
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 2;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_media_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_media_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_media_icon
+                text_color: 0x8B98A5
+            - lvgl.label.update:
+                id: cyd_tab_media_label
                 text_color: 0x8B98A5
 
 lvgl:
@@ -763,19 +968,22 @@ lvgl:
       text_font: font_20
       text_color: 0xE6EDF3
     - id: cyd_text_9
+      text_font: font_14_b
+      text_color: 0xE6EDF3
+    - id: cyd_text_10
       text_font: icons_20
       text_color: 0x22D3EE
-    - id: cyd_text_10
+    - id: cyd_text_11
       text_font: font_12
       text_color: 0x22D3EE
       text_align: CENTER
-    - id: cyd_text_11
+    - id: cyd_text_12
       text_font: icons_20
       text_color: 0x8B98A5
-    - id: cyd_text_12
+    - id: cyd_text_13
       text_font: font_16
       text_color: 0xE6EDF3
-    - id: cyd_text_13
+    - id: cyd_text_14
       text_font: font_14
       text_color: 0x8B98A5
     - id: cyd_small_btn
@@ -832,7 +1040,7 @@ lvgl:
                 id: cyd_tab_klima
                 x: 0
                 y: 0
-                width: 160
+                width: 106
                 height: 40
                 styles: cyd_tab
                 scrollable: false
@@ -843,21 +1051,21 @@ lvgl:
                       id: cyd_tab_klima_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F0393"
                   - label:
                       id: cyd_tab_klima_label
                       align: BOTTOM_MID
                       y: -1
-                      width: 158
+                      width: 104
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_11
                       text: Klima
             - button:
                 id: cyd_tab_steuer
-                x: 160
+                x: 106
                 y: 0
-                width: 160
+                width: 107
                 height: 40
                 styles: cyd_tab
                 scrollable: false
@@ -868,16 +1076,41 @@ lvgl:
                       id: cyd_tab_steuer_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: "\U000F062E"
                   - label:
                       id: cyd_tab_steuer_label
                       align: BOTTOM_MID
                       y: -1
-                      width: 158
+                      width: 105
                       long_mode: DOT
                       styles: cyd_text_2
                       text: Steuern
+            - button:
+                id: cyd_tab_media
+                x: 213
+                y: 0
+                width: 107
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_media
+                widgets:
+                  - label:
+                      id: cyd_tab_media_icon
+                      align: TOP_MID
+                      y: 2
+                      styles: cyd_text_12
+                      text: "\U000F075A"
+                  - label:
+                      id: cyd_tab_media_label
+                      align: BOTTOM_MID
+                      y: -1
+                      width: 105
+                      long_mode: DOT
+                      styles: cyd_text_2
+                      text: Musik
       - obj:
           id: cyd_msg
           x: 0
@@ -908,7 +1141,7 @@ lvgl:
                 widgets:
                   - label:
                       align: TOP_LEFT
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F009F"
                   - label:
                       id: cyd_msg_title
@@ -916,7 +1149,7 @@ lvgl:
                       x: 26
                       width: 222
                       long_mode: DOT
-                      styles: cyd_text_12
+                      styles: cyd_text_13
                       text: ""
                   - label:
                       id: cyd_msg_text
@@ -925,7 +1158,7 @@ lvgl:
                       width: 248
                       height: 102
                       long_mode: WRAP
-                      styles: cyd_text_13
+                      styles: cyd_text_14
                       text: ""
   pages:
     - id: page_klima
@@ -1405,25 +1638,259 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_1
                   text: "CO₂"
-# cyd_studio_checksum: aa7f6c8e96c496a6
+    - id: page_media
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 2
+            root: 2
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_media_mp
+            x: 8
+            y: 36
+            width: 148
+            height: 101
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_media_mp_title
+                  align: TOP_LEFT
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: Wohnzimmer
+              - label:
+                  id: w_media_mp_artist
+                  align: TOP_LEFT
+                  y: 18
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "Nicht verfügbar"
+              - button:
+                  align: BOTTOM_LEFT
+                  y: -22
+                  width: 41
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_previous_track
+                        data:
+                          entity_id: "${ent_media_player_wohnzimmer}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F04AE"
+              - button:
+                  align: BOTTOM_LEFT
+                  x: 47
+                  y: -22
+                  width: 41
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_play_pause
+                        data:
+                          entity_id: "${ent_media_player_wohnzimmer}"
+                  widgets:
+                    - label:
+                        id: w_media_mp_play_icon
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F040A"
+              - button:
+                  align: BOTTOM_LEFT
+                  x: 94
+                  y: -22
+                  width: 42
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_next_track
+                        data:
+                          entity_id: "${ent_media_player_wohnzimmer}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F04AD"
+              - slider:
+                  id: w_media_mp_volume
+                  align: BOTTOM_MID
+                  y: -2
+                  width: 112
+                  height: 12
+                  min_value: 0
+                  max_value: 100
+                  value: 0
+                  bg_color: 0x1B2430
+                  bg_opa: COVER
+                  indicator:
+                    bg_color: 0xA3E635
+                    bg_opa: COVER
+                  knob:
+                    bg_color: 0xE6EDF3
+                    bg_opa: COVER
+                    pad_all: 3
+                  on_release:
+                    - homeassistant.action:
+                        action: media_player.volume_set
+                        data:
+                          entity_id: "${ent_media_player_wohnzimmer}"
+                          volume_level: !lambda |-
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "%.2f", x / 100.0f);
+                            return std::string(buf);
+        - obj:
+            id: w_media_mp2
+            x: 164
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_media_mp2_title
+                  align: TOP_LEFT
+                  width: 68
+                  long_mode: DOT
+                  styles: cyd_text_9
+                  text: Kueche
+              - label:
+                  id: w_media_mp2_artist
+                  align: BOTTOM_LEFT
+                  width: 68
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "Nicht verfügbar"
+              - button:
+                  align: RIGHT_MID
+                  x: -34
+                  width: 28
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_play_pause
+                        data:
+                          entity_id: "${ent_media_player_kueche}"
+                  widgets:
+                    - label:
+                        id: w_media_mp2_play_icon
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F040A"
+              - button:
+                  align: RIGHT_MID
+                  width: 28
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_next_track
+                        data:
+                          entity_id: "${ent_media_player_kueche}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F04AD"
+        - obj:
+            id: w_media_mp3
+            x: 164
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_media_mp3_title
+                  align: TOP_LEFT
+                  width: 68
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: Bad
+              - label:
+                  id: w_media_mp3_artist
+                  align: BOTTOM_LEFT
+                  width: 68
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "Nicht verfügbar"
+              - button:
+                  align: RIGHT_MID
+                  x: -34
+                  width: 28
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_play_pause
+                        data:
+                          entity_id: "${ent_media_player_bad}"
+                  widgets:
+                    - label:
+                        id: w_media_mp3_play_icon
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F040A"
+              - button:
+                  align: RIGHT_MID
+                  width: 28
+                  height: 28
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: media_player.media_next_track
+                        data:
+                          entity_id: "${ent_media_player_bad}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F04AD"
+# cyd_studio_checksum: 71689ce99a458b71
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/61WS47jNhC9C4Hs3IZanm50vJ1BECCLBJkgWQQNgpLKEmH+wI8dT8ObOVHOkKPk
-#   JKkiJVnucWYmQFa2SFbVq1ePVXxhjRW+Y1sGwW3qu/rNpg5V/eTZquzwg/BSmMi2Jim1Yh0cZAvc
-#   CA1o1J66u9aa6K0KaNEr2wjFti9sZ20ET//AiEYBRtgJFWDFBpD9gO42jyt2lF0PMbDt789n2hHd
-#   K5vo08KkflqavDChZG8QhYJdxOjx5AiTEz3wKKMCdl5dDvnsYz7VKtvu2fn5jIF7LzsK21IW2ze4
-#   IBzbYjAnuk6aPv/39oibGzxOh1lvVQdmmbyGKMhLcp2IBJ7VVf14V32LpCISNlL2PkICn9ArLR1k
-#   L6K0hgwHq4ETejy1V1ILPBEGe+QSo4SJjLyiRAPqshRPioyiaBpBlQtHSUmW3bLKnQ2yRMLCxmg1
-#   ceGFmVeDkh3g4tELx4W3yUxFQ/DWSzBxhMqUMF1ohaPjBLiUg2jk9gDek6NRL4QdLXQnt3EAr21A
-#   L2wkccpSGr6kouBW4mRTJKqpPDN/P4w2Tni4yDKzMglozFtqQAc8TGeW0kFTGU9ZB+guwvpoB/NB
-#   ag3E34BaGyG2FMpbF6hCmXZc/B7kh1JBLf4outQSgT9QLQC1w6r1A9V8FlsOQuRmz2hTrRiGr0ih
-#   M5YAJli/dgeuQIZYIiyw9EssHbTolERQrWZgP/06YXqqqmpEhb/JSGLytwWmXqT+ClE9InomTF+s
-#   ZTIwVTFkRf/HMpZrYP7HQhLaNd5FZQtr9yM8f6uCP+dziwqRNR9v85fqpKiVrLEAe7gOFe5vxXqX
-#   D15i5Yvmb1G/DKKhk4I7pA/T2idoh9fB6puJiU7azwYrGd1fBZPGIcEm6QaDBeTmVajNrVDvy7ks
-#   t80ktvuL2v768+1XZH0N5AiC2sSaeuE1huMSQlFJ0rLLZqST89wHsZFL3yqY10cEo+9Puahv3cII
-#   2l0j0P96/Yotry/WO0jtkG/8uLe57LWWKjex+EuJkz+zh+9m07JGlm9//PvjR3bFbPnIFt9MH3TU
-#   Ob1gXScVJc5wlW7c9Rrv+jPmZF1yeQgjhSgzbK+Uc4AYcfjlbIWTfA+n6QI2eZgaCIF3gmpIvWax
-#   aMZ5/TC/F0RLPSFcmoLpU5l0eeZkA65tB2X8l1KUYDuPswqHab2tqtxk8KbG+TkRbPIt+bG7HU20
-#   wQOKQ2G96jW+MKKlZvyI+iRSPMTkDc+DVuzwgUI9haTr+4bnB8en75UsNRpaKVzGYWg9YDHFobxX
-#   SnaUjCSRzK4fszaW/s7UvXaycMpxSTUC3yEjLSkAD4C+48gUvU5Qs7ljaoGN1iMcH5F1v2fj1tym
-#   qVLn8z/pGUB00gkAAA==
+# cyd_studio_project: H4sIAAAAAAAC/61W247bNhD9FwJ98xpaObvY+jVFUaAoWjRF81AsCEocy4R5EXix4wR+yRf1G/op
+#   /ZLOkJIs7zrdDZAnWyRn5syZM+R8Yo0TXrI1g9Cv6pv6zaoOVf3g2aLs8L3wStjI1jZpvWAS9qoF
+#   boUBNGqP8qZ1NnqnA1p02jVCs/UntnEugqd/YEWjASNshA6wYFtQ3Rbdre4X7KBkBzGw9V+PJ9oR
+#   8olN9GlmUj/MTT4xoVVnEYWGTcTo8dgTpl50wKOKGthpcT7ks4/pVKtdu2OnxxMG7rySFLalLNZv
+#   cEH0bI3BeiGlsl3+790BN1d4nA6zzmkJdp68gSjIS+qliASe1VV9f1N9j6QiEjZQ9i5CAp/QKy3t
+#   VSeicpYMt84AJ/R4aqeVEXgibN2BK4wSRjLyihYN6PNSPGoyiqJpBFUuHBQlWXbLKu9dUCUSFjZG
+#   Z4gLL+y0GrSSgIsHL3ouvEt2LBqCd16BjQNUpoWVoRU9HSfApRxEI3d78J4cDXoh7GhhpFrHLXjj
+#   AnphA4ljlsryORUFtxZHlyJRTeWZ+Pt5sOmFh7MsMyujgIa8lQF0wMN4Zi4dNFXxmHWA7iIsD25r
+#   PypjgPjbotYGiC2F8q4PVKFMOy7+BOpjqaARH4oujULgd1QLQO2wanlHNZ/EloMQudkz2lQLhuEr
+#   UuiEJYANzi/7PdegQiwRZli6ORYJLTolEVSLCdhvf46YHqqqGlDhb7KKmHw/w9SJ1F0gqgdEj4Tp
+#   xVomC2MVQ1b0V5axtIH9hoUktEvsRe0Ka7cDPH+tgr/nc7MKkTUfuvmlOmm6SpZYgB1chgq312L9
+#   kA+eY+VG89eonwcxIJXgPdKHae0StNunweqriQmp3P8GKxndXgRTtkeCbTINBgvIzZNQq2uh3pVz
+#   WW6rUWy3Z7X98/fbV2R9CeQAgq6JJd2FlxgOcwhFJckomc1IJ6fpHsSLXPlWw7Q+IBh8P+eivtaF
+#   EUx/icB8sf2KLa/P1htI7TZ3/LC3Ou+1jio3svhHiZM/s4cfJ9OyRpZvf/3382d2wWz5yBbfjR90
+#   tO/NjHWTdFT4hut0pdfr1/W6SUG1Y7NnWX5lr/+CDnbfrtMvOuNL93Ym9Zlk359Pzzia+Xup9V/s
+#   StPXz4S6dzoREeNjOuk0wofID8N0g8+ylq+A9eJl0Qj5FNO8f18b4RbV8Yhmrk99HtEQOKaLjy85
+#   DhAjjkY5SdErvoPjWLQmj1oWQuBSkCN6iWaLdpjm7qZpUrSkonCWke1SmYPyRJINuHESynBYki7B
+#   Nh4nGRy16nVVZVmijuM0bAaXfEt+3GZD887WA1YEaV7XS5w/o6On+h5vL+LdQ0ze8jyGiQ2Or6RD
+#   uth81/A8jj6fZnN9aaRJYVbf1gO2utiXabZkR8koukIm1/f55pj7O5HiN6pwynFJNwKn1IGWFIAH
+#   QN9xYIpmV7zRco8Zgc+wRzg+Iut+x4atqbFz6U//AT8SIVLwCwAA

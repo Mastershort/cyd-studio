@@ -326,6 +326,50 @@ function widgetElementsInner(wtype: string, w: number, h: number, props: Props,
   const lhT = lineHeight(textSize);
   const lhXs = lineHeight(fs.xs);
 
+  if (wtype === "media_player") {
+    // title + artist, previous / play-pause / next, optional volume slider underneath
+    const lines = lhT + lhXs;
+    const roles = ["prev", "play", "next"];
+    if (ch >= lines + ELEMENT_GAP + 24) {
+      els.push(el("text", "title", "TOP_LEFT", 0, 0, textSize, "text", cw));
+      els.push(el("text", "artist", "TOP_LEFT", 0, lhT, fs.xs, "text_muted", cw));
+      const rest = ch - lines - ELEMENT_GAP;
+      const volH = TILE_SLIDER_H + ELEMENT_GAP + 4;
+      const volume = Boolean(props.show_volume ?? true) && rest >= 24 + volH;
+      const bh = Math.min(rest - (volume ? volH : 0), SMALL_BUTTON_MAX);
+      const by = volume ? -volH : 0;
+      const isz = bh >= ics.m + 8 ? ics.m : ics.s;
+      roles.forEach((role, i) => {
+        const [bx, bw] = split(0, cw, 3, ELEMENT_GAP, i);
+        els.push(sized("button", role, "BOTTOM_LEFT", bx, by, bw, bh, isz, "accent"));
+      });
+      if (volume) els.push(sized("slider", "volume", "BOTTOM_MID", 0, -2, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent"));
+    } else if (ch >= lhT + 2 + 20) {
+      // medium (e.g. 2x1): title over the full width, the buttons underneath (2 px apart)
+      els.push(el("text", "title", "TOP_LEFT", 0, 0, textSize, "text", cw));
+      const bh = Math.min(ch - lhT - 2, SMALL_BUTTON_MAX);
+      const isz = bh >= ics.m + 8 ? ics.m : ics.s;
+      roles.forEach((role, i) => {
+        const [bx, bw] = split(0, cw, 3, ELEMENT_GAP, i);
+        els.push(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"));
+      });
+    } else {
+      // flat: as many buttons (play first) as leave at least half the width for the title
+      const bs = Math.max(Math.min(ch, 28), 16);
+      const count = [3, 2].find((n) => cw - n * (bs + ELEMENT_GAP) >= fdiv(cw, 2)) ?? 1;
+      const shown = count === 1 ? roles.slice(1, 2) : roles.slice(3 - count);
+      const tw = Math.max(cw - count * (bs + ELEMENT_GAP), 1);
+      if (ch >= lines) {
+        els.push(el("text", "title", "TOP_LEFT", 0, 0, textSize, "text", tw));
+        els.push(el("text", "artist", "BOTTOM_LEFT", 0, 0, fs.xs, "text_muted", tw));
+      } else {
+        els.push(el("text", "title", "LEFT_MID", 0, 0, textSize, "text", tw));
+      }
+      shown.forEach((role, i) => els.push(sized("button", role, "RIGHT_MID", (i - (shown.length - 1)) * (bs + ELEMENT_GAP), 0, bs, bs, ics.s, "accent")));
+    }
+    return els;
+  }
+
   if (wtype === "cover_control") {
     const withTitle = ch >= lhT + ELEMENT_GAP + 24;
     const bh = withTitle ? Math.min(ch - lhT - ELEMENT_GAP, SMALL_BUTTON_MAX) : ch;

@@ -1,0 +1,36 @@
+{
+  "type": "media_player",
+  "name": "Mediaplayer",
+  "name_en": "Media player",
+  "description": "Titel, Interpret, Zurück / Play-Pause / Weiter, Lautstärke",
+  "description_en": "Title, artist, previous / play-pause / next, volume",
+  "icon": "mdi:play-circle",
+  "domains": [
+    "media_player"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 2
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung (wenn nichts läuft)",
+      "label_en": "Label (when nothing plays)"
+    },
+    {
+      "key": "show_volume",
+      "type": "bool",
+      "default": true,
+      "label": "Lautstärke-Regler (wenn Platz)",
+      "label_en": "Volume slider (if there is room)"
+    }
+  ]
+}

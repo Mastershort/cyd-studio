@@ -484,6 +484,23 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       }
       break;
     }
+    case "media_player": {
+      tileBox();
+      const lang = project.settings?.language === "en" ? "en" : "de";
+      const texts = STATE_TEXTS.media as Record<string, Record<string, string>>;
+      const usable = (v: unknown) => (typeof v === "string" && v !== "" && v !== "unknown" && v !== "unavailable" ? v : null);
+      const title = usable(entity?.attributes.media_title) ?? String(props.label || fallbackLabel(w.entity));
+      const artist = usable(entity?.attributes.media_artist) ?? (texts[st ?? ""] ?? texts.unavailable)[lang];
+      const vol = attrNumber(entity, "volume_level");
+      const icons: Record<string, string> = { prev: "mdi:skip-previous", play: st === "playing" ? "mdi:pause" : "mdi:play", next: "mdi:skip-next" };
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "title") draw(el, title, col(el.color));
+        else if (el.role === "artist") draw(el, artist, col(el.color));
+        else if (el.role === "volume") p.slider(content, el, vol === null ? 0 : vol, style.circle_bg, style.icon_on, style.text);
+        else p.smallButton(content, el, icons[el.role], style.circle_bg, style.icon_on, style.radius);
+      }
+      break;
+    }
     case "climate": {
       tileBox();
       const lang = project.settings?.language === "en" ? "en" : "de";
@@ -727,7 +744,7 @@ export function sampleState(project: Project): StateResolver {
       if (domain === "fan" && state === "on") attributes.percentage = 50;
       if (domain === "climate") { state = "heat"; attributes.temperature = 21.5; attributes.current_temperature = 20.8; }
       if (domain === "weather") { state = "partlycloudy"; attributes.temperature = 17; attributes.humidity = 62; }
-      if (domain === "media_player") { state = "playing"; attributes.volume_level = 0.35; }
+      if (domain === "media_player") { state = "playing"; Object.assign(attributes, { volume_level: 0.35, media_title: "Bohemian Rhapsody", media_artist: "Queen" }); }
       if (domain === "input_number" || domain === "number") state = "21";
       if (domain === "counter") state = "3";
       if (domain === "input_select" || domain === "select") state = "Komfort";
