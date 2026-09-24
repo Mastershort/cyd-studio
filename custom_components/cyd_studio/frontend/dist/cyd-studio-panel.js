@@ -551,7 +551,7 @@ class Ri {
       const t = ((await this.hass.callWS(
         { type: "supervisor/api", endpoint: "/addons", method: "get" }
       )).addons ?? []).filter((s) => /(^|_)esphome(-beta|-dev)?$/.test(s.slug)), i = t.find((s) => s.state === "started") ?? t[0];
-      return i ? `/hassio/ingress/${i.slug}` : null;
+      return i ? `/${i.slug}` : null;
     } catch {
       return null;
     }

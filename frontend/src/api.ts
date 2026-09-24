@@ -39,7 +39,8 @@ export class Api {
         { type: "supervisor/api", endpoint: "/addons", method: "get" });
       const addons = (res.addons ?? []).filter((a) => /(^|_)esphome(-beta|-dev)?$/.test(a.slug));
       const best = addons.find((a) => a.state === "started") ?? addons[0];
-      return best ? `/hassio/ingress/${best.slug}` : null;
+      // the add-on panel lives at /<slug> (the old /hassio/ingress/<slug> route answers 404 in current HA)
+      return best ? `/${best.slug}` : null;
     } catch {
       return null;
     }

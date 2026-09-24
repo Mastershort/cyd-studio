@@ -97,8 +97,10 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
   von Hand geänderte Datei (Prüfsumme passt nicht) → Rückfrage, bei „geändert“ mit Diff; beim
   Überschreiben bleibt `…yaml.bak-<zeit>`. `secrets.yaml`: nur `wifi_ssid`/`wifi_password` werden
   ergänzt oder ersetzt, alles andere bleibt unverändert.
-- Link „ESPHome öffnen“: `/hassio/ingress/5c53de3b_esphome` (offizielles Add-on). Bei anderen
-  Installationen führt er ins Leere – dann ESPHome wie gewohnt öffnen.
+- Link „ESPHome öffnen“: das installierte ESPHome-Add-on wird über den Supervisor ermittelt
+  (`supervisor/api` → `/addons`, Kennung `…_esphome`, `-beta`, `-dev`), verlinkt wird `/<Kennung>`
+  (die Seitenleisten-Adresse; `/hassio/ingress/<Kennung>` liefert in aktuellen HA-Versionen 404).
+  Ohne Supervisor wird der Link ausgeblendet.
 
 ## Licht-Popup (ab 0.9)
 
