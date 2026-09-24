@@ -47,6 +47,22 @@ in UTC-Sekunden um; `cyd_parse_duration` liest `H:MM:SS`.
 
 | `notification_area` | – | letzte Meldung aus HA (Titel + Text) |
 
+## Bedingungen & Zustandsregeln (ab 0.8)
+
+Jedes Widget kann `visible_if` (alle Bedingungen müssen zutreffen, sonst ausgeblendet) und
+`style_rules` (erste passende Regel färbt Hintergrund, Rahmen, Text, Icon) haben:
+
+```json
+{"entity": "sensor.temp", "op": "gt", "value": "25", "text": "#ef4444"}
+```
+
+`op`: `eq`/`ne` (Zustand gleich/ungleich), `on`/`off` (an/offen/zu Hause … bzw. alles andere), `gt`/`lt`
+(Zahl über/unter; wie C `atof`). Fehlt `entity`, gilt die Entität des Widgets. Auf dem Gerät hängt der
+Generator an jede beteiligte Quelle ein Lambda (`lv_obj_add/remove_flag(HIDDEN)` bzw.
+`lv_obj_set_style_*` mit `LV_PART_MAIN | LV_STATE_ANY`); passt keine Regel, werden die lokalen Farben
+entfernt und der normale An/Aus-Zustand neu gesetzt. Die Vorschau wertet dieselben Regeln aus
+(`frontend/src/logic.ts`, Tests in `tests/logic.test.ts`).
+
 ## Vom Home Assistant ans Display (ab 0.7)
 
 Wenn „Aus Home Assistant steuerbar“ aktiv ist (Standard), bekommt das Gerät `api: actions:`. In HA

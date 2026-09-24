@@ -95,7 +95,7 @@ export class CydScreen extends LitElement {
       project: this.project, board: this.board, theme: this.theme, pageId: this.pageId,
       state: this.state, now: this.now, pressed: this._pressed, night: this.night,
       overlay: this.mode === "preview" ? this.overlay : null, images: this.images,
-      message: this.mode === "preview" ? this.message : null,
+      message: this.mode === "preview" ? this.message : null, editMode: this.mode === "edit",
     });
   }
 

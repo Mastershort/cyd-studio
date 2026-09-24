@@ -469,13 +469,37 @@
           ]
         },
         "visible_if": {
-          "type": [
-            "object",
-            "null"
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
         },
         "style_rules": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/condition"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "bg": {
+                    "type": "string"
+                  },
+                  "border": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
         },
         "badge": {
           "type": [
@@ -575,6 +599,33 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "properties": {
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "op": {
+          "enum": [
+            "eq",
+            "ne",
+            "on",
+            "off",
+            "gt",
+            "lt"
+          ]
+        },
+        "value": {
+          "type": "string"
         }
       }
     }

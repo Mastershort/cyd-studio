@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "id": "golden-logic",
+  "name": "Regeln",
+  "device_name": "cyd-logic",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "mastershort_dark",
+  "grid": {
+    "cols": 4,
+    "rows": 3,
+    "gap": 8,
+    "padding": 8
+  },
+  "settings": {
+    "language": "de"
+  },
+  "navigation": {
+    "style": "none"
+  },
+  "pages": [
+    {
+      "id": "home",
+      "name": "Regeln",
+      "icon": "mdi:filter",
+      "widgets": [
+        {
+          "id": "t",
+          "type": "sensor_value",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "sensor.temp",
+          "props": {
+            "label": "Temperatur",
+            "icon": "mdi:thermometer",
+            "unit": "°C"
+          },
+          "style_rules": [
+            {
+              "op": "gt",
+              "value": "25",
+              "text": "#ef4444",
+              "icon": "#ef4444",
+              "border": "#ef4444"
+            },
+            {
+              "op": "lt",
+              "value": "18",
+              "text": "#38bdf8",
+              "icon": "#38bdf8"
+            }
+          ]
+        },
+        {
+          "id": "l",
+          "type": "toggle_tile",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "light.flur",
+          "props": {
+            "label": "Flur",
+            "icon": "mdi:lightbulb"
+          },
+          "style_rules": [
+            {
+              "entity": "binary_sensor.nacht",
+              "op": "on",
+              "bg": "#1e1b4b"
+            }
+          ]
+        },
+        {
+          "id": "a",
+          "type": "binary_indicator",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "binary_sensor.fenster",
+          "props": {
+            "label": "Fenster",
+            "icon": "mdi:window-open"
+          },
+          "style_rules": [
+            {
+              "op": "on",
+              "bg": "#450a0a"
+            }
+          ]
+        },
+        {
+          "id": "g",
+          "type": "scene_button",
+          "x": 2,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "action": {
+            "service": "script.turn_on",
+            "target": "script.gute_nacht"
+          },
+          "props": {
+            "label": "Gute Nacht",
+            "icon": "mdi:weather-night"
+          },
+          "visible_if": [
+            {
+              "entity": "person.anna",
+              "op": "eq",
+              "value": "home"
+            },
+            {
+              "entity": "sensor.lux",
+              "op": "lt",
+              "value": "50"
+            }
+          ]
+        },
+        {
+          "id": "w",
+          "type": "label",
+          "x": 0,
+          "y": 2,
+          "w": 4,
+          "h": 1,
+          "props": {
+            "text": "Niemand zu Hause",
+            "size": "m"
+          },
+          "visible_if": [
+            {
+              "entity": "person.anna",
+              "op": "ne",
+              "value": "home"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "updated": "2026-09-24"
+  }
+}

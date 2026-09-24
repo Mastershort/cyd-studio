@@ -177,7 +177,7 @@ def person_presence(ctx: Context, page: dict[str, Any], widget: dict[str, Any], 
     parts.title = None
     pairs = [("icon_on", "icon"), ("text", "text"), ("sub", "sub"), ("circle_bg_on", "circle_bg")]
     _wire_state(ctx, entity, parts, 0, None, text_on, text_off,
-                color_array(ctx, [(style[on], style[off]) for on, off in pairs]))  # fmt: skip
+                color_array(ctx, [(style[on], style[off]) for on, off in pairs]), wid)  # fmt: skip
     return [box(ctx, "obj", wid, rect, children, clickable=False, tile_style=style)]
 
 

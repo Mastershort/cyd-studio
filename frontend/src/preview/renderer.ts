@@ -7,6 +7,7 @@ import {
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
 import { layoutProps, resolveTileStyle, type TileStyle } from "../style";
+import { isVisible, matchingRule } from "../logic";
 import stateTextsData from "../../../custom_components/cyd_studio/data/state_texts.json";
 import qrcode from "qrcode-generator";
 import { deviceStrings } from "../i18n";
@@ -25,6 +26,8 @@ export interface RenderInput {
   now: Date;
   pressed?: string | null;
   night?: boolean;
+  /** edit mode: hidden widgets are drawn faintly so they can still be edited */
+  editMode?: boolean;
   /** decoded project images (backgrounds) by asset id */
   images?: Record<string, CanvasImageSource>;
   /** message sent by Home Assistant (show_message) */
@@ -302,7 +305,13 @@ export function renderScreen(canvas: HTMLCanvasElement, input: RenderInput): Hit
   for (const w of widgets) {
     const rect = layout.widgets[w.id];
     if (!rect) continue;
-    renderWidget(p, input, page, w, rect);
+    if (!isVisible(w, input.state)) {
+      if (!input.editMode) continue;
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      renderWidget(p, input, page, w, rect);
+      ctx.restore();
+    } else renderWidget(p, input, page, w, rect);
     hits.push({ kind: "widget", id: w.id, rect });
   }
   renderTopLayer(p, input, page, hits);
@@ -326,7 +335,16 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
   const entity = w.entity ? input.state(w.entity) : undefined;
   const st = entity?.state;
   const pressed = input.pressed === w.id;
-  const style = resolveTileStyle(theme, { ...(project.tile_style ?? {}), ...(w.style ?? {}) });
+  const base = resolveTileStyle(theme, { ...(project.tile_style ?? {}), ...(w.style ?? {}) });
+  // state rule: the first matching rule recolors the widget in every state (like the device)
+  const rule = matchingRule(w, input.state);
+  const style: TileStyle = rule ? {
+    ...base,
+    ...(rule.bg ? { bg: rule.bg, bg_on: rule.bg } : {}),
+    ...(rule.border ? { border: rule.border, border_on: rule.border } : {}),
+    ...(rule.text ? { text: rule.text, text_on: rule.text, sub: rule.text, sub_on: rule.text } : {}),
+    ...(rule.icon ? { icon: rule.icon, icon_on: rule.icon } : {}),
+  } : base;
   const lp = (extra: Record<string, unknown> = {}) => layoutProps({ ...props, ...extra }, style);
   // element color role -> style color ("on" state variants for tiles that are on)
   const col = (role: string, on = false): string => {

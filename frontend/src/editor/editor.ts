@@ -6,6 +6,7 @@ import { lang, loc, t } from "../i18n";
 import { navPages, pageGrid } from "../layout";
 import { PRESETS, resolveTileStyle } from "../style";
 import { fitImageFile, loadProjectImages } from "../images";
+import { OPS } from "../logic";
 import {
   defaultProps, findFreeSpot, newWidgetId, normalize, overlapsAny, pageIdFrom, resolveBoard, rootOf, slugify,
 } from "../model";
@@ -477,6 +478,9 @@ export class CydEditor extends LitElement {
     .danger { color: var(--error-color, #ef4444); }
     .crow { display: flex; gap: 4px; align-items: center; }
     .muted { font-size: 12px; color: var(--secondary-text-color); }
+    .cond, .rule { border: 1px solid var(--divider-color); border-radius: 8px; padding: 6px; margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
+    .rule .cond { border: 0; padding: 0; margin: 0; }
+    .cond select, .cond input[type=text] { padding: 5px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font: inherit; min-width: 0; flex: 1; }
     .field.color input[type=color] { width: 100%; height: 30px; padding: 0 2px; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
     input[type=range] { width: 100%; }
   `;
@@ -685,6 +689,8 @@ export class CydEditor extends LitElement {
         ${this.text(t("action_service"), w.action?.service, (v) => set((x) => { x.action = { ...(x.action ?? { service: "" }), service: v.trim() }; }))}` : nothing}
       ${def?.props.filter((d) => !d.min_count || Number(w.props.count ?? 4) >= d.min_count).map(prop)}
       ${this.renderAppearance(w)}
+      ${this.renderConditions(w)}
+      ${this.renderRules(w)}
       <h3>${t("position")}</h3>
       <div class="row4">
         ${this.num("x", w.x, (v) => set((x) => { x.x = Math.max(0, v ?? 0); }), 0)}
@@ -738,6 +744,55 @@ export class CydEditor extends LitElement {
             : html`<button @click=${choose}>${t("bg_choose")}</button>`}
         </div>
       </div>`;
+  }
+
+  private opOptions(): [string, string][] {
+    return OPS.map((op): [string, string] => [op, t(`op_${op}` as "op_eq")]);
+  }
+
+  /** One condition row: [entity] [operator] [value] – entity empty = the widget's own entity. */
+  private conditionRow(c: { entity?: string | null; op: string; value?: string }, update: (c: Record<string, unknown>) => void,
+    remove: () => void, ownEntity: boolean) {
+    const needsValue = !["on", "off"].includes(c.op);
+    return html`<div class="cond">
+      <cyd-entity-picker .hass=${this.hass} .value=${c.entity ?? null} .domains=${[]}
+        @value-changed=${(e: CustomEvent<{ value: string }>) => update({ ...c, entity: e.detail.value })}></cyd-entity-picker>
+      ${ownEntity && !c.entity ? html`<span class="muted">${t("this_entity")}</span>` : nothing}
+      <div class="crow">
+        <select @change=${(e: Event) => update({ ...c, op: (e.target as HTMLSelectElement).value })}>
+          ${this.opOptions().map(([v, l]) => html`<option value=${v} ?selected=${c.op === v}>${l}</option>`)}</select>
+        ${needsValue ? html`<input type="text" .value=${c.value ?? ""} placeholder=${t("value")}
+          @change=${(e: Event) => update({ ...c, value: (e.target as HTMLInputElement).value })} />` : nothing}
+        <button class="small danger" @click=${remove}>✕</button>
+      </div>
+    </div>`;
+  }
+
+  private renderConditions(w: Widget) {
+    const list = w.visible_if ?? [];
+    const set = (next: typeof list) => this.editWidget(w.id, (x) => { x.visible_if = next; });
+    return html`<h3>${t("conditions")}</h3>
+      <div class="muted">${t("conditions_hint")}</div>
+      ${list.map((c, i) => this.conditionRow(c, (nc) => set(list.map((o, j) => (j === i ? (nc as typeof c) : o))),
+        () => set(list.filter((_, j) => j !== i)), false))}
+      <button class="small" @click=${() => set([...list, { entity: w.entity ?? null, op: "on" }])}>+ ${t("add_condition")}</button>`;
+  }
+
+  private renderRules(w: Widget) {
+    const list = w.style_rules ?? [];
+    const set = (next: typeof list) => this.editWidget(w.id, (x) => { x.style_rules = next; });
+    const color = (r: (typeof list)[number], i: number, key: "bg" | "border" | "text" | "icon", label: string) => html`
+      <label class="field color"><span>${label}</span><span class="crow">
+        <input type="color" .value=${r[key] ?? "#ef4444"} @change=${(e: Event) => set(list.map((o, j) => (j === i ? { ...o, [key]: (e.target as HTMLInputElement).value } : o)))} />
+        ${r[key] ? html`<button class="small" @click=${() => set(list.map((o, j) => { if (j !== i) return o; const n = { ...o }; delete n[key]; return n; }))}>↺</button>` : nothing}
+      </span></label>`;
+    return html`<h3>${t("rules")}</h3>
+      <div class="muted">${t("rules_hint")}</div>
+      ${list.map((r, i) => html`<div class="rule">
+        ${this.conditionRow(r, (nc) => set(list.map((o, j) => (j === i ? { ...o, ...nc } : o))), () => set(list.filter((_, j) => j !== i)), true)}
+        <div class="row4">${color(r, i, "bg", t("color_bg"))}${color(r, i, "border", t("color_border"))}${color(r, i, "text", t("color_text"))}${color(r, i, "icon", t("icon"))}</div>
+      </div>`)}
+      <button class="small" @click=${() => set([...list, { entity: null, op: "gt", value: "25", text: "#ef4444" }])}>+ ${t("add_rule")}</button>`;
   }
 
   /** Theme of the project with the user's color overrides. */

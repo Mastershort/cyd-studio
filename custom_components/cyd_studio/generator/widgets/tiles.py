@@ -57,11 +57,18 @@ def _state_call(parts: _Parts, x: str, value: str, kind: int, text_on: str | Non
 
 
 def _wire_state(ctx: Context, entity: str, parts: _Parts, kind: int, attribute: str | None,
-                text_on: str | None, text_off: str | None, colors: str) -> tuple[str, str | None]:  # fmt: skip
+                text_on: str | None, text_off: str | None, colors: str, wid: str | None = None,
+                ) -> tuple[str, str | None]:  # fmt: skip
     """Mirror the entity (and optionally its value attribute) and update the tile on every change."""
     ctx.helpers.add("state")
     src = ctx.source("text", entity)
     attr = ctx.source("number", entity, attribute) if attribute else None
+    if wid:
+        # used by state rules to restore the normal on/off colors before applying a rule
+        replay = _state_call(parts, f"id({src.id}).state", f"id({attr.id}).state" if attr else "NAN", kind,
+                             text_on, text_off, colors)  # fmt: skip
+        ctx.state_replays[wid] = replay["lambda"].code
+        ctx.state_sources[wid] = [src.id, *([attr.id] if attr else [])]
     value_now = f"id({attr.id}).state" if attr else "NAN"
     src.actions.append(_state_call(parts, "x", value_now, kind, text_on, text_off, colors))
     if attr:
@@ -107,7 +114,7 @@ def toggle_tile(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect
     pairs = [("icon_on", "icon"), ("text_on", "text"), ("sub_on", "sub"), ("circle_bg_on", "circle_bg")]
     colors = color_array(ctx, [(style[on], style[off]) for on, off in pairs])
     src_id, attr_id = _wire_state(ctx, entity, parts, kind if show_value else 0,
-                                  attribute if (show_value or slider) else None, None, None, colors)  # fmt: skip
+                                  attribute if (show_value or slider) else None, None, None, colors, wid)  # fmt: skip
 
     extra: dict[str, Any] = {
         "on_short_click": [
@@ -195,5 +202,5 @@ def binary_indicator(ctx: Context, page: dict[str, Any], widget: dict[str, Any],
     alert = colors_map["error"] if props.get("alert_on", True) else colors_map["accent"]
     colors = color_array(ctx, [(alert, colors_map["on"]), (style["text"], style["text"]),
                                (style["sub"], style["sub"]), (style["circle_bg"], style["circle_bg"])])  # fmt: skip
-    _wire_state(ctx, entity, parts, 0, None, text_on, text_off, colors)
+    _wire_state(ctx, entity, parts, 0, None, text_on, text_off, colors, wid)
     return [box(ctx, "obj", wid, rect, children, clickable=False, tile_style=style)]

@@ -133,6 +133,37 @@ def safe_id(text: str) -> str:
     return s or "x"
 
 
+CONDITION_OPS = ("eq", "ne", "on", "off", "gt", "lt")
+
+
+def conditions_of(widget: dict[str, Any]) -> list[dict[str, Any]]:
+    """Valid visibility conditions of a widget (entity defaults to the widget's entity)."""
+    return [_with_entity(c, widget) for c in widget.get("visible_if") or [] if _valid(c, widget)]
+
+
+def rules_of(widget: dict[str, Any]) -> list[dict[str, Any]]:
+    """Valid style rules of a widget."""
+    return [_with_entity(r, widget) for r in widget.get("style_rules") or [] if _valid(r, widget)]
+
+
+def _with_entity(cond: dict[str, Any], widget: dict[str, Any]) -> dict[str, Any]:
+    return {**cond, "entity": cond.get("entity") or widget.get("entity")}
+
+
+def _valid(cond: Any, widget: dict[str, Any]) -> bool:
+    if not isinstance(cond, dict) or cond.get("op") not in CONDITION_OPS:
+        return False
+    entity = cond.get("entity") or widget.get("entity")
+    if not entity or not ENTITY_ID_RE.match(str(entity)):
+        return False
+    if cond["op"] in ("gt", "lt"):
+        try:
+            float(cond.get("value", ""))
+        except (TypeError, ValueError):
+            return False
+    return True
+
+
 def validate(
     project: dict[str, Any],
     widget_defs: dict[str, dict[str, Any]],
@@ -317,6 +348,13 @@ def validate(
                             pid,
                             wid,
                         )
+            for key, valid in (("visible_if", conditions_of(widget)), ("style_rules", rules_of(widget))):
+                if len(widget.get(key) or []) != len(valid):
+                    add("warning", "condition_invalid",
+                        f"„{label}“: Eine Bedingung/Regel ist unvollständig (Entität, Vergleich, Zahl) "
+                        "und wird ignoriert.",
+                        f"\"{label}\": a condition/rule is incomplete (entity, comparison, number) and is ignored.",
+                        pid, wid)  # fmt: skip
             for pdef in wdef.get("props", []):
                 value = widget.get("props", {}).get(pdef["key"])
                 if pdef.get("type") == "entity" and value and not ENTITY_ID_RE.match(str(value)):

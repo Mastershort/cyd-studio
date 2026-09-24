@@ -22,14 +22,15 @@ from .layout import (
     page_layout,
     tab_elements,
 )
+from .logic import apply_logic
 from .memory import MemoryEstimate, estimate
 from .model import Issue, normalize, safe_id, validate
 from .theme import resolve_theme
 from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
-from .widgets.common import opa, page_show
+from .widgets.common import opa, page_show, widget_id
 
-GENERATOR_VERSION = "0.7.0"
+GENERATOR_VERSION = "0.8.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -958,7 +959,9 @@ def _page(
         emitter = EMITTERS.get(widget["type"])
         if emitter is None:
             continue
-        widgets.extend(emitter(ctx, page, widget, layout["widgets"][widget["id"]]))
+        emitted = emitter(ctx, page, widget, layout["widgets"][widget["id"]])
+        apply_logic(ctx, widget_id(page, widget), widget, emitted)
+        widgets.extend(emitted)
     if widgets:
         conf["widgets"] = widgets
     return conf

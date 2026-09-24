@@ -26,6 +26,10 @@ export interface Widget {
   props: Record<string, unknown>;
   /** appearance overrides (preset, colors, opacity, radius, circle, text size) – see styles/tile_presets.json */
   style?: Record<string, unknown>;
+  /** show only when all conditions hold ({entity, op: eq|ne|on|off|gt|lt, value}) */
+  visible_if?: { entity?: string | null; op: string; value?: string }[];
+  /** first matching rule recolors the widget (bg, border, text, icon) */
+  style_rules?: { entity?: string | null; op: string; value?: string; bg?: string; border?: string; text?: string; icon?: string }[];
 }
 
 export interface Background {
