@@ -1,0 +1,13 @@
+{
+  "id": "blank",
+  "name": "Leer",
+  "name_en": "Blank",
+  "description": "Eine leere Startseite",
+  "description_en": "One empty home page",
+  "placeholders": [],
+  "project": {
+    "pages": [
+      {"id": "home", "name": "Start", "icon": "mdi:home", "parent": null, "in_navigation": true, "widgets": []}
+    ]
+  }
+}

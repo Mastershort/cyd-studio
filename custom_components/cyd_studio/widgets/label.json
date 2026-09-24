@@ -1,0 +1,19 @@
+{
+  "type": "label",
+  "name": "Text",
+  "name_en": "Label",
+  "description": "Freier Text oder Überschrift",
+  "description_en": "Free text or heading",
+  "icon": "mdi:format-text",
+  "domains": [],
+  "entity": "none",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "text", "type": "text", "default": "Text", "label": "Text", "label_en": "Text"},
+    {"key": "size", "type": "select", "default": "m", "options": ["s", "m", "l", "xl"], "label": "Schriftgröße", "label_en": "Font size"},
+    {"key": "align", "type": "select", "default": "center", "options": ["left", "center", "right"], "label": "Ausrichtung", "label_en": "Alignment"},
+    {"key": "muted", "type": "bool", "default": false, "label": "Gedämpfte Farbe", "label_en": "Muted color"},
+    {"key": "background", "type": "bool", "default": false, "label": "Kachel-Hintergrund", "label_en": "Tile background"}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "golden-reference-buttons",
+  "name": "SmartDisplay",
+  "device_name": "smartdisplay",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "mastershort_dark",
+  "grid": {"cols": 4, "rows": 3, "gap": 8, "padding": 8},
+  "settings": {"language": "de", "api_key": "zGm1uI0T3MdsCWDhYxJ9t3iX0N9kfjN7l6BUk4kP1Ro=", "return_home_after_s": 0},
+  "global": {"header": {"enabled": false}},
+  "navigation": {"style": "none", "swipe": false},
+  "pages": [
+    {
+      "id": "lockscreen", "name": "Sperrbildschirm", "icon": "mdi:lock",
+      "widgets": [
+        {"id": "clock", "type": "clock", "x": 0, "y": 0, "w": 4, "h": 2, "props": {"format": "HH:mm", "show_date": true, "size": "xxl"}},
+        {"id": "btn1", "type": "toggle_tile", "x": 0, "y": 2, "w": 1, "h": 1, "entity": "light.desk_lamp", "props": {"label": "Desk", "icon": "mdi:desk-lamp", "show_state": false}},
+        {"id": "btn2", "type": "toggle_tile", "x": 1, "y": 2, "w": 1, "h": 1, "entity": "light.ceiling_light", "props": {"label": "Ceiling", "icon": "mdi:ceiling-light", "show_state": false}},
+        {"id": "btn3", "type": "toggle_tile", "x": 2, "y": 2, "w": 1, "h": 1, "entity": "light.globe_lamp", "props": {"label": "Globe", "icon": "mdi:globe-light", "show_state": false}},
+        {"id": "btn4", "type": "toggle_tile", "x": 3, "y": 2, "w": 1, "h": 1, "entity": "light.ambient_light", "props": {"label": "Ambient", "icon": "mdi:led-strip-variant", "show_state": false}}
+      ]
+    }
+  ],
+  "meta": {"updated": "2026-09-24"}
+}

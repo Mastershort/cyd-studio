@@ -1,0 +1,35 @@
+{
+  "name": "cyd-studio-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CYD Studio – Home Assistant panel (editor, preview, export)",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite build --watch",
+    "dev:panel": "vite --open /dev/index.html",
+    "e2e": "playwright test",
+    "test": "vitest run",
+    "lint": "eslint src tests",
+    "typecheck": "tsc --noEmit",
+    "icons": "node tools/build-icons.mjs"
+  },
+  "dependencies": {
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@fontsource/montserrat": "^5.1.0",
+    "@mdi/font": "7.4.47",
+    "@mdi/svg": "7.4.47",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.4",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8",
+    "yaml": "^2.9.1"
+  }
+}

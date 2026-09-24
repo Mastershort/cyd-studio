@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mastershort/cyd-studio/schema/project.schema.json",
+  "title": "CYD Studio project",
+  "type": "object",
+  "required": ["schema", "name", "device_name", "board", "pages"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 64},
+    "device_name": {"type": "string", "pattern": "^[a-z0-9]([a-z0-9-]{0,29}[a-z0-9])?$"},
+    "board": {"type": "string"},
+    "board_variant": {"type": ["string", "null"]},
+    "orientation": {"enum": ["landscape", "portrait", "landscape_flipped", "portrait_flipped"]},
+    "grid": {"$ref": "#/$defs/grid"},
+    "theme": {"type": "string"},
+    "theme_overrides": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}},
+    "settings": {
+      "type": "object",
+      "properties": {
+        "brightness_day": {"type": "integer", "minimum": 1, "maximum": 100},
+        "brightness_night": {"type": "integer", "minimum": 0, "maximum": 100},
+        "night_mode": {
+          "type": "object",
+          "properties": {
+            "source": {"enum": ["ldr", "time", "entity", "off"]},
+            "threshold": {"type": "number"},
+            "invert": {"type": "boolean"},
+            "from": {"type": "string", "pattern": "^\\d{2}:\\d{2}$"},
+            "to": {"type": "string", "pattern": "^\\d{2}:\\d{2}$"},
+            "entity": {"type": ["string", "null"]}
+          }
+        },
+        "screensaver": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "after_s": {"type": "integer", "minimum": 5},
+            "action": {"enum": ["dim", "off", "clock"]}
+          }
+        },
+        "return_home_after_s": {"type": ["integer", "null"], "minimum": 0},
+        "rgb_led": {"type": "object", "properties": {"enabled": {"type": "boolean"}, "show_status": {"type": "boolean"}}},
+        "wifi": {"type": "object", "properties": {"use_secrets": {"type": "boolean"}, "ap_fallback": {"type": "boolean"}}},
+        "language": {"enum": ["de", "en"]},
+        "api_key": {"type": ["string", "null"]}
+      }
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "header": {"$ref": "#/$defs/bar"},
+        "footer": {"$ref": "#/$defs/bar"}
+      }
+    },
+    "pages": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/page"}},
+    "navigation": {
+      "type": "object",
+      "properties": {
+        "style": {"enum": ["tabbar", "swipe_and_dots", "side_menu", "buttons", "none"]},
+        "tabbar_position": {"enum": ["bottom", "top", "left"]},
+        "show_labels": {"type": "boolean"},
+        "show_icons": {"type": "boolean"},
+        "swipe": {"type": "boolean"},
+        "wrap_around": {"type": "boolean"},
+        "home_page": {"type": ["string", "null"]},
+        "transition": {"enum": ["none", "slide", "fade"]}
+      }
+    },
+    "popups": {"type": "array", "items": {"type": "object"}},
+    "meta": {"type": "object"}
+  },
+  "$defs": {
+    "grid": {
+      "type": "object",
+      "properties": {
+        "cols": {"type": "integer", "minimum": 1, "maximum": 12},
+        "rows": {"type": "integer", "minimum": 1, "maximum": 12},
+        "gap": {"type": "integer", "minimum": 0, "maximum": 32},
+        "padding": {"type": "integer", "minimum": 0, "maximum": 32}
+      }
+    },
+    "bar": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "height": {"type": "integer", "minimum": 16, "maximum": 80},
+        "widgets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {"enum": ["page_title", "clock", "label", "status_bar"]},
+              "align": {"enum": ["left", "center", "right"]}
+            }
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "name": {"type": "string"},
+        "icon": {"type": "string"},
+        "parent": {"type": ["string", "null"]},
+        "in_navigation": {"type": "boolean"},
+        "background": {"type": ["string", "null"]},
+        "layout": {"enum": ["grid", "free"]},
+        "grid_override": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/grid"}]},
+        "visible_if": {"type": ["object", "null"]},
+        "auto_show": {"type": ["object", "null"]},
+        "timeout_s": {"type": ["integer", "null"], "minimum": 5},
+        "show_header": {"type": "boolean"},
+        "widgets": {"type": "array", "items": {"$ref": "#/$defs/widget"}}
+      }
+    },
+    "widget": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "w", "h"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+        "type": {"type": "string"},
+        "x": {"type": "integer", "minimum": 0},
+        "y": {"type": "integer", "minimum": 0},
+        "w": {"type": "integer", "minimum": 1},
+        "h": {"type": "integer", "minimum": 1},
+        "z": {"type": "integer"},
+        "entity": {"type": ["string", "null"]},
+        "action": {
+          "type": ["object", "null"],
+          "properties": {
+            "service": {"type": "string"},
+            "target": {"type": ["string", "null"]},
+            "data": {"type": "object"}
+          }
+        },
+        "props": {"type": "object"},
+        "tap": {"type": ["object", "null"]},
+        "long_press": {"type": ["object", "null"]},
+        "double_tap": {"type": ["object", "null"]},
+        "visible_if": {"type": ["object", "null"]},
+        "style_rules": {"type": "array"},
+        "badge": {"type": ["object", "null"]},
+        "lock": {"type": "boolean"}
+      }
+    }
+  }
+}

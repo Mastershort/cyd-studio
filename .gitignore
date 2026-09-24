@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv*/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+frontend/node_modules/
+
+# ESPHome build output from local validation
+.esphome/
+tests/esphome/.esphome/
+tests/esphome/*.yaml
+!tests/esphome/secrets.yaml
+
+# Reference repository (cloned for study, never shipped)
+reference/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

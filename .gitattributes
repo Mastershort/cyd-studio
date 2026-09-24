@@ -1,0 +1,4 @@
+# LF everywhere: golden files and the built bundle are compared byte for byte
+* text=auto eol=lf
+*.png binary
+*.woff2 binary

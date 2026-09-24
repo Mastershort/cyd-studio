@@ -1,0 +1,17 @@
+{
+  "type": "clock",
+  "name": "Uhr",
+  "name_en": "Clock",
+  "description": "Uhrzeit, optional mit Datum",
+  "description_en": "Time, optionally with date",
+  "icon": "mdi:clock-outline",
+  "domains": [],
+  "entity": "none",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "format", "type": "select", "default": "HH:mm", "options": ["HH:mm", "HH:mm:ss", "h:mm a"], "label": "Format", "label_en": "Format"},
+    {"key": "show_date", "type": "bool", "default": true, "label": "Datum anzeigen", "label_en": "Show date"},
+    {"key": "size", "type": "select", "default": "xl", "options": ["l", "xl", "xxl"], "label": "Schriftgröße", "label_en": "Font size"}
+  ]
+}

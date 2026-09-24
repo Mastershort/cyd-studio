@@ -1,0 +1,32 @@
+name: ESPHome
+
+# Generated code must be accepted by ESPHome: `config` on every push,
+# `compile` for all golden files nightly and before a release. Red = no release.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+  release:
+    types: [prereleased]
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pytest pyyaml
+      - name: Golden files are up to date
+        run: pytest -q tests/test_generator.py
+      - run: bash tools/validate_esphome.sh config
+
+  compile:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_esphome.sh compile

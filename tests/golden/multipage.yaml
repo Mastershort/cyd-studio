@@ -1,0 +1,1261 @@
+# ======================================================================
+# Erzeugt von CYD Studio (Generator 0.1.0) – ESPHome >= 2026.9.0
+# Projekt: Wohnzimmer · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Stand: 2026-09-24
+#
+# Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
+# nächsten Export überschrieben.
+#
+# WLAN-Zugangsdaten kommen aus secrets.yaml (wifi_ssid, wifi_password).
+# In Home Assistant beim ESPHome-Gerät „Dem Gerät erlauben,
+# Home-Assistant-Aktionen auszuführen“ aktivieren – sonst reagieren
+# die Schalter nicht.
+#
+# Hardware-Grundkonfiguration nach github.com/akuehlewind/ESPHome-touch-display-mount (MIT, (c) 2023 Adrian Kuehlewind)
+# ======================================================================
+
+substitutions:
+  device_name: cyd-wohnzimmer
+  friendly_name: Wohnzimmer
+  ent_binary_sensor_fenster_wohnzimmer: binary_sensor.fenster_wohnzimmer
+  ent_cover_rollladen: cover.rollladen
+  ent_light_wohnzimmer: light.wohnzimmer
+  ent_script_alles_aus: script.alles_aus
+  ent_sensor_wohnzimmer_co2: sensor.wohnzimmer_co2
+  ent_sensor_wohnzimmer_luftfeuchte: sensor.wohnzimmer_luftfeuchte
+  ent_sensor_wohnzimmer_temperatur: sensor.wohnzimmer_temperatur
+  ent_switch_stehlampe: switch.stehlampe
+
+esphome:
+  name: "${device_name}"
+  friendly_name: "${friendly_name}"
+  min_version: 2026.9.0
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - script.execute: cyd_update_time
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: "zGm1uI0T3MdsCWDhYxJ9t3iX0N9kfjN7l6BUk4kP1Ro="
+
+ota:
+  - platform: esphome
+    id: cyd_ota
+    encryption:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Wohnzimmer Fallback"
+
+captive_portal:
+
+globals:
+  - id: cyd_page
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: cyd_dimmed
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - script.execute: cyd_update_time
+    on_time:
+      - seconds: 0
+        minutes: "/1"
+        then:
+          - script.execute: cyd_update_time
+
+spi:
+  - id: spi_display
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+  - id: spi_touch
+    clk_pin: GPIO25
+    mosi_pin: GPIO32
+    miso_pin: GPIO39
+
+display:
+  - platform: mipi_spi
+    id: cyd_display
+    spi_id: spi_display
+    model: ILI9341
+    color_order: BGR
+    data_rate: 10MHz
+    cs_pin:
+      number: 15
+      ignore_strapping_warning: true
+    dc_pin:
+      number: 2
+      ignore_strapping_warning: true
+    invert_colors: false
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: xpt2046
+    id: cyd_touch
+    spi_id: spi_touch
+    cs_pin: 33
+    interrupt_pin: 36
+    update_interval: 20ms
+    threshold: 300
+    calibration:
+      x_min: 280
+      x_max: 3860
+      y_min: 340
+      y_max: 3860
+    transform:
+      swap_xy: false
+      mirror_x: true
+      mirror_y: false
+    on_touch:
+      - if:
+          condition:
+            lambda: !lambda |-
+              return id(cyd_dimmed);
+          then:
+            - lambda: !lambda |-
+                id(cyd_dimmed) = false;
+            - light.turn_on:
+                id: backlight
+                brightness: "100%"
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Display-Beleuchtung
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+sensor:
+  - platform: wifi_signal
+    name: WLAN-Signal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Laufzeit
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: homeassistant
+    id: ha_sensor_wohnzimmer_temperatur_num
+    entity_id: "${ent_sensor_wohnzimmer_temperatur}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_home_w2_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.1f", x);
+              return std::string(buf) + " °C";
+  - platform: homeassistant
+    id: ha_sensor_wohnzimmer_luftfeuchte_num
+    entity_id: "${ent_sensor_wohnzimmer_luftfeuchte}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_klima_hum_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " %";
+  - platform: homeassistant
+    id: ha_sensor_wohnzimmer_co2_num
+    entity_id: "${ent_sensor_wohnzimmer_co2}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_klima_co2_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " ppm";
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_light_wohnzimmer
+    entity_id: "${ent_light_wohnzimmer}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_home_w3
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_home_w3_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_home_w3_icon
+                  text_color: 0x8B98A5
+        - lvgl.label.update:
+            id: w_home_w3_state
+            text: !lambda |-
+              if (x == "on") return std::string("An");
+              if (x == "off") return std::string("Aus");
+              if (x == "open") return std::string("Offen");
+              if (x == "closed") return std::string("Geschlossen");
+              if (x == "opening") return std::string("Öffnet");
+              if (x == "closing") return std::string("Schließt");
+              if (x == "locked") return std::string("Verriegelt");
+              if (x == "unlocked") return std::string("Entriegelt");
+              if (x == "unavailable") return std::string("Nicht verfügbar");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+        - lvgl.widget.update:
+            id: w_licht_details_l1
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_licht_details_l1_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_licht_details_l1_icon
+                  text_color: 0x8B98A5
+        - lvgl.label.update:
+            id: w_licht_details_l1_state
+            text: !lambda |-
+              if (x == "on") return std::string("An");
+              if (x == "off") return std::string("Aus");
+              if (x == "open") return std::string("Offen");
+              if (x == "closed") return std::string("Geschlossen");
+              if (x == "opening") return std::string("Öffnet");
+              if (x == "closing") return std::string("Schließt");
+              if (x == "locked") return std::string("Verriegelt");
+              if (x == "unlocked") return std::string("Entriegelt");
+              if (x == "unavailable") return std::string("Nicht verfügbar");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+  - platform: homeassistant
+    id: ha_binary_sensor_fenster_wohnzimmer
+    entity_id: "${ent_binary_sensor_fenster_wohnzimmer}"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_home_w4_icon
+                  text_color: 0xEF4444
+            else:
+              - lvgl.label.update:
+                  id: w_home_w4_icon
+                  text_color: 0xA3E635
+        - lvgl.label.update:
+            id: w_home_w4_state
+            text: !lambda |-
+              if (x == "on") return std::string("Offen");
+              if (x == "off") return std::string("Zu");
+              if (x == "open") return std::string("Offen");
+              if (x == "closed") return std::string("Zu");
+              if (x == "opening") return std::string("Öffnet");
+              if (x == "closing") return std::string("Schließt");
+              if (x == "locked") return std::string("Zu");
+              if (x == "unlocked") return std::string("Offen");
+              if (x == "unavailable") return std::string("Nicht verfügbar");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+  - platform: homeassistant
+    id: ha_switch_stehlampe
+    entity_id: "${ent_switch_stehlampe}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_licht_details_l2
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_licht_details_l2_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_licht_details_l2_icon
+                  text_color: 0x8B98A5
+        - lvgl.label.update:
+            id: w_licht_details_l2_state
+            text: !lambda |-
+              if (x == "on") return std::string("An");
+              if (x == "off") return std::string("Aus");
+              if (x == "open") return std::string("Offen");
+              if (x == "closed") return std::string("Geschlossen");
+              if (x == "opening") return std::string("Öffnet");
+              if (x == "closing") return std::string("Schließt");
+              if (x == "locked") return std::string("Verriegelt");
+              if (x == "unlocked") return std::string("Entriegelt");
+              if (x == "unavailable") return std::string("Nicht verfügbar");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+  - platform: homeassistant
+    id: ha_cover_rollladen
+    entity_id: "${ent_cover_rollladen}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_licht_details_l3
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_licht_details_l3_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_licht_details_l3_icon
+                  text_color: 0x8B98A5
+        - lvgl.label.update:
+            id: w_licht_details_l3_state
+            text: !lambda |-
+              if (x == "on") return std::string("An");
+              if (x == "off") return std::string("Aus");
+              if (x == "open") return std::string("Offen");
+              if (x == "closed") return std::string("Geschlossen");
+              if (x == "opening") return std::string("Öffnet");
+              if (x == "closing") return std::string("Schließt");
+              if (x == "locked") return std::string("Verriegelt");
+              if (x == "unlocked") return std::string("Entriegelt");
+              if (x == "unavailable") return std::string("Nicht verfügbar");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+
+button:
+  - platform: restart
+    name: Neustart
+    entity_category: diagnostic
+
+font:
+  - file: "gfonts://Montserrat@500"
+    id: font_12
+    size: 12
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·₂"
+  - file: "gfonts://Montserrat@500"
+    id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - "\U000F0141\U000F02DC\U000F0393\U000F058E\U000F07E4"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F0335\U000F0425\U000F050F\U000F0769\U000F08DD\U000F111C\U000F11DC\U000F1253"
+
+script:
+  - id: cyd_update_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: w_home_w1_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+      - lvgl.label.update:
+          id: w_home_w1_date
+          text: !lambda |-
+            static const char *const days[] = {"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
+            static const char *const months[] = {"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"};
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("");
+            char buf[48];
+            snprintf(buf, sizeof(buf), "%s, %d. %s", days[now.day_of_week - 1], now.day_of_month, months[now.month - 1]);
+            return std::string(buf);
+      - lvgl.label.update:
+          id: cyd_header_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+  - id: cyd_on_page
+    mode: restart
+    parameters:
+      page: int
+      root: int
+    then:
+      - lambda: !lambda |-
+          id(cyd_page) = page;
+      - if:
+          condition:
+            lambda: !lambda |-
+              return page == 2;
+          then:
+            - lvgl.widget.show: cyd_back
+          else:
+            - lvgl.widget.hide: cyd_back
+      - lvgl.label.update:
+          id: cyd_title
+          text: !lambda |-
+            static const char *const names[] = {"Start", "Klima", "Lichter"};
+            if (page < 0 || page >= 3) return std::string("");
+            return std::string(names[page]);
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 0;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_home_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_home_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_home_icon
+                text_color: 0x8B98A5
+            - lvgl.label.update:
+                id: cyd_tab_home_label
+                text_color: 0x8B98A5
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 1;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_klima_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_klima_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_klima_icon
+                text_color: 0x8B98A5
+            - lvgl.label.update:
+                id: cyd_tab_klima_label
+                text_color: 0x8B98A5
+
+lvgl:
+  displays:
+    - cyd_display
+  touchscreens:
+    - touchscreen_id: cyd_touch
+  rotation: 90
+  page_wrap: false
+  theme:
+    button:
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      shadow_width: 0
+      pad_all: 5
+      text_color: 0xE6EDF3
+      pressed:
+        bg_color: 0x1B2430
+      checked:
+        bg_color: 0x1B2430
+        border_color: 0x22D3EE
+      disabled:
+        bg_opa: "50%"
+  style_definitions:
+    - id: cyd_tile
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      pad_all: 5
+      shadow_width: 0
+    - id: cyd_plain
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_bar
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_navbar
+      bg_color: 0x12171F
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_tab
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+  on_idle:
+    - timeout: 30s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) != 0 && id(cyd_page) != 2;
+            then:
+              - lvgl.page.show: page_home
+    - timeout: 15s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) == 2;
+            then:
+              - lvgl.page.show: page_home
+    - timeout: 60s
+      then:
+        - lambda: !lambda |-
+            id(cyd_dimmed) = true;
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+  top_layer:
+    widgets:
+      - obj:
+          id: cyd_header
+          x: 0
+          y: 0
+          width: 320
+          height: 28
+          styles: cyd_bar
+          pad_left: 6
+          pad_right: 6
+          scrollable: false
+          clickable: false
+          widgets:
+            - label:
+                id: cyd_back
+                align: LEFT_MID
+                x: 0
+                y: 0
+                text_font: icons_20
+                text: "\U000F0141"
+                text_color: 0x22D3EE
+                hidden: true
+                on_short_click:
+                  - if:
+                      condition:
+                        lambda: !lambda |-
+                          return id(cyd_page) == 2;
+                      then:
+                        - lvgl.page.show:
+                            id: page_home
+                            animation: MOVE_RIGHT
+                            time: 200ms
+            - label:
+                id: cyd_title
+                align: LEFT_MID
+                x: 26
+                y: 0
+                text_font: font_14
+                text: Start
+                text_color: 0xE6EDF3
+            - label:
+                id: cyd_header_time
+                align: RIGHT_MID
+                x: 0
+                y: 0
+                text_font: font_14
+                text: "--:--"
+                text_color: 0xE6EDF3
+      - obj:
+          id: cyd_tabbar
+          x: 0
+          y: 200
+          width: 320
+          height: 40
+          styles: cyd_navbar
+          scrollable: false
+          clickable: false
+          widgets:
+            - button:
+                id: cyd_tab_home
+                x: 0
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_home
+                widgets:
+                  - label:
+                      id: cyd_tab_home_icon
+                      align: TOP_MID
+                      x: 0
+                      y: 2
+                      text_font: icons_20
+                      text: "\U000F02DC"
+                      text_color: 0x22D3EE
+                  - label:
+                      id: cyd_tab_home_label
+                      align: BOTTOM_MID
+                      x: 0
+                      y: -1
+                      text_font: font_12
+                      width: 158
+                      long_mode: DOT
+                      text_align: CENTER
+                      text: Start
+                      text_color: 0x22D3EE
+            - button:
+                id: cyd_tab_klima
+                x: 160
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_klima
+                widgets:
+                  - label:
+                      id: cyd_tab_klima_icon
+                      align: TOP_MID
+                      x: 0
+                      y: 2
+                      text_font: icons_20
+                      text: "\U000F0393"
+                      text_color: 0x8B98A5
+                  - label:
+                      id: cyd_tab_klima_label
+                      align: BOTTOM_MID
+                      x: 0
+                      y: -1
+                      text_font: font_12
+                      width: 158
+                      long_mode: DOT
+                      text_align: CENTER
+                      text: Klima
+                      text_color: 0x8B98A5
+  pages:
+    - id: page_home
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 0
+            root: 0
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_home_w1
+            x: 8
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_home_w1_time
+                  align: CENTER
+                  x: 0
+                  y: -7
+                  text_font: font_20
+                  width: 136
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: "--:--"
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_home_w1_date
+                  align: CENTER
+                  x: 0
+                  y: 12
+                  text_font: font_12
+                  width: 136
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: ""
+                  text_color: 0x8B98A5
+        - obj:
+            id: w_home_w2
+            x: 164
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            on_short_click:
+              - lvgl.page.show:
+                  id: page_klima
+                  animation: MOVE_LEFT
+                  time: 200ms
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F050F"
+                  text_color: 0x22D3EE
+              - label:
+                  id: w_home_w2_value
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_20
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "--"
+                  text_color: 0xE6EDF3
+              - label:
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Wohnzimmer
+                  text_color: 0x8B98A5
+        - button:
+            id: w_home_w3
+            x: 8
+            y: 90
+            width: 148
+            height: 47
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_wohnzimmer}"
+            widgets:
+              - label:
+                  id: w_home_w3_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F0335"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_home_w3_label
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Licht
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_home_w3_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - obj:
+            id: w_home_w4
+            x: 164
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_home_w4_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F11DC"
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Fenster
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_home_w4_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - button:
+            id: w_home_w5
+            x: 8
+            y: 145
+            width: 148
+            height: 47
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: script.turn_on
+                  data:
+                    entity_id: "${ent_script_alles_aus}"
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F0425"
+                  text_color: 0x22D3EE
+              - label:
+                  align: LEFT_MID
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "Alles aus"
+                  text_color: 0xE6EDF3
+        - button:
+            id: w_home_w6
+            x: 164
+            y: 145
+            width: 148
+            height: 47
+            scrollable: false
+            on_short_click:
+              - lvgl.page.show:
+                  id: page_licht_details
+                  animation: MOVE_LEFT
+                  time: 200ms
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F1253"
+                  text_color: 0x22D3EE
+              - label:
+                  align: LEFT_MID
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Lichter
+                  text_color: 0xE6EDF3
+    - id: page_klima
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 1
+            root: 1
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_klima_t
+            x: 8
+            y: 36
+            width: 304
+            height: 46
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: CENTER
+                  x: 0
+                  y: 0
+                  text_font: font_20
+                  width: 292
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: "Raumklima \"Süd\": Übersicht"
+                  text_color: 0xE6EDF3
+        - obj:
+            id: w_klima_hum
+            x: 8
+            y: 90
+            width: 148
+            height: 102
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_12
+                  width: 110
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Luftfeuchte
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_RIGHT
+                  x: 0
+                  y: 0
+                  text_font: icons_20
+                  text: "\U000F058E"
+                  text_color: 0x22D3EE
+              - label:
+                  id: w_klima_hum_value
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_28
+                  width: 136
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "--"
+                  text_color: 0xE6EDF3
+        - obj:
+            id: w_klima_co2
+            x: 164
+            y: 90
+            width: 148
+            height: 102
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_12
+                  width: 110
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "CO₂"
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_RIGHT
+                  x: 0
+                  y: 0
+                  text_font: icons_20
+                  text: "\U000F07E4"
+                  text_color: 0x22D3EE
+              - label:
+                  id: w_klima_co2_value
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_28
+                  width: 136
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "--"
+                  text_color: 0xE6EDF3
+    - id: page_licht_details
+      skip: true
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 2
+            root: 0
+      on_swipe_right:
+        - lvgl.page.show:
+            id: page_home
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_licht_details_title
+            x: 8
+            y: 36
+            width: 304
+            height: 46
+            styles: cyd_plain
+            scrollable: false
+            on_short_click:
+              - lvgl.page.show:
+                  id: page_home
+                  animation: MOVE_RIGHT
+                  time: 200ms
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_20
+                  text: "\U000F0141"
+                  text_color: 0x22D3EE
+              - label:
+                  align: LEFT_MID
+                  x: 26
+                  y: 0
+                  text_font: font_20
+                  width: 266
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Lichter
+                  text_color: 0xE6EDF3
+        - button:
+            id: w_licht_details_l1
+            x: 8
+            y: 90
+            width: 148
+            height: 47
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_wohnzimmer}"
+            widgets:
+              - label:
+                  id: w_licht_details_l1_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F0769"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_licht_details_l1_label
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Decke
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_licht_details_l1_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - button:
+            id: w_licht_details_l2
+            x: 164
+            y: 90
+            width: 148
+            height: 47
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_switch_stehlampe}"
+            widgets:
+              - label:
+                  id: w_licht_details_l2_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F08DD"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_licht_details_l2_label
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Stehlampe
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_licht_details_l2_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 102
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - button:
+            id: w_licht_details_l3
+            x: 8
+            y: 145
+            width: 304
+            height: 47
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_cover_rollladen}"
+            widgets:
+              - label:
+                  id: w_licht_details_l3_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F111C"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_licht_details_l3_label
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 258
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Rollladen
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_licht_details_l3_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 258
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+# cyd_studio_checksum: 02b5b9bbf3f56356
+
+# Projektdaten für den Import in CYD Studio (nicht bearbeiten)
+# cyd_studio_project: H4sIAAAAAAAC/7VXXW7jNhC+SkCgb3Ygy0m6EdCHNot22253F0mL7c8GAiWNJNYUKZBUHCfwy56j
+#   h+gB+tS9SU/SGUqyJTveZAv0yTJ/Zj7OfPNxeM8SzU3GIga2nofT8GQe2iB8ZtiknYlvuBFcORap
+#   RsoJy+BGpBArXgFuSlfZdKlLdSeqCmhPIXXCJYvuWa61wyH8AsUTCegj59LChJUgihINzs8mbCmy
+#   Apxl0W/Xa5rh2c4eZ5rBlvDZcMs941IUCnFIyB16d6uaUNW8gNgJJ4GtJ9tFxtvYrEqlThdsfb1G
+#   x4URGblNtUTDJzjAaxahs5pnmVCF/zZ6iZNzXE6LWaFlBmpaNdIJ8oiWK3CczDR1xh2hZ2EQnk2D
+#   c4wrQmFd1N4OI6b4jSi4E1rRzlJXEHtrkf/GBbbUy1ikWtk+Gn5E8gTkdsitJO1xPEk4mbVLQads
+#   Z9vRuNZWtI4wt87pioJhuNqMWikycrk0vI650Y3qs4bgtRGgXIeUSa4ym/KalhPeNh8Ux1jfgDFk
+#   qKMMYccdVSai7kg+fv23iochaAFLvtKNoyBTYjaBu3LcOO/QwJaSPhw9dboDiwrQQGz7NUPS4Fbh
+#   Vv1MyaJZh2g5I9tG17YlsKk4YXjxIqqqPhGU2NbLeodJ6AQJOmG3LAomDO0HRL7eGbOgrDbH22qJ
+#   HVQ1GO4aytcQRjiEkUEqKk6Zno1C6UowFYbQeRZ5NuxSy2EWOy4tJBrBoUYJOtLff16wLf4WGla6
+#   bGB4jPCBY0gqouNRzQ+hz4fQB2j9tqSRyQDrS5FiPW5hOF0UkgpXwn4wZyMUiVDcrOIupjn+YBji
+#   g6hODqBaCpXp5VTXWMe9zm3xfd2apUDCrYt1nuPgr83mP1l5naPzwRk6YGhXpNxpsx9OfxCe9gVv
+#   wZCgUhZSI2p3jHRQZJvSZ5Cz2xkuJdiYN5b8HSbx6YHD1no5osqXZO6oM9czIQUFcdKgOKj9HITD
+#   HOw7Phs63oCXlOU4Q2UUcujKi/S+p7DzdE2+HpOTtgYsilIvKj3PP0VVvu/2/E+q4oZhseKOXMqO
+#   RPh5yZvKoz56x64+/JW9Y9HRhz8SMHanPNq8+VCdfILKyCZ3OTRoC9qqCHv9baqHdSYYxXiJgmem
+#   KFQpjKrj5chupyufPUFVHqrnfdipDsdw24FH4VZaQtpImLbre7QXr/95/36Ls66rJ+vf7Glc3Cjc
+#   tMCLs+4JOab/HjG7lugAM71C+qLtuTlqCg6yc3b6VG76Jukhfq4f6qYeId/H7wY5OyBMKQiJPdZU
+#   dv1Zn7PnkC7gv90P2P24tDxG+S4lr2rYQRIeQJJLrc2UdgxgXG2MPAolfABKSpw5NlpKidlSO0jm
+#   H7+ZbIkCOVLty4EhTwJSv72OZA/fyUjGr9fX6FbXTe07b7SUloAaSLgsOIfZ8IB4LeIF0Cnuvqlm
+#   zbfBj/MfMnvx9nn5y+13524ufg5enS/y3199Ls+++mlxsngzu9Rf0NPB99oKrMWGiUISBKNB1bXz
+#   p3QwVTRtk+J7Tz8VV5qKbJe5ucGeFZvqMAoCX0sYWrcpIqsb429SuqkxFKUBjJDEOIfH+NRwGqeC
+#   s2geUCIN+IvW99s8p+6BentEaYok9i+P/YfLJt54Z27aYrycAfWD37QPl/5mZ5kged2YPgsm40fN
+#   mko0F22YY7QmE45dZFfMjQXsbtC061p8eqXgdedloeLUlyAag8rCzYJ1Uxt5ouSt1/8CuJccgdwN
+#   AAA=

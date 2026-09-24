@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pytest-homeassistant-custom-component ruff mypy types-PyYAML
+      - run: ruff check custom_components tests tools
+      - run: ruff format --check custom_components tests tools
+      - run: mypy custom_components/cyd_studio
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint src tests
+      - run: npx vitest run
+      - name: dist/ matches the sources
+        run: |
+          npx vite build
+          git diff --exit-code -- ../custom_components/cyd_studio/frontend/dist \
+            || (echo "::error::Run 'npm run build' in frontend/ and commit dist/"; exit 1)
+      - name: icon table matches @mdi/svg
+        run: |
+          node tools/build-icons.mjs
+          git diff --exit-code -- ../custom_components/cyd_studio/data/mdi_codepoints.json

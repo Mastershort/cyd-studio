@@ -1,0 +1,37 @@
+// Renders every page of every golden project with fixed sample data and a fixed clock.
+// Used by the Playwright snapshot tests (e2e/preview.spec.ts) and for manual checks.
+import { normalize, resolveBoard } from "../src/model";
+import { loadFonts } from "../src/preview/fonts";
+import { loadIcons } from "../src/preview/icons";
+import { renderScreen, sampleState } from "../src/preview/renderer";
+import { boards, goldens, iconsUrl, themes } from "./data";
+
+const FIXED_NOW = new Date(2026, 8, 24, 10, 30, 15);
+
+async function main() {
+  await Promise.all([loadFonts(), loadIcons(iconsUrl)]);
+  const root = document.getElementById("root")!;
+  for (const { name, project: raw } of goldens) {
+    const project = normalize(raw);
+    const board = boards.find((b) => b.id === project.board)!;
+    const theme = themes.find((t) => t.id === project.theme)!;
+    const resolved = resolveBoard(board, project.board_variant, project.orientation);
+    for (const page of project.pages) {
+      const figure = document.createElement("figure");
+      const canvas = document.createElement("canvas");
+      canvas.dataset.snapshot = `${name}--${page.id}`;
+      renderScreen(canvas, {
+        project, board: resolved, theme: { ...theme, colors: { ...theme.colors, ...(project.theme_overrides ?? {}) } },
+        pageId: page.id, state: sampleState(project), now: FIXED_NOW,
+      });
+      canvas.style.width = `${resolved.width * 2}px`;
+      const caption = document.createElement("figcaption");
+      caption.textContent = `${name} / ${page.id}`;
+      figure.append(canvas, caption);
+      root.append(figure);
+    }
+  }
+  document.body.dataset.ready = "1";
+}
+
+void main();

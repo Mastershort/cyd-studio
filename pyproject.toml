@@ -1,0 +1,34 @@
+[project]
+name = "cyd-studio"
+version = "0.1.0"
+description = "CYD Studio – visual ESPHome display designer for Home Assistant"
+requires-python = ">=3.13"
+license = "MIT"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["reference", ".venv*", "frontend/node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "S", "PL", "D"]
+ignore = [
+  "D203", "D213", "D100", "D104", "D107", "D105",
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR0917", "PLR2004", "D401",
+  "RUF001", "RUF002", "RUF003",  # German typography in UI strings is intended
+  "S101",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "S", "PLC0415"]
+"tools/**" = ["D", "T201", "PLC0415"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
+exclude = ["reference/", "tests/", "tools/", "frontend/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

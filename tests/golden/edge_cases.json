@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "golden-edge",
+  "name": "Ümlaut \"Test\": Küche & Bad",
+  "device_name": "cyd-edge-cases",
+  "board": "esp32-2432s028r",
+  "board_variant": "ili9342",
+  "orientation": "landscape_flipped",
+  "theme": "mastershort_dark",
+  "grid": {"cols": 6, "rows": 4, "gap": 4, "padding": 4},
+  "settings": {"language": "de", "screensaver": {"enabled": true, "after_s": 120, "action": "off"}, "return_home_after_s": 45},
+  "global": {"header": {"enabled": true, "height": 24, "widgets": [{"type": "label", "align": "center"}]}},
+  "navigation": {"style": "tabbar", "tabbar_position": "left", "show_labels": true, "home_page": "zwei"},
+  "pages": [
+    {"id": "eins", "name": "Eins mit sehr langem Seitennamen", "icon": "mdi:numeric-1-box", "widgets": [
+      {"id": "a", "type": "toggle_tile", "x": 0, "y": 0, "w": 3, "h": 2, "entity": "light.kueche", "props": {"label": "Küchenlicht mit einem wirklich sehr langen Namen", "icon": "mdi:lightbulb"}},
+      {"id": "b", "type": "toggle_tile", "x": 3, "y": 0, "w": 3, "h": 2, "entity": "light.kueche", "props": {"label": "Dasselbe Licht", "icon": "mdi:does-not-exist"}},
+      {"id": "c", "type": "sensor_value", "x": 0, "y": 2, "w": 2, "h": 2, "entity": "light.kueche", "props": {"label": "Als Text", "numeric": false}},
+      {"id": "d", "type": "label", "x": 2, "y": 2, "w": 4, "h": 1, "props": {"text": "Sonderzeichen: \\ \" ' # : { } [ ] % @ ` ✓", "size": "s"}},
+      {"id": "e", "type": "clock", "x": 2, "y": 3, "w": 4, "h": 1, "props": {"format": "HH:mm:ss", "show_date": true, "size": "xxl"}}
+    ]},
+    {"id": "zwei", "name": "Zwei", "icon": "mdi:numeric-2-box", "timeout_s": 20, "widgets": []},
+    {"id": "unter", "name": "Unterseite", "parent": "zwei", "widgets": [
+      {"id": "t", "type": "page_title", "x": 0, "y": 0, "w": 6, "h": 1, "props": {"show_back": true}},
+      {"id": "u", "type": "page_button", "x": 0, "y": 1, "w": 2, "h": 1, "props": {"target": "unter2", "label": "", "icon": ""}}
+    ]},
+    {"id": "unter2", "name": "Unter-Unterseite", "parent": "unter", "timeout_s": 10, "widgets": [
+      {"id": "t", "type": "page_title", "x": 0, "y": 0, "w": 6, "h": 1, "props": {"show_back": false}}
+    ]}
+  ],
+  "meta": {"updated": "2026-09-24"}
+}

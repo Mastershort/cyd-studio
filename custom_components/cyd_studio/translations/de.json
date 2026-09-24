@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Willkommen bei CYD Studio",
+        "description": "CYD Studio fügt deiner Seitenleiste einen Designer für Touch-Displays (Cheap Yellow Display) hinzu. Du gestaltest das Dashboard, CYD Studio schreibt den ESPHome-Code."
+      },
+      "esphome": {
+        "title": "ESPHome Device Builder",
+        "description": "ESPHome-Verzeichnis {path}: {status}\n\nDer ESPHome Device Builder ist kein Muss – den Code kannst du immer kopieren oder herunterladen. Mit dem Add-on kannst du ihn später direkt dort speichern."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "CYD Studio ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CYD Studio – Optionen",
+        "data": {
+          "require_admin": "Panel nur für Administratoren",
+          "sidebar_title": "Titel in der Seitenleiste",
+          "sidebar_icon": "Icon in der Seitenleiste",
+          "hardware_hints": "Hinweise auf Hardware & Gehäuse anzeigen",
+          "esphome_path": "ESPHome-Verzeichnis (relativ zur Konfiguration)",
+          "default_theme": "Standard-Theme für neue Projekte",
+          "preview_real_actions": "Echte Aktionen aus der Vorschau erlauben"
+        }
+      }
+    }
+  },
+  "services": {
+    "list_projects": {
+      "name": "Projekte auflisten",
+      "description": "Gibt alle CYD-Studio-Projekte zurück."
+    }
+  }
+}

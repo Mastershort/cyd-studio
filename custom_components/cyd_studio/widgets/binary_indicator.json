@@ -1,0 +1,19 @@
+{
+  "type": "binary_indicator",
+  "name": "Status-Anzeige",
+  "name_en": "Binary indicator",
+  "description": "Icon und Text, Farbe je Zustand (z. B. Fenster offen/zu)",
+  "description_en": "Icon and text, color by state (e.g. window open/closed)",
+  "icon": "mdi:window-closed-variant",
+  "domains": ["binary_sensor", "input_boolean", "switch", "light", "lock", "cover"],
+  "entity": "required",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "label", "type": "text", "default": "", "label": "Beschriftung", "label_en": "Label"},
+    {"key": "icon", "type": "icon", "default": "mdi:window-closed-variant", "label": "Icon", "label_en": "Icon"},
+    {"key": "text_on", "type": "text", "default": "Offen", "label": "Text wenn an", "label_en": "Text when on"},
+    {"key": "text_off", "type": "text", "default": "Geschlossen", "label": "Text wenn aus", "label_en": "Text when off"},
+    {"key": "alert_on", "type": "bool", "default": true, "label": "\"An\" als Warnung (rot)", "label_en": "Show \"on\" as alert (red)"}
+  ]
+}

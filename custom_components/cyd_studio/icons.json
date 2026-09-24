@@ -1,0 +1,5 @@
+{
+  "services": {
+    "list_projects": {"service": "mdi:format-list-bulleted"}
+  }
+}

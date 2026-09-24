@@ -1,0 +1,17 @@
+{
+  "type": "page_button",
+  "name": "Seiten-Taste",
+  "name_en": "Page button",
+  "description": "Wechselt zu einer anderen Seite",
+  "description_en": "Switches to another page",
+  "icon": "mdi:arrow-right-bold-box",
+  "domains": [],
+  "entity": "none",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "target", "type": "page", "default": null, "label": "Ziel-Seite", "label_en": "Target page"},
+    {"key": "label", "type": "text", "default": "", "label": "Beschriftung (leer = Seitenname)", "label_en": "Label (empty = page name)"},
+    {"key": "icon", "type": "icon", "default": "", "label": "Icon (leer = Seiten-Icon)", "label_en": "Icon (empty = page icon)"}
+  ]
+}

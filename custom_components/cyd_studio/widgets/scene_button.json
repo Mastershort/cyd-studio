@@ -1,0 +1,16 @@
+{
+  "type": "scene_button",
+  "name": "Aktions-Taste",
+  "name_en": "Action button",
+  "description": "Führt eine Aktion aus (Szene, Skript, Taste, …)",
+  "description_en": "Runs an action (scene, script, button, …)",
+  "icon": "mdi:gesture-tap-button",
+  "domains": ["scene", "script", "button", "input_button", "automation"],
+  "entity": "action",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "label", "type": "text", "default": "", "label": "Beschriftung", "label_en": "Label"},
+    {"key": "icon", "type": "icon", "default": "mdi:play", "label": "Icon", "label_en": "Icon"}
+  ]
+}

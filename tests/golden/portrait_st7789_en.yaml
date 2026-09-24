@@ -1,0 +1,801 @@
+# ======================================================================
+# Erzeugt von CYD Studio (Generator 0.1.0) – ESPHome >= 2026.9.0
+# Projekt: Hallway · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Stand: 2026-09-24
+#
+# Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
+# nächsten Export überschrieben.
+#
+# WLAN-Zugangsdaten kommen aus secrets.yaml (wifi_ssid, wifi_password).
+# In Home Assistant beim ESPHome-Gerät „Dem Gerät erlauben,
+# Home-Assistant-Aktionen auszuführen“ aktivieren – sonst reagieren
+# die Schalter nicht.
+#
+# Hardware-Grundkonfiguration nach github.com/akuehlewind/ESPHome-touch-display-mount (MIT, (c) 2023 Adrian Kuehlewind)
+# ======================================================================
+
+substitutions:
+  device_name: cyd-hallway
+  friendly_name: Hallway
+  ent_binary_sensor_front_door: binary_sensor.front_door
+  ent_lock_front_door: lock.front_door
+  ent_sensor_outside_condition: sensor.outside_condition
+  ent_sensor_power: sensor.power
+
+esphome:
+  name: "${device_name}"
+  friendly_name: "${friendly_name}"
+  min_version: 2026.9.0
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - script.execute: cyd_update_time
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    id: cyd_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+globals:
+  - id: cyd_page
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - script.execute: cyd_update_time
+    on_time:
+      - seconds: 0
+        minutes: "/1"
+        then:
+          - script.execute: cyd_update_time
+
+spi:
+  - id: spi_display
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+  - id: spi_touch
+    clk_pin: GPIO25
+    mosi_pin: GPIO32
+    miso_pin: GPIO39
+
+display:
+  - platform: mipi_spi
+    id: cyd_display
+    spi_id: spi_display
+    model: ST7789V
+    data_rate: 40MHz
+    cs_pin:
+      number: 15
+      ignore_strapping_warning: true
+    dc_pin:
+      number: 2
+      ignore_strapping_warning: true
+    invert_colors: false
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: xpt2046
+    id: cyd_touch
+    spi_id: spi_touch
+    cs_pin: 33
+    interrupt_pin: 36
+    update_interval: 20ms
+    threshold: 300
+    calibration:
+      x_min: 280
+      x_max: 3860
+      y_min: 340
+      y_max: 3860
+    transform:
+      swap_xy: false
+      mirror_x: true
+      mirror_y: false
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+  - platform: ledc
+    id: led_red
+    pin: GPIO4
+    inverted: true
+  - platform: ledc
+    id: led_green
+    pin: GPIO16
+    inverted: true
+  - platform: ledc
+    id: led_blue
+    pin: GPIO17
+    inverted: true
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: "Display backlight"
+    id: backlight
+    restore_mode: ALWAYS_ON
+  - platform: rgb
+    name: "Status LED"
+    id: status_led
+    red: led_red
+    green: led_green
+    blue: led_blue
+    restore_mode: ALWAYS_OFF
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi signal"
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: homeassistant
+    id: ha_sensor_power_num
+    entity_id: "${ent_sensor_power}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_main_power_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " W";
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_binary_sensor_front_door
+    entity_id: "${ent_binary_sensor_front_door}"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_main_door_icon
+                  text_color: 0xEF4444
+            else:
+              - lvgl.label.update:
+                  id: w_main_door_icon
+                  text_color: 0xA3E635
+        - lvgl.label.update:
+            id: w_main_door_state
+            text: !lambda |-
+              if (x == "on") return std::string("Open");
+              if (x == "off") return std::string("Closed");
+              if (x == "open") return std::string("Open");
+              if (x == "closed") return std::string("Closed");
+              if (x == "opening") return std::string("Opening");
+              if (x == "closing") return std::string("Closing");
+              if (x == "locked") return std::string("Closed");
+              if (x == "unlocked") return std::string("Open");
+              if (x == "unavailable") return std::string("Unavailable");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+  - platform: homeassistant
+    id: ha_lock_front_door
+    entity_id: "${ent_lock_front_door}"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_main_lock_icon
+                  text_color: 0xF472B6
+            else:
+              - lvgl.label.update:
+                  id: w_main_lock_icon
+                  text_color: 0xA3E635
+        - lvgl.label.update:
+            id: w_main_lock_state
+            text: !lambda |-
+              if (x == "on") return std::string("On");
+              if (x == "off") return std::string("Off");
+              if (x == "open") return std::string("On");
+              if (x == "closed") return std::string("Off");
+              if (x == "opening") return std::string("Opening");
+              if (x == "closing") return std::string("Closing");
+              if (x == "locked") return std::string("Off");
+              if (x == "unlocked") return std::string("On");
+              if (x == "unavailable") return std::string("Unavailable");
+              if (x.empty() || x == "unknown") return std::string("–");
+              return x;
+  - platform: homeassistant
+    id: ha_sensor_outside_condition
+    entity_id: "${ent_sensor_outside_condition}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_info_weather_value
+            text: !lambda |-
+              if (x.empty() || x == "unknown" || x == "unavailable") return std::string("--");
+              return x;
+
+button:
+  - platform: restart
+    name: Restart
+    entity_category: diagnostic
+
+font:
+  - file: "gfonts://Montserrat@500"
+    id: font_12
+    size: 12
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_16
+    size: 16
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - "\U000F02DC\U000F02FC\U000F0595"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F033E\U000F0425\U000F081A"
+
+script:
+  - id: cyd_update_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: w_main_c_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%I:%M %p");
+      - lvgl.label.update:
+          id: cyd_header_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+  - id: cyd_on_page
+    mode: restart
+    parameters:
+      page: int
+      root: int
+    then:
+      - lambda: !lambda |-
+          id(cyd_page) = page;
+      - lvgl.label.update:
+          id: cyd_title
+          text: !lambda |-
+            static const char *const names[] = {"Main", "Info", "Service"};
+            if (page < 0 || page >= 3) return std::string("");
+            return std::string(names[page]);
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 0;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_main_icon
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_main_icon
+                text_color: 0x8B98A5
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 1;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_info_icon
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_info_icon
+                text_color: 0x8B98A5
+
+lvgl:
+  displays:
+    - cyd_display
+  touchscreens:
+    - touchscreen_id: cyd_touch
+  rotation: 180
+  page_wrap: true
+  theme:
+    button:
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      shadow_width: 0
+      pad_all: 5
+      text_color: 0xE6EDF3
+      pressed:
+        bg_color: 0x1B2430
+      checked:
+        bg_color: 0x1B2430
+        border_color: 0xF472B6
+      disabled:
+        bg_opa: "50%"
+  style_definitions:
+    - id: cyd_tile
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      pad_all: 5
+      shadow_width: 0
+    - id: cyd_plain
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_bar
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_navbar
+      bg_color: 0x12171F
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_tab
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+  on_idle:
+    - timeout: 30s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) != 0;
+            then:
+              - lvgl.page.show: page_main
+  top_layer:
+    widgets:
+      - obj:
+          id: cyd_header
+          x: 0
+          y: 0
+          width: 240
+          height: 28
+          styles: cyd_bar
+          pad_left: 6
+          pad_right: 6
+          scrollable: false
+          clickable: false
+          widgets:
+            - label:
+                id: cyd_title
+                align: LEFT_MID
+                x: 0
+                y: 0
+                text_font: font_14
+                text: Main
+                text_color: 0xE6EDF3
+            - label:
+                id: cyd_header_time
+                align: RIGHT_MID
+                x: 0
+                y: 0
+                text_font: font_14
+                text: "--:--"
+                text_color: 0xE6EDF3
+      - obj:
+          id: cyd_tabbar
+          x: 0
+          y: 28
+          width: 240
+          height: 32
+          styles: cyd_navbar
+          scrollable: false
+          clickable: false
+          widgets:
+            - button:
+                id: cyd_tab_main
+                x: 0
+                y: 0
+                width: 120
+                height: 32
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_main
+                widgets:
+                  - label:
+                      id: cyd_tab_main_icon
+                      align: CENTER
+                      x: 0
+                      y: 0
+                      text_font: icons_20
+                      text: "\U000F02DC"
+                      text_color: 0x22D3EE
+            - button:
+                id: cyd_tab_info
+                x: 120
+                y: 0
+                width: 120
+                height: 32
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_info
+                widgets:
+                  - label:
+                      id: cyd_tab_info_icon
+                      align: CENTER
+                      x: 0
+                      y: 0
+                      text_font: icons_20
+                      text: "\U000F02FC"
+                      text_color: 0x8B98A5
+  pages:
+    - id: page_main
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 0
+            root: 0
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: NONE
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: NONE
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_main_c
+            x: 6
+            y: 66
+            width: 228
+            height: 57
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_main_c_time
+                  align: CENTER
+                  x: 0
+                  y: 0
+                  text_font: font_28
+                  width: 216
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: "--:--"
+                  text_color: 0xE6EDF3
+        - obj:
+            id: w_main_door
+            x: 6
+            y: 129
+            width: 228
+            height: 58
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_main_door_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F081A"
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 182
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "Front door"
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_main_door_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 182
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - obj:
+            id: w_main_lock
+            x: 6
+            y: 193
+            width: 111
+            height: 57
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_main_lock_icon
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F033E"
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 65
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Lock
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_main_lock_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  y: 0
+                  text_font: font_12
+                  width: 65
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "–"
+                  text_color: 0x8B98A5
+        - obj:
+            id: w_main_power
+            x: 123
+            y: 193
+            width: 111
+            height: 57
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_main_power_value
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_20
+                  width: 99
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "--"
+                  text_color: 0xE6EDF3
+              - label:
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_12
+                  width: 99
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Power
+                  text_color: 0x8B98A5
+        - button:
+            id: w_main_all_off
+            x: 6
+            y: 256
+            width: 228
+            height: 58
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: light.turn_off
+                  data:
+                    entity_id: all
+                    transition: "2"
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F0425"
+                  text_color: 0xF472B6
+              - label:
+                  align: LEFT_MID
+                  x: 34
+                  y: 0
+                  text_font: font_14
+                  width: 182
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "All off"
+                  text_color: 0xE6EDF3
+    - id: page_info
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 1
+            root: 1
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: NONE
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: NONE
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_info_weather
+            x: 6
+            y: 66
+            width: 228
+            height: 121
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_12
+                  width: 190
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Outside
+                  text_color: 0x8B98A5
+              - label:
+                  align: TOP_RIGHT
+                  x: 0
+                  y: 0
+                  text_font: icons_20
+                  text: "\U000F0595"
+                  text_color: 0xF472B6
+              - label:
+                  id: w_info_weather_value
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_28
+                  width: 216
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: "--"
+                  text_color: 0xE6EDF3
+        - obj:
+            id: w_info_note
+            x: 6
+            y: 193
+            width: 228
+            height: 121
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: CENTER
+                  x: 0
+                  y: 0
+                  text_font: font_28
+                  width: 216
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: "Have a nice day!"
+                  text_color: 0xE6EDF3
+    - id: page_hidden
+      skip: true
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 2
+            root: -1
+      widgets:
+        - obj:
+            id: w_hidden_t
+            x: 6
+            y: 66
+            width: 228
+            height: 57
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  x: 0
+                  y: 0
+                  text_font: font_16
+                  width: 216
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Service
+                  text_color: 0x8B98A5
+# cyd_studio_checksum: e37daf62c2d10e7a
+
+# Projektdaten für den Import in CYD Studio (nicht bearbeiten)
+# cyd_studio_project: H4sIAAAAAAAC/7VWXW/rNgz9K5n2mhSu06W9eRsGDBuw4Q7Ywx6GwqBtxhYqS4YkJ82K/PeRkuw4
+#   6c3tBmxPcSiRPDz8EN9EacDWYivQ9et8lT+sc5flT1Ys40mxBytBe7rh/OPj0yc6qHEvKyw0dEji
+#   6livWlDqAEc6a5QpQYntm9gZ49HyF2ooFZKTHSiHS9GibFqyuN4sxUHWDXontn8+n/gE6isdb4eZ
+#   Sv40V3kToGSjCYTCnSfv/tgzpB4aLLz0CsVpeb5kg43pVqVM9SJOzydy3FhZs9vKKDKckwB6sSV8
+#   PdS11E34tuZAhw90nS+Lxqga9ao31luQbLhDD2xl6GvwDF7kWb5ZZZ+IV0IiEmM/TWxp2MsGvDSa
+#   1VrTYcHY6U4HUtMF15pDISuj3chEkCgokYEmQp0/KlbyUJbAqXMHySFGjSgteuNk9CS86ZkGC3oS
+#   aaORZAcLfQHWDDpRT6iNlah9Qilm4TLUmAamrzB7tPRLfvWgFJFUBYWulluOTCTaUmRSF/PoI1QF
+#   RzNwrYV8TIT9GlV6sMiVGM0HIsaCSZHKDkm/cOOdeamQqvTH8aQV2/sEqGLT1vQuVq3tgBG0265b
+#   wJgCzueZbvkXo3pVnNOLYiKPoXpexTZbCnKWcf2NnkUpNdhj4VA7Y+921mhf1MZwxmZ4kmSCNOMx
+#   HYX0k+hHtrBIQo+vvjC7Hcl/UMZhPclY+3OPegY3IZG6lhX4oH+F/P4COUd3E3AKfQIMCm10mwib
+#   RZDujhH8Ev/OsF+g/hDx/QxxfoE4kdybA17BHUUT3hor2QH3UzZhnWH8Ld0ftOTC+GMGKjqhGakG
+#   nAO6PwOCamxvqiGIo40hFgELTYKrTiQlMmt5wjK1PLLu/GB1oIeb2VJFxyqmmzeLmgwnjS/V0UjB
+#   GOL3Si349iyyCjUW5eC90e+LY01Tc/lx20sd20kGGwEXi/5l9/8cVf6b7h/rgi46Al0Q2FomgG0I
+#   MsA8IPgWb7VhOl0RJK+OK+r9oT7O6PwcjXMIQ4dWVqkTvlY4N6fGlNoRm6Z39bLd4vNGGfMBcgnV
+#   SzOb4fOJFbsrPEJ7XMBCU50tajh+M8t9DOMdqvyfJf1AaaraMd+trOmRfJ/xNBlupPz31AD/28z3
+#   XyIwLRHd4M+LR2JrBPQhSRmR9Ey2TT/0Yash0FWLHQTfDr2nbSJ67WXxghO4MmwnGp2jx4bnb5Zd
+#   CHVagL5j0nQzxDUhUBuOis5wOq5jppnd8R6Sb7MsZIES588vmRlsmDNpuLQWiWJF0ed3tPB4Q0fZ
+#   ZrvOOHCLYQ6FLQV2VGrM+ZpQ2qYswq72bm0L+XK0Owzu3AKuskjlT/UXNr1xQIpadoRhsrzJlleb
+#   44mTu5ORvIJEiit9CmZwSE8rGfdpWeLFjvq0i/uUI7uEh16mGmx4dPhoquSYk6oK1Sa+3T085uVG
+#   nE5/A6aFrVAiCwAA

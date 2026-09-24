@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>CYD Studio – Dev</title>
+    <style>
+      html, body { margin: 0; height: 100%; }
+      body {
+        --primary-background-color: #111318; --card-background-color: #1c1f26; --primary-text-color: #e6edf3;
+        --secondary-text-color: #8b98a5; --divider-color: #2d333b; --primary-color: #22d3ee; --text-primary-color: #001014;
+        --error-color: #ef4444; --warning-color: #f59e0b; --success-color: #22c55e;
+        font-family: system-ui, sans-serif; background: var(--primary-background-color);
+      }
+    </style>
+  </head>
+  <body>
+    <cyd-studio-panel></cyd-studio-panel>
+    <script type="module">
+      import "../src/panel.ts";
+      import { mockHass } from "./mock-hass.ts";
+      const panel = document.querySelector("cyd-studio-panel");
+      panel.hass = mockHass;
+      panel.narrow = false;
+    </script>
+  </body>
+</html>

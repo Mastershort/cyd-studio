@@ -1,0 +1,66 @@
+# Board profile: ESP32-2432S028R ("Cheap Yellow Display", resistive touch)
+# Sources: see docs/BOARDS.md
+id: esp32-2432s028r
+name: "ESP32-2432S028R (Cheap Yellow Display 2,8″)"
+name_en: "ESP32-2432S028R (Cheap Yellow Display 2.8″)"
+chip: esp32
+board: esp32dev
+framework: arduino
+psram: false
+# Rough LVGL memory budget (bytes) used by the memory estimate
+memory_budget: 110000
+native: {width: 240, height: 320}
+display:
+  platform: mipi_spi
+  model: ILI9341
+  color_order: BGR
+  data_rate: 10MHz
+  spi: {clk: GPIO14, mosi: GPIO13}
+  cs: 15
+  dc: 2
+  strapping_pins: [15, 2]
+  invert_colors: false
+  variants:
+    - id: st7789
+      label: "Variante mit ST7789 (Farben verfälscht? Dann diese wählen)"
+      label_en: "ST7789 variant (wrong colors? pick this one)"
+      display: {model: ST7789V, color_order: null, data_rate: 40MHz}
+    # ILI9342 revision: values from contributor hardware tests in the reference repo
+    - id: ili9342
+      label: "Variante mit ILI9342 (Bild gedreht/gespiegelt? Dann diese wählen)"
+      label_en: "ILI9342 variant (image rotated/mirrored? pick this one)"
+      native: {width: 320, height: 240}
+      display: {model: ILI9342, color_order: RGB, data_rate: 40MHz}
+      touch:
+        calibration: {x_min: 340, x_max: 3860, y_min: 280, y_max: 3860}
+      orientations:
+        landscape: {rotation: 180, touch_transform: {swap_xy: true, mirror_x: true, mirror_y: true}}
+        portrait: {rotation: 270, touch_transform: {swap_xy: true, mirror_x: false, mirror_y: false}}
+        landscape_flipped: {rotation: 0, touch_transform: {swap_xy: true, mirror_x: true, mirror_y: true}}
+        portrait_flipped: {rotation: 90, touch_transform: {swap_xy: true, mirror_x: false, mirror_y: false}}
+# LVGL owns rotation of display + touch (ESPHome >= 2026.4).
+# Keys are project orientations, values the LVGL rotation in degrees.
+orientations:
+  landscape: {rotation: 90, usb: right}
+  portrait: {rotation: 180, usb: bottom}
+  landscape_flipped: {rotation: 270, usb: left}
+  portrait_flipped: {rotation: 0, usb: top}
+touch:
+  platform: xpt2046
+  spi: {clk: GPIO25, mosi: GPIO32, miso: GPIO39}
+  cs: 33
+  irq: 36
+  update_interval: 20ms
+  threshold: 300
+  calibration: {x_min: 280, x_max: 3860, y_min: 340, y_max: 3860}
+  transform: {swap_xy: false, mirror_x: true, mirror_y: false}
+backlight: {pin: GPIO21, pwm: true}
+extras:
+  ldr: {pin: GPIO34}
+  rgb_led: {r: GPIO4, g: GPIO16, b: GPIO17, inverted: true}
+  sd: {cs: 5}
+  speaker: {pin: GPIO26}
+usb: ["micro-usb", "usb-c (neue Revision)"]
+buy_links: []
+notes_de: "Das verbreitetste CYD. Es gibt Revisionen mit ILI9341 und mit ST7789 – sehen die Farben falsch aus, die ST7789-Variante wählen."
+notes_en: "The most common CYD. Revisions ship with ILI9341 or ST7789 – if colors look wrong, pick the ST7789 variant."

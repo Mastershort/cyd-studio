@@ -1,0 +1,26 @@
+{
+  "id": "mastershort_dark",
+  "name": "mastershort dark",
+  "name_en": "mastershort dark",
+  "colors": {
+    "background": "#0a0e14",
+    "tile": "#12171f",
+    "tile_on": "#1b2430",
+    "border": "#1f2933",
+    "text": "#e6edf3",
+    "text_muted": "#8b98a5",
+    "accent": "#22d3ee",
+    "on": "#a3e635",
+    "off": "#8b98a5",
+    "warning": "#f59e0b",
+    "error": "#ef4444",
+    "header_bg": "#0a0e14",
+    "nav_bg": "#12171f",
+    "nav_active": "#22d3ee",
+    "nav_inactive": "#8b98a5"
+  },
+  "radius": 10,
+  "border_width": 1,
+  "font_sizes": {"xs": 12, "s": 14, "m": 16, "l": 20, "xl": 28, "xxl": 40},
+  "icon_sizes": {"s": 20, "m": 28, "l": 40}
+}

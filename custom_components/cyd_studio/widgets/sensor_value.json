@@ -1,0 +1,20 @@
+{
+  "type": "sensor_value",
+  "name": "Messwert",
+  "name_en": "Sensor value",
+  "description": "Großer Wert mit Einheit und Beschriftung",
+  "description_en": "Large value with unit and label",
+  "icon": "mdi:thermometer",
+  "domains": ["sensor", "input_number", "number"],
+  "entity": "required",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "label", "type": "text", "default": "", "label": "Beschriftung", "label_en": "Label"},
+    {"key": "icon", "type": "icon", "default": "mdi:thermometer", "label": "Icon", "label_en": "Icon"},
+    {"key": "unit", "type": "text", "default": "", "label": "Einheit", "label_en": "Unit"},
+    {"key": "decimals", "type": "int", "default": 1, "min": 0, "max": 3, "label": "Nachkommastellen", "label_en": "Decimals"},
+    {"key": "numeric", "type": "bool", "default": true, "label": "Zahlenwert", "label_en": "Numeric value"},
+    {"key": "tap_page", "type": "page", "default": null, "label": "Beim Tippen Seite öffnen", "label_en": "Open page on tap"}
+  ]
+}

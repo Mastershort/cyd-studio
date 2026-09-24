@@ -1,0 +1,17 @@
+CYD Studio
+==========
+
+Hardware configuration (pins, SPI buses, display and touch settings, calibration,
+orientation presets) and interaction patterns for the ESP32-2432S028R are based on
+
+  ESPHome-touch-display-mount
+  https://github.com/akuehlewind/ESPHome-touch-display-mount
+  Copyright (c) 2023 Adrian Kuehlewind
+  MIT License
+
+The generated ESPHome configuration credits this project in its header comment.
+
+Bundled / referenced fonts:
+  - Montserrat, SIL Open Font License 1.1 (via @fontsource/montserrat and Google Fonts)
+  - Material Design Icons 7.4.47, Apache License 2.0 (via @mdi/font, @mdi/svg and
+    github.com/Templarian/MaterialDesign-Webfont)

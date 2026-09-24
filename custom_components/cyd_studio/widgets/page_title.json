@@ -1,0 +1,16 @@
+{
+  "type": "page_title",
+  "name": "Seitentitel",
+  "name_en": "Page title",
+  "description": "Titel der aktuellen Seite, mit Zurück-Pfeil auf Unterseiten",
+  "description_en": "Current page title, with back arrow on sub pages",
+  "icon": "mdi:format-title",
+  "domains": [],
+  "entity": "none",
+  "default_size": {"w": 2, "h": 1},
+  "min_size": {"w": 1, "h": 1},
+  "props": [
+    {"key": "size", "type": "select", "default": "m", "options": ["s", "m", "l"], "label": "Schriftgröße", "label_en": "Font size"},
+    {"key": "show_back", "type": "bool", "default": true, "label": "Zurück-Pfeil auf Unterseiten", "label_en": "Back arrow on sub pages"}
+  ]
+}

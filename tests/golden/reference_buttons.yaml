@@ -1,0 +1,545 @@
+# ======================================================================
+# Erzeugt von CYD Studio (Generator 0.1.0) – ESPHome >= 2026.9.0
+# Projekt: SmartDisplay · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Stand: 2026-09-24
+#
+# Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
+# nächsten Export überschrieben.
+#
+# WLAN-Zugangsdaten kommen aus secrets.yaml (wifi_ssid, wifi_password).
+# In Home Assistant beim ESPHome-Gerät „Dem Gerät erlauben,
+# Home-Assistant-Aktionen auszuführen“ aktivieren – sonst reagieren
+# die Schalter nicht.
+#
+# Hardware-Grundkonfiguration nach github.com/akuehlewind/ESPHome-touch-display-mount (MIT, (c) 2023 Adrian Kuehlewind)
+# ======================================================================
+
+substitutions:
+  device_name: smartdisplay
+  friendly_name: SmartDisplay
+  ent_light_ambient_light: light.ambient_light
+  ent_light_ceiling_light: light.ceiling_light
+  ent_light_desk_lamp: light.desk_lamp
+  ent_light_globe_lamp: light.globe_lamp
+
+esphome:
+  name: "${device_name}"
+  friendly_name: "${friendly_name}"
+  min_version: 2026.9.0
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - script.execute: cyd_update_time
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: "zGm1uI0T3MdsCWDhYxJ9t3iX0N9kfjN7l6BUk4kP1Ro="
+
+ota:
+  - platform: esphome
+    id: cyd_ota
+    encryption:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "SmartDisplay Fallback"
+
+captive_portal:
+
+globals:
+  - id: cyd_page
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - script.execute: cyd_update_time
+    on_time:
+      - seconds: 0
+        minutes: "/1"
+        then:
+          - script.execute: cyd_update_time
+
+spi:
+  - id: spi_display
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+  - id: spi_touch
+    clk_pin: GPIO25
+    mosi_pin: GPIO32
+    miso_pin: GPIO39
+
+display:
+  - platform: mipi_spi
+    id: cyd_display
+    spi_id: spi_display
+    model: ILI9341
+    color_order: BGR
+    data_rate: 10MHz
+    cs_pin:
+      number: 15
+      ignore_strapping_warning: true
+    dc_pin:
+      number: 2
+      ignore_strapping_warning: true
+    invert_colors: false
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: xpt2046
+    id: cyd_touch
+    spi_id: spi_touch
+    cs_pin: 33
+    interrupt_pin: 36
+    update_interval: 20ms
+    threshold: 300
+    calibration:
+      x_min: 280
+      x_max: 3860
+      y_min: 340
+      y_max: 3860
+    transform:
+      swap_xy: false
+      mirror_x: true
+      mirror_y: false
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Display-Beleuchtung
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+sensor:
+  - platform: wifi_signal
+    name: WLAN-Signal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Laufzeit
+    update_interval: 60s
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_light_desk_lamp
+    entity_id: "${ent_light_desk_lamp}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_lockscreen_btn1
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn1_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn1_icon
+                  text_color: 0x8B98A5
+  - platform: homeassistant
+    id: ha_light_ceiling_light
+    entity_id: "${ent_light_ceiling_light}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_lockscreen_btn2
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn2_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn2_icon
+                  text_color: 0x8B98A5
+  - platform: homeassistant
+    id: ha_light_globe_lamp
+    entity_id: "${ent_light_globe_lamp}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_lockscreen_btn3
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn3_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn3_icon
+                  text_color: 0x8B98A5
+  - platform: homeassistant
+    id: ha_light_ambient_light
+    entity_id: "${ent_light_ambient_light}"
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: w_lockscreen_btn4
+            state:
+              checked: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+              disabled: !lambda |-
+                return x == "unavailable";
+        - if:
+            condition:
+              lambda: !lambda |-
+                return x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+            then:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn4_icon
+                  text_color: 0xA3E635
+            else:
+              - lvgl.label.update:
+                  id: w_lockscreen_btn4_icon
+                  text_color: 0x8B98A5
+
+button:
+  - platform: restart
+    name: Neustart
+    entity_category: diagnostic
+
+font:
+  - file: "gfonts://Montserrat@500"
+    id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_40
+    size: 40
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F066F\U000F0769\U000F095F\U000F1051"
+
+script:
+  - id: cyd_update_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: w_lockscreen_clock_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+      - lvgl.label.update:
+          id: w_lockscreen_clock_date
+          text: !lambda |-
+            static const char *const days[] = {"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
+            static const char *const months[] = {"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"};
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("");
+            char buf[48];
+            snprintf(buf, sizeof(buf), "%s, %d. %s", days[now.day_of_week - 1], now.day_of_month, months[now.month - 1]);
+            return std::string(buf);
+  - id: cyd_on_page
+    mode: restart
+    parameters:
+      page: int
+      root: int
+    then:
+      - lambda: !lambda |-
+          id(cyd_page) = page;
+
+lvgl:
+  displays:
+    - cyd_display
+  touchscreens:
+    - touchscreen_id: cyd_touch
+  rotation: 90
+  page_wrap: false
+  theme:
+    button:
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      shadow_width: 0
+      pad_all: 5
+      text_color: 0xE6EDF3
+      pressed:
+        bg_color: 0x1B2430
+      checked:
+        bg_color: 0x1B2430
+        border_color: 0x22D3EE
+      disabled:
+        bg_opa: "50%"
+  style_definitions:
+    - id: cyd_tile
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      pad_all: 5
+      shadow_width: 0
+    - id: cyd_plain
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_bar
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_navbar
+      bg_color: 0x12171F
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_tab
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+  pages:
+    - id: page_lockscreen
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 0
+            root: 0
+      widgets:
+        - obj:
+            id: w_lockscreen_clock
+            x: 8
+            y: 8
+            width: 304
+            height: 146
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_lockscreen_clock_time
+                  align: CENTER
+                  x: 0
+                  y: -9
+                  text_font: font_40
+                  width: 292
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: "--:--"
+                  text_color: 0xE6EDF3
+              - label:
+                  id: w_lockscreen_clock_date
+                  align: CENTER
+                  x: 0
+                  y: 24
+                  text_font: font_14
+                  width: 292
+                  long_mode: DOT
+                  text_align: CENTER
+                  text: ""
+                  text_color: 0x8B98A5
+        - button:
+            id: w_lockscreen_btn1
+            x: 8
+            y: 162
+            width: 70
+            height: 70
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_desk_lamp}"
+            widgets:
+              - label:
+                  id: w_lockscreen_btn1_icon
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F095F"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_lockscreen_btn1_label
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_14
+                  width: 58
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Desk
+                  text_color: 0xE6EDF3
+        - button:
+            id: w_lockscreen_btn2
+            x: 86
+            y: 162
+            width: 70
+            height: 70
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_ceiling_light}"
+            widgets:
+              - label:
+                  id: w_lockscreen_btn2_icon
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F0769"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_lockscreen_btn2_label
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_14
+                  width: 58
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Ceiling
+                  text_color: 0xE6EDF3
+        - button:
+            id: w_lockscreen_btn3
+            x: 164
+            y: 162
+            width: 70
+            height: 70
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_globe_lamp}"
+            widgets:
+              - label:
+                  id: w_lockscreen_btn3_icon
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F066F"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_lockscreen_btn3_label
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_14
+                  width: 58
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Globe
+                  text_color: 0xE6EDF3
+        - button:
+            id: w_lockscreen_btn4
+            x: 242
+            y: 162
+            width: 70
+            height: 70
+            scrollable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_ambient_light}"
+            widgets:
+              - label:
+                  id: w_lockscreen_btn4_icon
+                  align: TOP_LEFT
+                  x: 0
+                  y: 0
+                  text_font: icons_28
+                  text: "\U000F1051"
+                  text_color: 0x8B98A5
+              - label:
+                  id: w_lockscreen_btn4_label
+                  align: BOTTOM_LEFT
+                  x: 0
+                  y: 0
+                  text_font: font_14
+                  width: 58
+                  long_mode: DOT
+                  text_align: LEFT
+                  text: Ambient
+                  text_color: 0xE6EDF3
+# cyd_studio_checksum: 6968799f2854159d
+
+# Projektdaten für den Import in CYD Studio (nicht bearbeiten)
+# cyd_studio_project: H4sIAAAAAAAC/52V3Y7bNhCF34XXdiBLWzcroBdtFkhaoEHRH7RFsRBG0khmTZEESdm7WfjdM0NR
+#   st3Evdg7geLMfDwzPHwRtQHXilKgt0W+zu+K3Gf5WydW05/qAE6CDqLUo1Ir0eJBNlhpGJCC/AAu
+#   tNJbBc8U0StTgxLli+iMCej4CzXUCqlCB8rjSuxQ9jtKV2xX4ijbHoMX5T+PJ/4D7f/H5G8vY14E
+#   KNlrwlDYBSofni1DWeixCjIoFKfVeZOLOZZdjTLNXpweT1S5d7Lluo1RlPiOFsCKkopZaFup+/jt
+#   zJF+FrSdN4veqBb12mGHDnWD63oMwWhPFQYMwOlG20LgY4g8y7fr7J7kJSSRxPuNxXtYxNNwkD0E
+#   aTTH7syAFZ+Ej0ekvnGImrb5nTlWsuFKZXAjphUFNarzUnhWHKmNRo45Sj5zUjNAXYOrrPFyqkad
+#   JvSBtXGgl1WvZMvRRwe2AmdGPXeEzmCcRB0SrlCgW9+A5e0MPbWHZa3MAZ3jRGmAGJ0ihlaWsQNJ
+#   zqszSl1dqjGdiVQyY2DluVtnFS3lr6Wi+jvphghADVkGNqozj9aUKcgBKVXl5z2XM0WhMjzPf3Y0
+#   dImwSbjWGeunGXcDMNCHD+UwzK3hli9tkJ8Y8elJcduvBo+Kxkl7EmW2ElQv41mdiwvFw/qmRb+n
+#   zg5WRJJNIqmD3lyCXEjKEesUEUeC1h9obabzIeLNXUxIwfS94jujcALbXIDlXwFrUCq6F5VKd+oa
+#   Lr8Bl6LWc9QM+G5afxXj5iYjmxF+Xb3iBmAM+QLvPa++Ci6/CQdDzffnhoB3N/jIE9c+OGnXsyuf
+#   Kb+fMr6Ks0icj6dHKmzsaKMnU6pmhwPEbR5DoCZFJLCy2iOf5tP7YTP+mP1e/Nz6d38+7P5++uk+
+#   FPKv7OP9vvv347dq+8Mf+7v9L5tfzXf8pEQT1ug93ROK32TZ1aJOPv8Nn0v34+R/0YXir2ow7CT/
+#   vaWdI/cil83LLIv2QZ4TFr/zZnQN5zFdxx63c0gSKdI6f0OPUDD0K9uWRcaX1GEYna6i/UJHbxi7
+#   BEG6vq7ik/Tl67ToPfqz4JOXeThMLxo0ySlbyU6xZN5S6ut8J7ajTk4yV7SkaiC/SI4yeqw8Uu6Q
+#   vJ6fr0BN4vMN4Ckt4bhA8rq9SL8WD+bmnU6fAe8dJOr0BwAA

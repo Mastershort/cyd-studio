@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "golden-portrait",
+  "name": "Hallway",
+  "device_name": "cyd-hallway",
+  "board": "esp32-2432s028r",
+  "board_variant": "st7789",
+  "orientation": "portrait",
+  "theme": "mastershort_dark",
+  "theme_overrides": {"accent": "#f472b6"},
+  "grid": {"cols": 2, "rows": 4, "gap": 6, "padding": 6},
+  "settings": {"language": "en", "rgb_led": {"enabled": true}, "wifi": {"ap_fallback": false}},
+  "navigation": {"style": "tabbar", "tabbar_position": "top", "show_labels": false, "wrap_around": true, "transition": "none"},
+  "pages": [
+    {"id": "main", "name": "Main", "icon": "mdi:home", "widgets": [
+      {"id": "c", "type": "clock", "x": 0, "y": 0, "w": 2, "h": 1, "props": {"format": "h:mm a", "show_date": false, "size": "xl"}},
+      {"id": "door", "type": "binary_indicator", "x": 0, "y": 1, "w": 2, "h": 1, "entity": "binary_sensor.front_door", "props": {"label": "Front door", "icon": "mdi:door", "text_on": "Open", "text_off": "Closed"}},
+      {"id": "lock", "type": "binary_indicator", "x": 0, "y": 2, "w": 1, "h": 1, "entity": "lock.front_door", "props": {"label": "Lock", "icon": "mdi:lock", "alert_on": false, "text_on": "", "text_off": ""}},
+      {"id": "power", "type": "sensor_value", "x": 1, "y": 2, "w": 1, "h": 1, "entity": "sensor.power", "props": {"label": "Power", "icon": "", "unit": "W", "decimals": 0}},
+      {"id": "all_off", "type": "scene_button", "x": 0, "y": 3, "w": 2, "h": 1, "action": {"service": "light.turn_off", "target": null, "data": {"entity_id": "all", "transition": 2}}, "props": {"label": "All off", "icon": "mdi:power"}}
+    ]},
+    {"id": "info", "name": "Info", "icon": "mdi:information", "widgets": [
+      {"id": "weather", "type": "sensor_value", "x": 0, "y": 0, "w": 2, "h": 2, "entity": "sensor.outside_condition", "props": {"label": "Outside", "icon": "mdi:weather-partly-cloudy", "numeric": false}},
+      {"id": "note", "type": "label", "x": 0, "y": 2, "w": 2, "h": 2, "props": {"text": "Have a nice day!", "size": "xl", "align": "center", "background": true}}
+    ]},
+    {"id": "hidden", "name": "Service", "icon": "mdi:wrench", "in_navigation": false, "widgets": [
+      {"id": "t", "type": "label", "x": 0, "y": 0, "w": 2, "h": 1, "props": {"text": "Service", "muted": true, "align": "left"}}
+    ]}
+  ],
+  "meta": {"updated": "2026-09-24"}
+}
