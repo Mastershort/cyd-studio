@@ -68,6 +68,7 @@ def default_project() -> dict[str, Any]:
             "wifi": {"use_secrets": True, "ap_fallback": True},
             "language": "de",
             "api_key": None,
+            "device_actions": True,
         },
         "global": {
             "header": {

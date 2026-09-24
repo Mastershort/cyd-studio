@@ -45,6 +45,24 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 Zeitstempel wandelt die Hilfsfunktion `cyd_parse_time` (ISO 8601 inkl. Zeitzone, ohne Zone = Ortszeit)
 in UTC-Sekunden um; `cyd_parse_duration` liest `H:MM:SS`.
 
+| `notification_area` | – | letzte Meldung aus HA (Titel + Text) |
+
+## Vom Home Assistant ans Display (ab 0.7)
+
+Wenn „Aus Home Assistant steuerbar“ aktiv ist (Standard), bekommt das Gerät `api: actions:`. In HA
+heißen sie `esphome.<gerätename mit _>_<aktion>`:
+
+| Aktion | Variablen | Wirkung |
+|---|---|---|
+| `show_page` | `page` (Seiten-ID oder Name) | Display wecken, Seite öffnen |
+| `show_message` | `title`, `message`, `duration` (s, 0 = bis zum Antippen) | Meldung einblenden (Overlay), Meldungs-Widgets aktualisieren, Display wecken |
+| `wake` / `dim` | – | Helligkeit Tag / gedimmt |
+| `set_brightness` | `brightness` (1–100) | Hintergrundbeleuchtung |
+| `set_led` | `red`, `green`, `blue` (0–255, alle 0 = aus) | RGB-LED (nur wenn aktiviert) |
+
+`string`-Variablen sind in ESPHome 2026.9 `StringRef` (Vergleich mit `==` und `.str()`), `int`-Variablen
+`int32_t` – deshalb die Casts in den Lambdas.
+
 Kleine Tasten in Kacheln nutzen den Style `cyd_small_btn` (Farbe = Kreis-Hintergrund des Stils,
 Icon = „Icon an“).
 

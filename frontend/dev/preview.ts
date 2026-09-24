@@ -61,6 +61,22 @@ async function main() {
     canvas.style.width = `${resolved.width * 2}px`;
     root.append(canvas);
   }
+  // Message from Home Assistant (show_message) on top of the "more" project
+  const more = goldens.find((g) => g.name === "more");
+  if (more) {
+    const project = normalize(more.project);
+    const board = boards.find((b) => b.id === project.board)!;
+    const theme = themes.find((t) => t.id === project.theme)!;
+    const resolved = resolveBoard(board, project.board_variant, project.orientation);
+    const canvas = document.createElement("canvas");
+    canvas.dataset.snapshot = "more--message";
+    renderScreen(canvas, {
+      project, board: resolved, theme, pageId: "zwei", state: sampleState(project), now: FIXED_NOW, images,
+      message: { title: "Paket", text: "Das Paket wurde geliefert und liegt vor der Haustür. Bitte bald hereinholen." },
+    });
+    canvas.style.width = `${resolved.width * 2}px`;
+    root.append(canvas);
+  }
   document.body.dataset.ready = "1";
 }
 

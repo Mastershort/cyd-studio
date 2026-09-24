@@ -47,6 +47,7 @@ export class CydEditor extends LitElement {
     _simAttr: { state: true },
     _overlay: { state: true },
     _images: { state: true },
+    _message: { state: true },
     _saveState: { state: true },
     _issues: { state: true },
     _showExport: { state: true },
@@ -73,6 +74,7 @@ export class CydEditor extends LitElement {
   declare _simAttr: Record<string, Record<string, unknown>>;
   declare _overlay: { entity: string; title: string; kind: number; value: number } | null;
   declare _images: Record<string, HTMLImageElement>;
+  declare _message: { title: string; text: string } | null;
   declare _saveState: "saved" | "saving" | "dirty" | "error";
   declare _issues: Issue[];
   declare _showExport: boolean;
@@ -100,6 +102,7 @@ export class CydEditor extends LitElement {
     this._simAttr = {};
     this._overlay = null;
     this._images = {};
+    this._message = null;
     this._saveState = "saved";
     this._issues = [];
     this._showExport = false;
@@ -344,6 +347,10 @@ export class CydEditor extends LitElement {
   private onPreviewTap(ev: CustomEvent<{ hit: HitRegion; long: boolean; point: { x: number; y: number } }>) {
     const { hit, long, point } = ev.detail;
     const project = this._project!;
+    if (this._message) {
+      if (hit.kind === "overlay-close") this._message = null;
+      return;
+    }
     if (this._overlay) {
       if (hit.kind === "overlay-close") this._overlay = null;
       else if (hit.kind === "overlay-slider") this.setOverlayValue(((point.x - hit.rect.x) * 100) / hit.rect.w);
@@ -507,6 +514,8 @@ export class CydEditor extends LitElement {
           ${this._mode === "edit" ? "▶ " + t("preview_mode") : "✎ " + t("edit_mode")}</button>
         <button class=${this._sample ? "on" : ""} @click=${() => (this._sample = !this._sample)}>${this._sample ? t("sample_data") : t("live_data")}</button>
         <button class=${this._night ? "on" : ""} @click=${() => (this._night = !this._night)}>☾ ${t("night_view")}</button>
+        ${this._mode === "preview" && p.settings?.device_actions !== false ? html`<button title=${t("test_message_hint")}
+          @click=${() => (this._message = this._message ? null : { title: t("test_message_title"), text: t("test_message_text") })}>✉ ${t("test_message")}</button>` : nothing}
         ${this.info?.preview_real_actions && this._mode === "preview" ? html`<label class="check" style="margin:0">
           <input type="checkbox" .checked=${this._realActions} @change=${(e: Event) => (this._realActions = (e.target as HTMLInputElement).checked)} />⚡</label>` : nothing}
         <span class="zoom">
@@ -525,6 +534,7 @@ export class CydEditor extends LitElement {
             .night=${this._night} .now=${this._now}
             .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value } : null}
             .images=${this._images}
+            .message=${this._message}
             @select=${(e: CustomEvent<{ ids: string[] }>) => (this._selected = e.detail.ids)}
             @widget-change=${(e: CustomEvent<{ id: string; changes: Partial<Widget> }>) => this.editWidget(e.detail.id, (w) => Object.assign(w, e.detail.changes))}
             @widget-add=${(e: CustomEvent<{ type: string; x: number; y: number }>) => this.addWidget(e.detail.type, e.detail)}
@@ -893,6 +903,7 @@ export class CydEditor extends LitElement {
         ${this.num(t("brightness_day"), s.brightness_day ?? 100, (v) => set((pp) => { pp.settings = { ...pp.settings, brightness_day: Math.max(1, Math.min(100, v ?? 100)) }; }), 1, 100)}
         ${this.num(t("brightness_night"), s.brightness_night ?? 25, (v) => set((pp) => { pp.settings = { ...pp.settings, brightness_night: Math.max(0, Math.min(100, v ?? 25)) }; }), 0, 100)}
       </div>
+      ${this.check(t("device_actions"), s.device_actions ?? true, (v) => set((pp) => { pp.settings = { ...pp.settings, device_actions: v }; }))}
       ${this.check(t("rgb_led"), s.rgb_led?.enabled ?? false, (v) => set((pp) => { pp.settings = { ...pp.settings, rgb_led: { ...pp.settings?.rgb_led, enabled: v } }; }))}`;
   }
 }

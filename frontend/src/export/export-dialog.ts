@@ -163,6 +163,29 @@ export class CydExportDialog extends LitElement {
     return nothing;
   }
 
+  /** Example automation actions for the device actions (esphome.<device>_<action>). */
+  private actionsExample(): string {
+    const dev = this.project.device_name.replace(/-/g, "_");
+    const page = this.project.pages[0]?.id ?? "home";
+    return [
+      `action: esphome.${dev}_show_message`,
+      "data:",
+      '  title: "Paket"',
+      '  message: "Das Paket wurde geliefert."',
+      "  duration: 15",
+      "",
+      `action: esphome.${dev}_show_page`,
+      "data:",
+      `  page: "${page}"`,
+      "",
+      `action: esphome.${dev}_set_brightness`,
+      "data:",
+      "  brightness: 60",
+      "",
+      `# ${dev}_wake · ${dev}_dim${this.project.settings?.rgb_led?.enabled ? ` · ${dev}_set_led (red, green, blue)` : ""}`,
+    ].join("\n");
+  }
+
   private close() {
     this.dispatchEvent(new CustomEvent("closed", { bubbles: true, composed: true }));
   }
@@ -195,6 +218,9 @@ export class CydExportDialog extends LitElement {
               <p><strong>${t("allow_actions_hint")}</strong></p>
               ${this.project.id ? html`<cyd-device-status .api=${this.api} .projectId=${this.project.id}
                 .deviceName=${this.project.device_name}></cyd-device-status>` : nothing}
+              ${this.project.settings?.device_actions !== false ? html`<h4>${t("ha_actions")}</h4>
+                <p>${t("ha_actions_hint")}</p>
+                <pre class="diff">${this.actionsExample()}</pre>` : nothing}
               <h4>${t("first_install")}</h4>
               <p>${t("first_install_steps")}</p>
               ${mem ? html`<h4>${t("memory")}</h4><p>${t("memory_estimate", {

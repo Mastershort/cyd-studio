@@ -25,6 +25,7 @@ export function defaultProject(): Project {
       wifi: { use_secrets: true, ap_fallback: true },
       language: "de",
       api_key: null,
+      device_actions: true,
     },
     global: {
       header: { enabled: true, height: 28, widgets: [{ type: "page_title", align: "left" }, { type: "clock", align: "right" }] },

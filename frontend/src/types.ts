@@ -76,6 +76,7 @@ export interface Project {
     wifi?: { use_secrets?: boolean; ap_fallback?: boolean };
     language?: "de" | "en";
     api_key?: string | null;
+    device_actions?: boolean;
     [key: string]: unknown;
   };
   global?: {

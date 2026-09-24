@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.7.0) – ESPHome >= 2026.9.0
 # Projekt: Stil-Test · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -44,6 +44,52 @@ esp32:
 logger:
 
 api:
+  actions:
+    - action: show_page
+      variables:
+        page: string
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Wohnzimmer" || page == "home";
+            then:
+              - lvgl.page.show: page_home
+    - action: show_message
+      variables:
+        title: string
+        message: string
+        duration: int
+      then:
+        - script.execute:
+            id: cyd_show_message
+            title: !lambda |-
+              return title.str();
+            message: !lambda |-
+              return message.str();
+            duration: !lambda |-
+              return duration;
+    - action: wake
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+    - action: dim
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+    - action: set_brightness
+      variables:
+        brightness: int
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: !lambda |-
+              return std::max(1, std::min(100, (int) brightness)) / 100.0f;
 
 ota:
   - platform: esphome
@@ -319,7 +365,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0156"
+      - "\U000F009F\U000F0156"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -328,6 +374,33 @@ font:
       - "\U000F050F\U000F0769\U000F081A\U000F08DD\U000F0FCE\U000F1A6B"
 
 script:
+  - id: cyd_show_message
+    mode: restart
+    parameters:
+      title: string
+      message: string
+      duration: int
+    then:
+      - lvgl.label.update:
+          id: cyd_msg_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: cyd_msg_text
+          text: !lambda |-
+            return message;
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - lvgl.widget.show: cyd_msg
+      - if:
+          condition:
+            lambda: !lambda |-
+              return duration > 0;
+          then:
+            - delay: !lambda |-
+                return (uint32_t) duration * 1000;
+            - lvgl.widget.hide: cyd_msg
   - id: cyd_overlay_open
     mode: restart
     parameters:
@@ -466,6 +539,12 @@ lvgl:
       text_font: font_28
       text_color: 0xFFFFFF
       text_align: CENTER
+    - id: cyd_text_10
+      text_font: icons_20
+      text_color: 0xFFCC00
+    - id: cyd_text_11
+      text_font: font_14
+      text_color: 0xC7C7CC
   on_idle:
     - timeout: 30s
       then:
@@ -609,6 +688,55 @@ lvgl:
                                       return id(cyd_ov_entity);
                                     percentage: !lambda |-
                                       return to_string((int) lroundf(x));
+      - obj:
+          id: cyd_msg
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "50%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_msg
+          widgets:
+            - obj:
+                x: 30
+                y: 50
+                width: 260
+                height: 140
+                styles: cyd_tile
+                border_color: 0xFFCC00
+                border_width: 2
+                pad_all: 4
+                scrollable: false
+                clickable: false
+                widgets:
+                  - label:
+                      align: TOP_LEFT
+                      styles: cyd_text_10
+                      text: "\U000F009F"
+                  - label:
+                      id: cyd_msg_title
+                      align: TOP_LEFT
+                      x: 26
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_4
+                      text: ""
+                  - label:
+                      id: cyd_msg_text
+                      align: TOP_LEFT
+                      y: 26
+                      width: 248
+                      height: 102
+                      long_mode: WRAP
+                      styles: cyd_text_11
+                      text: ""
   pages:
     - id: page_home
       bg_color: 0x1C1C24
@@ -914,25 +1042,25 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_3
                   text: "–"
-# cyd_studio_checksum: 96d4857fc0fb7695
+# cyd_studio_checksum: f4cc05d522712d18
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/4VW227jNhD9F/bVDhT50qxeWxR9K9BdoECLQBiRI4kIRQok5aw38D/1A/rU/lhn
-#   qEvkJG79JJOc4Tlnjmb0IiqQT413g1WieBG6gwZFIeC+yuVO7fFQH8VlIyoHng4IDP0u3+b7XR6y
-#   /MGLaac8gddgoyjsYMxGKDxpiaWFjpPJs9qGeDao6HxjXAWG76qdi+j5CS1UvFvUYAJuRIu6aSnZ
-#   7rgRz1o1GIMo/ni88A6oNzHRD6uQ/GEd8iLA6MYSBoN1pNvjuWdEPbEso44GidzrIZ9yLKekcfJJ
-#   XB4vdHHjdRJIOkOJ97QAvSjosh6U0rZJz9490+aOjvNh0Tij0L5S7zAC5xh6BZGhizzLj9vsEwnK
-#   Ik9yfY7abL9gYCQWTrqBqJ3lwNZ1WPZjhfiZDoTWPZdaOhtmJdKKgQrN6xIjoBjrbIp51sxvEjtC
-#   VYEvexf0eA+VNEbXsQ4e7LIajFYc/eyhL2FyTMpB0J3XaOMEVBiwKkjo+TjDHUvBEpbuhN5zoskp
-#   DJ0iOqWL4GoQk3QTO23LtQIjGwNnN0TWl2uyyPaba+033XXo060eX+2YJJmtMyaJukPKUob5zNo0
-#   FKrjmYmwIe4UyidG04rifsJn7vkS7/qQ3ppXEhK1ITtszWSlVAja+zHluCzeiq5pDHvQJE3JuBvx
-#   VRTZRtC9GZvyDYgQsTXQ9ROQfAaS3wBSG+f8liNWKD4vSS6LK15ExK8khP7GuLr/wnifMOYfYJRc
-#   1zvvjHHX+OQtofgs+m1oIblqRvhrSrFGJ7WX/DTWjTOUKcl3u738/vAppceAbAgqKInP6TwoPdCV
-#   efa/dHYf0Alog/N3EZN6q7rHW3Rii74j08Zkv5nNF0qAHuLAi4PVDPLvP3+44lc1TCaDh31dcz9t
-#   StdTm9gdNm+oLzQbAyGs6jSipR5shg/MdJ86nJx7SEDPvZnDJFq8I2xJUG4Evkn5x41am2SGWZTx
-#   NVlpEW5p0bmTxq3r0a6k+InS0SM1jffkD3iQeBRX1a3Tb13d2kBqzuTWqwNr+5q1LEyjrAZqZva9
-#   LPlVwSttwZ/Lue5DquKKa3WLq6K3bMXyZxhC/OcvP8NyhLAQvw/Lf477pa5JmtseH/+Voza5pEG8
-#   X9GaoGqrtISYbl+o5RO1x8sjwXX90KfBSTfJFjtIfEjMSB0qEYFel0+4FLdKA9BiCKUCtk6WXS3a
-#   acYemLBthnESpfc3bZWdUzgO57Vnak/ThIZdXmRZaurUK+Iyf4IbfPKjG6vZUr1bmpx0zx3N/+ho
-#   KzsWu4w18Jj8mgYh1PSycQPfEUrfVGX6HHj/NZG6f6DhxA1hHlhBeqRiw2n8mpjfD6E0D74l9THb
-#   vMl34VFR61G9kpYMf0HNpRsCkokod5yGL387UG/oViM7/V0GIdfhcvkX6LoTy4gJAAA=
+# cyd_studio_project: H4sIAAAAAAAC/4VWy47jNhD8F+ZqG7L8yKyuCYLcAmQXCJBgILSolkQMRQokZa934H/KB+SU/Fi6
+#   qYflmXHik0yym1XVpW69igLkS+1sb0qRvQrVQo0iE7AtUrkr93iojuK6EoUFRwcE+m6XrtP9LvVJ
+#   +uTEuJOfwCkwQWSm13olSjwpibmBlpPJS7n24aKxpPO1tgVovquyNqDjJzRQ8G5Wgfa4Eg2quqFk
+#   u+NKnFVZY/Ai++P5yjtQvokJrl+EpE/LkFcBWtWGMGisAt0eLh0j6ohlHlTQSORuh1zMMZ+S2soX
+#   cX2+0sW1U1EgaTUl3tMCdCKjyzooS2Xq+OzsmTZ3dJwPi9rqEs2NeosBOEfflRAYukiT9LhOPpGg
+#   LPIo1+eg9PoLekZi4KRqCMoaDmxsi3k3VIif6YBv7DlX0ho/KRFXNBSob0uMgGKMNTHmrJjfKHaA
+#   ogCXd9ar4R4qaQi2ZR0cmHnVa1Vy9NlBl8PomJiDoFun0IQRqNBgSi+h4+MMdygFS5jbEzrHiUan
+#   MHSKaEuVeVuBGKUb2SmTLxUY2Gi42D6wvlyTWbbfbGO+qbZFF291eLNjlGSyzpAkqBYpS+6nM0vT
+#   UKgKFybChtiUKF8YTSOy7YhPb/kSZzsf35obCYlKkx3WerRSLATt/RhzXGdvBVvXmj2oo6Zk3JX4
+#   KrJkJejehE35BoQP2GhouxFIOgFJHwCptLVuzRELFJ/nJNfZFa8i4FcSQn1jXO1/YdxGjOkHGCXX
+#   deOs1vYen3wkFJ9Ft/YNRFdNCH+NKZbopHKSn4a6cYY8Jvlut5ffHz7F9OiRDUEFJfE5nYNS9XRl
+#   mvwvnd0HdDwab90mYFRvUffwiE5o0LVk2hDtN7H5QgnQQeh5sTeKQf795w93/IqaySTwtK8q7qd1
+#   bjtqE7vD6g31mWatwftFnQa01IN1/4GZtrHDyamHeHTcmzlMosENYYuCciNwdcw/bFRKRzNMogyv
+#   yUIL/0iL1p4Urm2HZiHFT5SOHqlpvCd/wIPEo7irbhV/y+pWGmJzJrfeHVjaVy9lYRp50VMzM+9l
+#   Se8KXigD7pJPde9jFRdci0dcS3rLFix/ht6Hf/5yEyxLCDPxez//57hfqoqkeezx4V8+aJNKGsT7
+#   Ba0RqjKlkhDi7TO1dKT2fH0muLbruzg46SbZYAuRD4kZqENFItCp/AXn4hZxABr0Pi+BrZMkd4tm
+#   nLGHecIPvvK31mzqfphP8a2OAXlrSxxG9tJJlaMZQyMwzZIktnrqIGGeSt72LrrUDjVuyAUNzVO6
+#   fUNfBcHSVnLMdgkr4zC6OI5HqOgV5La+I+yuLvL4kfD+GyPOBE8ji9vENMa8dEgWgNPwjTG9NaJU
+#   PA7n1Mdk9SbflQdIpQZNc1rS/F01ydJ7JGtR7jAqxV8U1DHaxSCPf+fxyNW5Xv8FTZQaOJ4JAAA=

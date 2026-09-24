@@ -12,7 +12,16 @@ from typing import Any
 from .board import resolve_board
 from .context import ON_STATES, Context, cpp_str
 from .emit import Block, Comment, Lambda, Raw, Secret, dump
-from .layout import HEADER_PAD_X, TILE_PAD, header_elements, nav_pages, overlay_layout, page_layout, tab_elements
+from .layout import (
+    HEADER_PAD_X,
+    TILE_PAD,
+    header_elements,
+    message_layout,
+    nav_pages,
+    overlay_layout,
+    page_layout,
+    tab_elements,
+)
 from .memory import MemoryEstimate, estimate
 from .model import Issue, normalize, safe_id, validate
 from .theme import resolve_theme
@@ -20,7 +29,7 @@ from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import opa, page_show
 
-GENERATOR_VERSION = "0.6.0"
+GENERATOR_VERSION = "0.7.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -244,6 +253,8 @@ def _document(ctx: Context) -> dict[Any, Any]:
     api_key = s.get("api_key")
     if api_key:
         api["encryption"] = {"key": api_key}
+    if s.get("device_actions", True):
+        api["actions"] = _device_actions(ctx, pages, brightness_day)
     doc["api"] = api or None
     ota: dict[str, Any] = {"platform": "esphome", "id": "cyd_ota"}
     if api_key:
@@ -648,8 +659,110 @@ def _overlay_widget(ctx: Context, width: int, height: int) -> dict[str, Any]:
     }
 
 
+def _device_actions(ctx: Context, pages: list[dict[str, Any]], brightness_day: int) -> list[Any]:
+    """Actions Home Assistant can call on the display (esphome.<device>_<action>)."""
+    s = ctx.project["settings"]
+    night = max(1, min(int(s.get("brightness_night", 25)), 100))
+    show_page = []
+    for page in pages:
+        names = sorted({page["id"], page.get("name", "")} - {""})
+        cond = " || ".join(f"page == {cpp_str(n)}" for n in names)
+        show_page.append(
+            {"if": {"condition": {"lambda": Lambda(f"return {cond};")}, "then": [page_show(ctx, page["id"])]}}
+        )
+    wake = {"light.turn_on": {"id": "backlight", "brightness": f"{brightness_day}%"}}
+    actions: list[Any] = [
+        {"action": "show_page", "variables": {"page": "string"}, "then": [wake, *show_page]},
+        {
+            "action": "show_message",
+            "variables": {"title": "string", "message": "string", "duration": "int"},
+            "then": [{"script.execute": {
+                "id": "cyd_show_message",
+                "title": Lambda("return title.str();"),
+                "message": Lambda("return message.str();"),
+                "duration": Lambda("return duration;"),
+            }}],
+        },
+        {"action": "wake", "then": [wake]},
+        {"action": "dim", "then": [{"light.turn_on": {"id": "backlight", "brightness": f"{night}%"}}]},
+        {
+            "action": "set_brightness",
+            "variables": {"brightness": "int"},
+            "then": [{"light.turn_on": {"id": "backlight", "brightness": Lambda(
+                "return std::max(1, std::min(100, (int) brightness)) / 100.0f;")}}],
+        },
+    ]  # fmt: skip
+    led = ctx.board.get("extras", {}).get("rgb_led")
+    if led and s.get("rgb_led", {}).get("enabled"):
+        actions.append({
+            "action": "set_led",
+            "variables": {"red": "int", "green": "int", "blue": "int"},
+            "then": [{"if": {
+                "condition": {"lambda": Lambda("return (int) red <= 0 && (int) green <= 0 && (int) blue <= 0;")},
+                "then": [{"light.turn_off": "status_led"}],
+                "else": [{"light.turn_on": {
+                    "id": "status_led", "brightness": "100%",
+                    "red": Lambda("return std::min(255, std::max(0, (int) red)) / 255.0f;"),
+                    "green": Lambda("return std::min(255, std::max(0, (int) green)) / 255.0f;"),
+                    "blue": Lambda("return std::min(255, std::max(0, (int) blue)) / 255.0f;"),
+                }}],
+            }}],
+        })  # fmt: skip
+    return actions
+
+
+def _message_widget(ctx: Context, width: int, height: int) -> dict[str, Any]:
+    """Hidden message overlay in the top layer (tap closes it)."""
+    lay = message_layout(width, height, ctx.font_sizes, ctx.icon_sizes)
+    panel = lay["panel"]
+    children: list[Any] = []
+    for el in lay["elements"]:
+        if el["role"] == "icon":
+            children.append(ctx.label(el, None, "mdi:bell-ring-outline"))
+        elif el["role"] == "title":
+            children.append(ctx.label(el, "cyd_msg_title", ""))
+        else:
+            children.append(ctx.label(el, "cyd_msg_text", ""))
+    ctx.objects += 2
+    hide = [{"lvgl.widget.hide": "cyd_msg"}]
+    return {"obj": {
+        "id": "cyd_msg", "x": 0, "y": 0, "width": width, "height": height,
+        "bg_color": Raw("0x000000"), "bg_opa": "50%", "border_width": 0, "radius": 0, "pad_all": 0,
+        "hidden": True, "scrollable": False, "on_short_click": hide,
+        "widgets": [{"obj": {
+            "x": panel.x, "y": panel.y, "width": panel.w, "height": panel.h, "styles": "cyd_tile",
+            "border_color": ctx.color("accent"), "border_width": 2, "pad_all": max(TILE_PAD - 2, 0),
+            "scrollable": False, "clickable": False, "widgets": [c for c in children if c],
+        }}],
+    }}  # fmt: skip
+
+
+def _message_script(ctx: Context, brightness_day: int) -> dict[str, Any]:
+    """Show a message (overlay + notification areas), wake the display, hide after ``duration`` seconds."""
+    then: list[Any] = [
+        {"lvgl.label.update": {"id": "cyd_msg_title", "text": Lambda("return title;")}},
+        {"lvgl.label.update": {"id": "cyd_msg_text", "text": Lambda("return message;")}},
+    ]
+    for title_id, text_id in ctx.notification_labels:
+        then.append({"lvgl.label.update": {"id": title_id, "text": Lambda("return title;")}})
+        then.append({"lvgl.label.update": {"id": text_id, "text": Lambda("return message;")}})
+    then += [
+        {"light.turn_on": {"id": "backlight", "brightness": f"{brightness_day}%"}},
+        {"lvgl.widget.show": "cyd_msg"},
+        {"if": {
+            "condition": {"lambda": Lambda("return duration > 0;")},
+            "then": [{"delay": Lambda("return (uint32_t) duration * 1000;")}, {"lvgl.widget.hide": "cyd_msg"}],
+        }},
+    ]  # fmt: skip
+    return {"id": "cyd_show_message", "mode": "restart",
+            "parameters": {"title": "string", "message": "string", "duration": "int"}, "then": then}  # fmt: skip
+
+
 def _scripts(ctx: Context, pages: list[dict[str, Any]]) -> list[Any]:
     scripts: list[Any] = []
+    if ctx.project["settings"].get("device_actions", True):
+        day = max(1, min(int(ctx.project["settings"].get("brightness_day", 100)), 100))
+        scripts.append(_message_script(ctx, day))
     if "overlay" in ctx.helpers:
         scripts.append(_overlay_script())
     if ctx.time_updates:
@@ -1001,6 +1114,8 @@ def _top_layer(ctx: Context, pages: list[dict[str, Any]], width: int, height: in
         )
     if "overlay" in ctx.helpers:
         widgets.append(_overlay_widget(ctx, width, height))
+    if p["settings"].get("device_actions", True):
+        widgets.append(_message_widget(ctx, width, height))
     ctx.page_actions = actions
     return widgets
 

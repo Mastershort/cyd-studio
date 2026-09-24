@@ -120,6 +120,7 @@ class Context:
         self.entities: dict[str, str] = {}
         self.helpers: set[str] = set()
         self.images: list[str] = []
+        self.notification_labels: list[tuple[str, str]] = []  # (title label id, text label id)
         self.label_styles: dict[tuple[str, str, str | None], str] = {}
         self.default_style = resolve_tile_style(theme, project.get("tile_style") or {})
         self.page_actions: list[Any] = []
@@ -259,7 +260,11 @@ class Context:
             font_id, value = found
         else:
             font_id, value = self.fonts.text_font(el["size"], text), text
-            if el.get("width"):
+            if el.get("width") and el.get("wrap"):
+                conf["width"] = el["width"]
+                conf["height"] = el["height"]
+                conf["long_mode"] = "WRAP"
+            elif el.get("width"):
                 conf["width"] = el["width"]
                 conf["long_mode"] = "DOT"
                 align = LV_TEXT_ALIGN.get(el.get("text_align", "left"), "LEFT")

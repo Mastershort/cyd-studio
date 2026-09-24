@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.7.0) – ESPHome >= 2026.9.0
 # Projekt: Wohnzimmer · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -48,6 +48,64 @@ logger:
 api:
   encryption:
     key: "zGm1uI0T3MdsCWDhYxJ9t3iX0N9kfjN7l6BUk4kP1Ro="
+  actions:
+    - action: show_page
+      variables:
+        page: string
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Start" || page == "home";
+            then:
+              - lvgl.page.show: page_home
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Klima" || page == "klima";
+            then:
+              - lvgl.page.show: page_klima
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Lichter" || page == "licht_details";
+            then:
+              - lvgl.page.show: page_licht_details
+    - action: show_message
+      variables:
+        title: string
+        message: string
+        duration: int
+      then:
+        - script.execute:
+            id: cyd_show_message
+            title: !lambda |-
+              return title.str();
+            message: !lambda |-
+              return message.str();
+            duration: !lambda |-
+              return duration;
+    - action: wake
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+    - action: dim
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+    - action: set_brightness
+      variables:
+        brightness: int
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: !lambda |-
+              return std::max(1, std::min(100, (int) brightness)) / 100.0f;
 
 ota:
   - platform: esphome
@@ -354,7 +412,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0141\U000F0156\U000F02DC\U000F0393\U000F058E\U000F07E4"
+      - "\U000F009F\U000F0141\U000F0156\U000F02DC\U000F0393\U000F058E\U000F07E4"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -363,6 +421,33 @@ font:
       - "\U000F0335\U000F0425\U000F050F\U000F0769\U000F08DD\U000F111C\U000F11DC\U000F1253"
 
 script:
+  - id: cyd_show_message
+    mode: restart
+    parameters:
+      title: string
+      message: string
+      duration: int
+    then:
+      - lvgl.label.update:
+          id: cyd_msg_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: cyd_msg_text
+          text: !lambda |-
+            return message;
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - lvgl.widget.show: cyd_msg
+      - if:
+          condition:
+            lambda: !lambda |-
+              return duration > 0;
+          then:
+            - delay: !lambda |-
+                return (uint32_t) duration * 1000;
+            - lvgl.widget.hide: cyd_msg
   - id: cyd_overlay_open
     mode: restart
     parameters:
@@ -579,6 +664,9 @@ lvgl:
       text_font: font_28
       text_color: 0xE6EDF3
       text_align: CENTER
+    - id: cyd_text_15
+      text_font: font_14
+      text_color: 0x8B98A5
   on_idle:
     - timeout: 30s
       then:
@@ -814,6 +902,55 @@ lvgl:
                                       return id(cyd_ov_entity);
                                     percentage: !lambda |-
                                       return to_string((int) lroundf(x));
+      - obj:
+          id: cyd_msg
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "50%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_msg
+          widgets:
+            - obj:
+                x: 30
+                y: 50
+                width: 260
+                height: 140
+                styles: cyd_tile
+                border_color: 0x22D3EE
+                border_width: 2
+                pad_all: 4
+                scrollable: false
+                clickable: false
+                widgets:
+                  - label:
+                      align: TOP_LEFT
+                      styles: cyd_text_10
+                      text: "\U000F009F"
+                  - label:
+                      id: cyd_msg_title
+                      align: TOP_LEFT
+                      x: 26
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_13
+                      text: ""
+                  - label:
+                      id: cyd_msg_text
+                      align: TOP_LEFT
+                      y: 26
+                      width: 248
+                      height: 102
+                      long_mode: WRAP
+                      styles: cyd_text_15
+                      text: ""
   pages:
     - id: page_home
       bg_color: 0x0A0E14
@@ -1260,30 +1397,30 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_5
                   text: "–"
-# cyd_studio_checksum: 64e366d439285438
+# cyd_studio_checksum: 14ebd92504c69c97
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/7VXXW7jNhC+SkCgb3Ygy0m6EdCHNot22253F0mL7c8GAiWNJNYUKZBUHCfwy56j
-#   h+gB+tS9SU/SGUqyJTveZAv0yTJ/Zj7OfPNxeM8SzU3GIga2nofT8GQe2iB8ZtiknYlvuBFcORap
-#   RsoJy+BGpBArXgFuSlfZdKlLdSeqCmhPIXXCJYvuWa61wyH8AsUTCegj59LChJUgihINzs8mbCmy
-#   Apxl0W/Xa5rh2c4eZ5rBlvDZcMs941IUCnFIyB16d6uaUNW8gNgJJ4GtJ9tFxtvYrEqlThdsfb1G
-#   x4URGblNtUTDJzjAaxahs5pnmVCF/zZ6iZNzXE6LWaFlBmpaNdIJ8oiWK3CczDR1xh2hZ2EQnk2D
-#   c4wrQmFd1N4OI6b4jSi4E1rRzlJXEHtrkf/GBbbUy1ikWtk+Gn5E8gTkdsitJO1xPEk4mbVLQads
-#   Z9vRuNZWtI4wt87pioJhuNqMWikycrk0vI650Y3qs4bgtRGgXIeUSa4ym/KalhPeNh8Ux1jfgDFk
-#   qKMMYccdVSai7kg+fv23iochaAFLvtKNoyBTYjaBu3LcOO/QwJaSPhw9dboDiwrQQGz7NUPS4Fbh
-#   Vv1MyaJZh2g5I9tG17YlsKk4YXjxIqqqPhGU2NbLeodJ6AQJOmG3LAomDO0HRL7eGbOgrDbH22qJ
-#   HVQ1GO4aytcQRjiEkUEqKk6Zno1C6UowFYbQeRZ5NuxSy2EWOy4tJBrBoUYJOtLff16wLf4WGla6
-#   bGB4jPCBY0gqouNRzQ+hz4fQB2j9tqSRyQDrS5FiPW5hOF0UkgpXwn4wZyMUiVDcrOIupjn+YBji
-#   g6hODqBaCpXp5VTXWMe9zm3xfd2apUDCrYt1nuPgr83mP1l5naPzwRk6YGhXpNxpsx9OfxCe9gVv
-#   wZCgUhZSI2p3jHRQZJvSZ5Cz2xkuJdiYN5b8HSbx6YHD1no5osqXZO6oM9czIQUFcdKgOKj9HITD
-#   HOw7Phs63oCXlOU4Q2UUcujKi/S+p7DzdE2+HpOTtgYsilIvKj3PP0VVvu/2/E+q4oZhseKOXMqO
-#   RPh5yZvKoz56x64+/JW9Y9HRhz8SMHanPNq8+VCdfILKyCZ3OTRoC9qqCHv9baqHdSYYxXiJgmem
-#   KFQpjKrj5chupyufPUFVHqrnfdipDsdw24FH4VZaQtpImLbre7QXr/95/36Ls66rJ+vf7Glc3Cjc
-#   tMCLs+4JOab/HjG7lugAM71C+qLtuTlqCg6yc3b6VG76Jukhfq4f6qYeId/H7wY5OyBMKQiJPdZU
-#   dv1Zn7PnkC7gv90P2P24tDxG+S4lr2rYQRIeQJJLrc2UdgxgXG2MPAolfABKSpw5NlpKidlSO0jm
-#   H7+ZbIkCOVLty4EhTwJSv72OZA/fyUjGr9fX6FbXTe07b7SUloAaSLgsOIfZ8IB4LeIF0Cnuvqlm
-#   zbfBj/MfMnvx9nn5y+13524ufg5enS/y3199Ls+++mlxsngzu9Rf0NPB99oKrMWGiUISBKNB1bXz
-#   p3QwVTRtk+J7Tz8VV5qKbJe5ucGeFZvqMAoCX0sYWrcpIqsb429SuqkxFKUBjJDEOIfH+NRwGqeC
-#   s2geUCIN+IvW99s8p+6BentEaYok9i+P/YfLJt54Z27aYrycAfWD37QPl/5mZ5kged2YPgsm40fN
-#   mko0F22YY7QmE45dZFfMjQXsbtC061p8eqXgdedloeLUlyAag8rCzYJ1Uxt5ouSt1/8CuJccgdwN
-#   AAA=
+# cyd_studio_project: H4sIAAAAAAAC/7VX247bNhD9lQWBvtkLWd7dZgX0oU3Qpm2aBEmL9JKFQEkjiTVFCiS1jnfhl3xH
+#   P6If0KfmT/olnaEulux1dlOgT5Z5mTmcOXM4vGWJ5iZjEQNbL8N5eLYMbRA+MmzWzsTX3AiuHItU
+#   I+WMZXAtUogVrwA3pZtsvtaluhFVBbSnkDrhkkW3LNfa4RB+geKJBPSRc2lhxkoQRYkGlxczthZZ
+#   Ac6y6LerLc3wbG+PM81oS/hovOWWcSkKhTgk5A69u01NqGpeQOyEk8C2s90i420Mq1Kp0xXbXm3R
+#   cWFERm5TLdHwGQ7wmkXorOZZJlThv41e4+QSl9NiVmiZgZpXjXSCPKLlChwnM02dcUfoWRiEF/Pg
+#   EuOKUFgXtTfjiCl+LQruhFa0s9QVxN5a5L9xgS31OhapVraPhh+RPAG5G3IbSXscTxJOZu1a0Cnb
+#   2XY0rrUVrSPMrXO6omAYroZRK0VGLteG1zE3ulF91hC8NgKU65AyyVVmU17TcsLb5oPiGOtrMIYM
+#   dZQh7LijykTUHcnHr/9W8TgELWDJN7pxFGRKzBC4144b5x0a2FHSh6OnTndgUQEaiG2/Zkwa3Crc
+#   pp8pWbToEK0XZNvo2rYENhUnDE+fRlXVJ4IS23rZ7jEJnSBBZ+wdi4IZQ/sBka93xiwoq83prlpi
+#   B1UNhruG8jWGEY5hZJCKilOmF5NQuhJMhSF0nkWeDfvUcpjFjksriUZwqFGCjvT3n4/ZDn8LDStd
+#   NjA+RnjHMSQV0emk5sfQl2PoI7R+W9LIZIT1mUixHncwnC4KSYUr4TCYiwmKRChuNnEX0xx/MAzx
+#   UVRnR1Cthcr0eq5rrONe53b4vm7NUiDhnYt1nuPgr83wn6y8yNH56AwdMLQrUu60OQynPwhP+4K3
+#   YEhQKQupEbU7RToosk3pM8jZ3QyXEmzMG0v+jpP4/Mhha72eUOVLMnfSmeuZkIKCOGlQHNRhDsJx
+#   Dg4dX4wdD+AlZTnOUBmFHLvyIn3oKew8XZGv++SkrQGLotSLSs/zT1GV77s9/5OquHFYrLghl7Ij
+#   EX6+4k3lUZ+8Za8//JW9ZdHJhz8SMHavPNq8+VCdfYLKyCZ3OTRoC9qqCHv9baq7dSaYxHiNgmfm
+#   KFQpTKrj2cRupyufPUBV7qrnQ9ipDqdw24F74VZaQtpImLfre7SPX/zz/v0OZ11XD9a/xcO4OCjc
+#   vMCLs+4JOaX/ATG7lugIM71C+qLtuTlpCo6yc3H+UG76Jukufm7v6qbuId/H7wa5OCJMKQiJPdZc
+#   dv1Zn7MnkK7gv90P2P24tDxF+S4lr2rYQxIeQZJLrc2cdoxgvB6M3AslvANKSpw5NVpKidlSe0iW
+#   H7+ZbIkCOVHtVyNDngSkfgcdyQG+s4mMX22v0K2um9p33mgpLQE1kHBZcA6z4QHxWsQroFPcfFMt
+#   mm+DH5c/ZPbxmyflL+++u3RL8XPw/HKV//78c3nx1U+rs9XLxSv9BT0dfK+twFpsmCgkQTAZVF07
+#   fz48KNob0e6kWhVN27r4jtRviCtNpbfP59xgJ4utdhgFga8wDLgbSsvqxvj7le5vDFBpAOMmMfrh
+#   KT5AnMap4CJaBpReA/769V04z6mnoI4fsZsiif175PA5M2QBb9KhWcYrG1BV+HX7nOnve5YJEt3B
+#   9EUwmz51tlS4uWiDH6M1mXDsLbuoNBaw50HTrgsUvV3wEvRiUXHqVhCNQb3hZsW6qUG0KKXb7b8F
+#   1Z9R8g0AAA==

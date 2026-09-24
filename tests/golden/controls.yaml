@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.7.0) – ESPHome >= 2026.9.0
 # Projekt: Steuerung · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -48,6 +48,58 @@ esp32:
 logger:
 
 api:
+  actions:
+    - action: show_page
+      variables:
+        page: string
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Klima" || page == "klima";
+            then:
+              - lvgl.page.show: page_klima
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Steuern" || page == "steuer";
+            then:
+              - lvgl.page.show: page_steuer
+    - action: show_message
+      variables:
+        title: string
+        message: string
+        duration: int
+      then:
+        - script.execute:
+            id: cyd_show_message
+            title: !lambda |-
+              return title.str();
+            message: !lambda |-
+              return message.str();
+            duration: !lambda |-
+              return duration;
+    - action: wake
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+    - action: dim
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+    - action: set_brightness
+      variables:
+        brightness: int
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: !lambda |-
+              return std::max(1, std::min(100, (int) brightness)) / 100.0f;
 
 ota:
   - platform: esphome
@@ -527,7 +579,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0045\U000F005D\U000F0374\U000F0393\U000F0415\U000F04DB\U000F062E"
+      - "\U000F0045\U000F005D\U000F009F\U000F0374\U000F0393\U000F0415\U000F04DB\U000F062E"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -536,6 +588,33 @@ font:
       - "\U000F0590\U000F0591\U000F0592\U000F0593\U000F0594\U000F0595\U000F0596\U000F0597\U000F0598\U000F0599\U000F059D\U000F059E\U000F05D6\U000F067E\U000F067F\U000F0F2F"
 
 script:
+  - id: cyd_show_message
+    mode: restart
+    parameters:
+      title: string
+      message: string
+      duration: int
+    then:
+      - lvgl.label.update:
+          id: cyd_msg_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: cyd_msg_text
+          text: !lambda |-
+            return message;
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - lvgl.widget.show: cyd_msg
+      - if:
+          condition:
+            lambda: !lambda |-
+              return duration > 0;
+          then:
+            - delay: !lambda |-
+                return (uint32_t) duration * 1000;
+            - lvgl.widget.hide: cyd_msg
   - id: cyd_update_time
     mode: restart
     then:
@@ -693,6 +772,12 @@ lvgl:
     - id: cyd_text_11
       text_font: icons_20
       text_color: 0x8B98A5
+    - id: cyd_text_12
+      text_font: font_16
+      text_color: 0xE6EDF3
+    - id: cyd_text_13
+      text_font: font_14
+      text_color: 0x8B98A5
     - id: cyd_small_btn
       bg_color: 0x1B2430
       bg_opa: COVER
@@ -793,6 +878,55 @@ lvgl:
                       long_mode: DOT
                       styles: cyd_text_2
                       text: Steuern
+      - obj:
+          id: cyd_msg
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "50%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_msg
+          widgets:
+            - obj:
+                x: 30
+                y: 50
+                width: 260
+                height: 140
+                styles: cyd_tile
+                border_color: 0x22D3EE
+                border_width: 2
+                pad_all: 4
+                scrollable: false
+                clickable: false
+                widgets:
+                  - label:
+                      align: TOP_LEFT
+                      styles: cyd_text_9
+                      text: "\U000F009F"
+                  - label:
+                      id: cyd_msg_title
+                      align: TOP_LEFT
+                      x: 26
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_12
+                      text: ""
+                  - label:
+                      id: cyd_msg_text
+                      align: TOP_LEFT
+                      y: 26
+                      width: 248
+                      height: 102
+                      long_mode: WRAP
+                      styles: cyd_text_13
+                      text: ""
   pages:
     - id: page_klima
       bg_color: 0x0A0E14
@@ -1271,7 +1405,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_1
                   text: "CO₂"
-# cyd_studio_checksum: 01d940ed68486d9f
+# cyd_studio_checksum: ea766d629dd665c9
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/61WS47jNhC9C4Hs3IZanm50vJ1BECCLBJkgWQQNgpLKEmH+wI8dT8ObOVHOkKPk
@@ -1289,7 +1423,7 @@ lvgl:
 #   t80ktvuL2v768+1XZH0N5AiC2sSaeuE1huMSQlFJ0rLLZqST89wHsZFL3yqY10cEo+9Puahv3cII
 #   2l0j0P96/Yotry/WO0jtkG/8uLe57LWWKjex+EuJkz+zh+9m07JGlm9//PvjR3bFbPnIFt9MH3TU
 #   Ob1gXScVJc5wlW7c9Rrv+jPmZF1yeQgjhSgzbK+Uc4AYcfjlbIWTfA+n6QI2eZgaCIF3gmpIvWax
-#   aMZ5/UA5mD6VmZanS97i2nZQBn0hvbjdeZxKODbrbVXldoJ3Ms4Ph2CTb8mP3e1odg0eUAYKK1Ov
-#   8S0RLbXdR1Qipe8hJm94Hqlih08R6h4kUt83PD8tPn2ZZFHReErhMvhC6wHLJg7lZSLacQR2kuQw
-#   u37MKlj6O1Of2snCHscl1Qh8cYw9LQXgAdB3HKc4vUNQnbk3aoEt1SMcH5Ffv2fj1tyQqSbn8z+O
-#   h4jdvAkAAA==
+#   aMZ5/TC/F0RLPSFcmoLpU5l0eeZkA65tB2X8l1KUYDuPswqHab2tqtxk8KbG+TkRbPIt+bG7HU20
+#   wQOKQ2G96jW+MKKlZvyI+iRSPMTkDc+DVuzwgUI9haTr+4bnB8en75UsNRpaKVzGYWg9YDHFobxX
+#   SnaUjCSRzK4fszaW/s7UvXaycMpxSTUC3yEjLSkAD4C+48gUvU5Qs7ljaoGN1iMcH5F1v2fj1tym
+#   qVLn8z/pGUB00gkAAA==

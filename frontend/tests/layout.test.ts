@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { headerElements, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
+import { headerElements, messageLayout, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
 import { resolveTileStyle } from "../src/style";
 import type { Project, Theme } from "../src/types";
 
@@ -11,7 +11,7 @@ interface Cases {
   elements: { input: { type: string; w: number; h: number; props: Record<string, unknown> }; expected: unknown[] }[];
   tabs: { input: { icons: boolean; labels: boolean; tab: number[] }; expected: unknown[] }[];
   styles: { input: { theme: Theme; style: Record<string, unknown> }; expected: unknown }[];
-  overlays: { input: { w: number; h: number }; expected: { panel: number[]; elements: unknown[] } }[];
+  overlays: { input: { w: number; h: number; kind?: string }; expected: { panel: number[]; elements: unknown[] } }[];
 }
 
 const cases = JSON.parse(readFileSync(resolve(__dirname, "../../tests/layout_cases.json"), "utf8")) as Cases;
@@ -49,7 +49,7 @@ describe("layout parity with generator/layout.py", () => {
 
   it("overlay layout", () => {
     for (const c of cases.overlays) {
-      const lay = overlayLayout(c.input.w, c.input.h);
+      const lay = (c.input.kind === "message" ? messageLayout : overlayLayout)(c.input.w, c.input.h);
       expect({ panel: list(lay.panel), elements: lay.elements }).toEqual(c.expected);
     }
   });

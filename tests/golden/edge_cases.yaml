@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.7.0) – ESPHome >= 2026.9.0
 # Projekt: Ümlaut "Test": Küche & Bad · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -40,6 +40,70 @@ esp32:
 logger:
 
 api:
+  actions:
+    - action: show_page
+      variables:
+        page: string
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Eins mit sehr langem Seitennamen" || page == "eins";
+            then:
+              - lvgl.page.show: page_eins
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Zwei" || page == "zwei";
+            then:
+              - lvgl.page.show: page_zwei
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Unterseite" || page == "unter";
+            then:
+              - lvgl.page.show: page_unter
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Unter-Unterseite" || page == "unter2";
+            then:
+              - lvgl.page.show: page_unter2
+    - action: show_message
+      variables:
+        title: string
+        message: string
+        duration: int
+      then:
+        - script.execute:
+            id: cyd_show_message
+            title: !lambda |-
+              return title.str();
+            message: !lambda |-
+              return message.str();
+            duration: !lambda |-
+              return duration;
+    - action: wake
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+    - action: dim
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+    - action: set_brightness
+      variables:
+        brightness: int
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: !lambda |-
+              return std::max(1, std::min(100, (int) brightness)) / 100.0f;
 
 ota:
   - platform: esphome
@@ -280,7 +344,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0141\U000F0156\U000F03A4\U000F03A7"
+      - "\U000F009F\U000F0141\U000F0156\U000F03A4\U000F03A7"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -289,6 +353,33 @@ font:
       - "\U000F0131\U000F0335"
 
 script:
+  - id: cyd_show_message
+    mode: restart
+    parameters:
+      title: string
+      message: string
+      duration: int
+    then:
+      - lvgl.label.update:
+          id: cyd_msg_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: cyd_msg_text
+          text: !lambda |-
+            return message;
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - lvgl.widget.show: cyd_msg
+      - if:
+          condition:
+            lambda: !lambda |-
+              return duration > 0;
+          then:
+            - delay: !lambda |-
+                return (uint32_t) duration * 1000;
+            - lvgl.widget.hide: cyd_msg
   - id: cyd_overlay_open
     mode: restart
     parameters:
@@ -699,6 +790,55 @@ lvgl:
                                       return id(cyd_ov_entity);
                                     percentage: !lambda |-
                                       return to_string((int) lroundf(x));
+      - obj:
+          id: cyd_msg
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "50%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_msg
+          widgets:
+            - obj:
+                x: 30
+                y: 50
+                width: 260
+                height: 140
+                styles: cyd_tile
+                border_color: 0x22D3EE
+                border_width: 2
+                pad_all: 4
+                scrollable: false
+                clickable: false
+                widgets:
+                  - label:
+                      align: TOP_LEFT
+                      styles: cyd_text_13
+                      text: "\U000F009F"
+                  - label:
+                      id: cyd_msg_title
+                      align: TOP_LEFT
+                      x: 26
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_9
+                      text: ""
+                  - label:
+                      id: cyd_msg_text
+                      align: TOP_LEFT
+                      y: 26
+                      width: 248
+                      height: 102
+                      long_mode: WRAP
+                      styles: cyd_text_11
+                      text: ""
   pages:
     - id: page_eins
       bg_color: 0x0A0E14
@@ -974,7 +1114,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_9
                   text: Unter-Unterseite
-# cyd_studio_checksum: 6cb1f28df219ca2e
+# cyd_studio_checksum: d2a24f760c9b8267
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/61WzY7bNhB+FYJF24sVyLK7aHRqixYI0KKXpJdmDZWSxjJhihRIyj+70FPkmkfp
@@ -993,7 +1133,7 @@ lvgl:
 #   85xe/LM3eU6/JfHFqP88WlSl2CLQKMc22UboSGELjbDbYd5f4B7+MI8A/4OMHA2NCfwHs/cLBsaV
 #   1v5B2ZHXXKBqwedZShqh2FN+bKqbx3r8yn/7kc6e9DEVuLAIc2Qp4RdR89Z7o6+7ad79X8IkX6RM
 #   9HF9Rqk/LdA8/o/yXAyeT+uz6lboxTRtE+oZwSErtQhRHHiPa0XwLxqZbeEEI7c0IDU4h71OjMfx
-#   g0M9bDnfEVG6avvlIPypw1VWG5LkMru1NTUtJUkax4F5FM+fKHemtQX5Mes1FcfGAqatkIvkBWbl
-#   DV7FN+kipjqx4Furs7CbiDUST9wuEY+t8iwsZNf7XCDR4cLQujONrrCAs1vs+n1OFMM60YM4uZ7T
-#   ZHiw7HWk41r27GXoTp3bZ8ZbB5kD9O2HfYg2PI/cU4K1cFRAG2M98mu3fLg6VTNp0nX/An7oxh75
-#   CgAA
+#   g0M9bDnfnfYsURB97tyRumr7lSH8v4NBVhsS6jLntTU1rSpJGsdBD5TUn4RwprUF+THrNZXMxgKS
+#   oZCh5AXm6g1exTfpIqbqseBbq7OwsYg1ykGMLxGlrfIsrGnXW16g1uEa0bozua6wgBNd7Potr8/u
+#   BOLkek7z4sEK2JG6a9lzmqE7dW6qGW8dZA7Qtx+Yor3PoyKUYC0cldXGWI+s2y0frk41Tkp13b+U
+#   yolKDwsAAA==

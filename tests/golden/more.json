@@ -13,7 +13,10 @@
     "padding": 8
   },
   "settings": {
-    "language": "de"
+    "language": "de",
+    "rgb_led": {
+      "enabled": true
+    }
   },
   "navigation": {
     "style": "tabbar"
@@ -135,11 +138,12 @@
         },
         {
           "id": "l",
-          "type": "divider",
+          "type": "notification_area",
           "x": 0,
           "y": 1,
           "w": 2,
-          "h": 1
+          "h": 1,
+          "props": {}
         },
         {
           "id": "sp",

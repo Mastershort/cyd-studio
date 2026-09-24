@@ -32,6 +32,7 @@ export class CydScreen extends LitElement {
     now: { attribute: false },
     overlay: { attribute: false },
     images: { attribute: false },
+    message: { attribute: false },
     _drag: { state: true },
     _dropCell: { state: true },
     _pressed: { state: true },
@@ -49,6 +50,7 @@ export class CydScreen extends LitElement {
   declare now: Date;
   declare overlay: { title: string; value: number } | null;
   declare images: Record<string, CanvasImageSource>;
+  declare message: { title: string; text: string } | null;
   declare _drag: DragState | null;
   declare _dropCell: { x: number; y: number } | null;
   declare _pressed: string | null;
@@ -65,6 +67,7 @@ export class CydScreen extends LitElement {
     this.now = new Date();
     this.overlay = null;
     this.images = {};
+    this.message = null;
     this._drag = null;
     this._dropCell = null;
     this._pressed = null;
@@ -92,6 +95,7 @@ export class CydScreen extends LitElement {
       project: this.project, board: this.board, theme: this.theme, pageId: this.pageId,
       state: this.state, now: this.now, pressed: this._pressed, night: this.night,
       overlay: this.mode === "preview" ? this.overlay : null, images: this.images,
+      message: this.mode === "preview" ? this.message : null,
     });
   }
 

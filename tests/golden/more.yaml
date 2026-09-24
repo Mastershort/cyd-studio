@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.7.0) – ESPHome >= 2026.9.0
 # Projekt: Mehr · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -48,6 +48,80 @@ esp32:
 logger:
 
 api:
+  actions:
+    - action: show_page
+      variables:
+        page: string
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Eins" || page == "eins";
+            then:
+              - lvgl.page.show: page_eins
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Zwei" || page == "zwei";
+            then:
+              - lvgl.page.show: page_zwei
+    - action: show_message
+      variables:
+        title: string
+        message: string
+        duration: int
+      then:
+        - script.execute:
+            id: cyd_show_message
+            title: !lambda |-
+              return title.str();
+            message: !lambda |-
+              return message.str();
+            duration: !lambda |-
+              return duration;
+    - action: wake
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "100%"
+    - action: dim
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: "25%"
+    - action: set_brightness
+      variables:
+        brightness: int
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: !lambda |-
+              return std::max(1, std::min(100, (int) brightness)) / 100.0f;
+    - action: set_led
+      variables:
+        red: int
+        green: int
+        blue: int
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return (int) red <= 0 && (int) green <= 0 && (int) blue <= 0;
+            then:
+              - light.turn_off: status_led
+            else:
+              - light.turn_on:
+                  id: status_led
+                  brightness: "100%"
+                  red: !lambda |-
+                    return std::min(255, std::max(0, (int) red)) / 255.0f;
+                  green: !lambda |-
+                    return std::min(255, std::max(0, (int) green)) / 255.0f;
+                  blue: !lambda |-
+                    return std::min(255, std::max(0, (int) blue)) / 255.0f;
 
 ota:
   - platform: esphome
@@ -200,6 +274,18 @@ output:
   - platform: ledc
     pin: GPIO21
     id: backlight_pwm
+  - platform: ledc
+    id: led_red
+    pin: GPIO4
+    inverted: true
+  - platform: ledc
+    id: led_green
+    pin: GPIO16
+    inverted: true
+  - platform: ledc
+    id: led_blue
+    pin: GPIO17
+    inverted: true
 
 light:
   - platform: monochromatic
@@ -207,6 +293,13 @@ light:
     name: Display-Beleuchtung
     id: backlight
     restore_mode: ALWAYS_ON
+  - platform: rgb
+    name: Status-LED
+    id: status_led
+    red: led_red
+    green: led_green
+    blue: led_blue
+    restore_mode: ALWAYS_OFF
 
 sensor:
   - platform: wifi_signal
@@ -340,7 +433,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F0141\U000F0142\U000F0374\U000F0415\U000F0B3A\U000F0B3B"
+      - "\U000F009F\U000F0141\U000F0142\U000F0374\U000F0415\U000F0B3A\U000F0B3B"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -349,6 +442,41 @@ font:
       - "\U000F0004\U000F0335\U000F0381\U000F0425"
 
 script:
+  - id: cyd_show_message
+    mode: restart
+    parameters:
+      title: string
+      message: string
+      duration: int
+    then:
+      - lvgl.label.update:
+          id: cyd_msg_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: cyd_msg_text
+          text: !lambda |-
+            return message;
+      - lvgl.label.update:
+          id: w_zwei_l_title
+          text: !lambda |-
+            return title;
+      - lvgl.label.update:
+          id: w_zwei_l_text
+          text: !lambda |-
+            return message;
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - lvgl.widget.show: cyd_msg
+      - if:
+          condition:
+            lambda: !lambda |-
+              return duration > 0;
+          then:
+            - delay: !lambda |-
+                return (uint32_t) duration * 1000;
+            - lvgl.widget.hide: cyd_msg
   - id: cyd_update_time
     mode: restart
     then:
@@ -557,6 +685,12 @@ lvgl:
       text_font: font_12
       text_color: 0x5C5C5C
       text_align: CENTER
+    - id: cyd_text_13
+      text_font: font_16
+      text_color: 0xD9D9D9
+    - id: cyd_text_14
+      text_font: font_14
+      text_color: 0x7A7A7A
     - id: cyd_small_btn
       bg_color: 0x141414
       bg_opa: COVER
@@ -657,6 +791,55 @@ lvgl:
                       long_mode: DOT
                       styles: cyd_text_12
                       text: Zwei
+      - obj:
+          id: cyd_msg
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "50%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_msg
+          widgets:
+            - obj:
+                x: 30
+                y: 50
+                width: 260
+                height: 140
+                styles: cyd_tile
+                border_color: 0x22D3EE
+                border_width: 2
+                pad_all: 4
+                scrollable: false
+                clickable: false
+                widgets:
+                  - label:
+                      align: TOP_LEFT
+                      styles: cyd_text_3
+                      text: "\U000F009F"
+                  - label:
+                      id: cyd_msg_title
+                      align: TOP_LEFT
+                      x: 26
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_13
+                      text: ""
+                  - label:
+                      id: cyd_msg_text
+                      align: TOP_LEFT
+                      y: 26
+                      width: 248
+                      height: 102
+                      long_mode: WRAP
+                      styles: cyd_text_14
+                      text: ""
   pages:
     - id: page_eins
       bg_color: 0x000000
@@ -1013,20 +1196,24 @@ lvgl:
             y: 90
             width: 148
             height: 47
-            styles: cyd_plain
+            styles: cyd_tile
             scrollable: false
             clickable: false
             widgets:
-              - obj:
-                  align: CENTER
+              - label:
+                  id: w_zwei_l_title
+                  align: TOP_LEFT
                   width: 136
-                  height: 2
-                  bg_color: 0x7A7A7A
-                  bg_opa: "50%"
-                  border_width: 0
-                  radius: 1
-                  scrollable: false
-                  clickable: false
+                  long_mode: DOT
+                  styles: cyd_text_4
+                  text: "Keine Meldungen"
+              - label:
+                  id: w_zwei_l_text
+                  align: BOTTOM_LEFT
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: ""
         - obj:
             id: w_zwei_g
             x: 86
@@ -1084,26 +1271,26 @@ lvgl:
                         align: CENTER
                         styles: cyd_text_9
                         text: "\U000F0335"
-# cyd_studio_checksum: 26d49f0ece134ea5
+# cyd_studio_checksum: 0d1074c5a88723ea
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/61W727jNgx/F31ODce5K27up2LYn8NuwwF3QIENhUHbjCNUllxJTtoe8jZ7gD3D
-#   9mIjJcVxrkF7A/YlcCjyR/JHUuIXURuwrSgFumFVXBRvVoXLi3dWLOJJtQUrQXtR6lGphWhxKxus
-#   NPRIRs1je9Ebi6TdKVODEuUXsTbGo+Uv1FArJPQ1KIcLsUHZbQhqdbkQO9l26J0o/7jd8wm0X9l4
-#   O85Mindzky8ClOw0RaBw7cm7fxw4ngE6rLz0CsV+cVSyAWPSapRp7sT+dk+OOytbdtsYRcBvSACD
-#   KMnZAG0rdRe+rdnR4YrUWVl0RrWoD4n36IERxqEFz4GLIi8uL/LviEyKQiSqfsUNk6phKzvw0mi2
-#   2ZgeKw6aCyC1IwW3MbtKNob+JAqCREGN6ijyj4ptPNQ1MKzbSU4tnkZpNRgnoyMqpfemZwYs6Enq
-#   lGw5g52FoQJrRn0oFYVtrETtU6RCgW5dAwOrc7yxCExeZbZoLQOlDuHYyaJvJQl6tLK5WIrEXMpR
-#   6mrOQ4xawaMZPdPLJZl4+yGaDGDx2IWBkkPPpKRlj2RfuYPOvFvIVPpHQpN6IB2Kq0abOaMUQW9E
-#   uUzxafZkzeC4OC02sgcmfcnREf+k8Sna9PBADZHTh6QEljmXBKlxRJ69peNRS87k77++5w5IbRe9
-#   Vqw4IBdtR229EARE5hRczi07RdpQOWiMsg6QLE7DfJqHeYjsp3/+ZMVv8Vec8ReZcaiw8RlN3VNv
-#   2tGd+nXn/P486R5dR5jnKS5PXHLJbLYD12x6/pE65Vkkf805fzcn+kefgbDW7PTzTE/dOtTO2Mxb
-#   ugU0EbRG62V3mml7zvPnZPGa05hrQRfM4ttnpDjMyNMO5X+ckd+jyf80I9QszugMtIZTUoY5KbMU
-#   oAk0iOOUXLPtkaWIWA0WifsGX2n9GNqsDe7Ptjs4f3Hz4fo3vtXwgUm5ef/j+/JzefPx+upTyedX
-#   H8sOqZf7q6tZNPe2akyboli+MhAMnSmp7047876Yx5T8P7zsZPVCqgeK1Qz2CNbKrWzPXRnLF8Hc
-#   cBbNDdAcwJYnDfsSWDdPONa7FCsRe7laplbozVbiQVgk4WB2wV8QrpJQ8Ztcj6o+tE3A+EVqMwnY
-#   /jrcQfE/m36QTXzKwVLnBhvXoMbsLlomeRHkVg4+A6XQVRBw0ikDBf/ZWo3zca5Heid1laZrF2r2
-#   EDhIA31LJJhhHMLeQjPWbLCHoODQe9oXAj0wyOoOJxbrsH9odK5qgauW5ydCnVact5yo7sa4D4Tm
-#   CUdVz51Ufl2ctaUnnbaNoszzcGHQJeOnXcuZ0TaMY9ZrznxDw7ehxYX8ZLR+ecOP1SW9YZy+RT9a
-#   XYV1BNaeX434vNmursI29nyZC/eLow2BmJ22BuIc6XqFbVzmoEn7Qyt5+5igLwn6FG/Pl9FaRvYq
-#   EqkaaElLF9fokJ4mwvZpBeLVzRP3IUFGSX+nmza0/P5fGPVjXN8KAAA=
+# cyd_studio_project: H4sIAAAAAAAC/61W727jNgx/F31OjcS5K27up2LYn8NuwwF3QIENhUHbjCNUllxJjtse8jZ7gD3D
+#   9mIjJcVxrkF7A/YlcCjyR/JHUuIXURmwjSgEun6dX+Rv1rlb5u+sWMSTcgdWgvai0INSC9HgTtZY
+#   auiQjOrH5qIzFkm7VaYCJYovYmOMR8tfqKFSSOgbUA4XYouy3RLU+nIhRtm06J0o/rjd8wk0X9l4
+#   O8xM8ndzky8ClGw1RaBw48m7f+w5nh5aLL30CsV+cVSyAWPSqpWp78T+dk+OWysbdlsbRcBvSAC9
+#   KMhZD00jdRu+rRnpcE3qrCxaoxrUh8Q79MAIQ9+A58BFvswvL5bfEZkUhUhU/YpbJlXDTrbgpdFs
+#   szUdlhw0F0BqRwpua8ZS1ob+JAqCREGF6ijyj4ptPFQVMKwbJacWT6O07I2T0RGV0nvTMQMW9CR1
+#   SjacwWihL8GaQR9KRWEbK1H7FKlQoBtXQ8/qHG8sApNXmh1ay0CpQzh2sugaSYIOrawvViIxl3KU
+#   upzzEKNW8GgGz/RySSbefogmPVg8dmGg5NAzKWnZIdmX7qAz7xYylf6R0KTuSYfiqtBmzihF0FtR
+#   rFJ8mj1Z0zsuToO17IBJX3F0xD9pfIo2HTxQQyzpQ1ICqyWXBKlxxDJ7S8eDlpzJ3399zx2Q2i56
+#   LVmxRy7aSG29EARE5hTcklt2irSmctAYZS0gWZyG+TQP8xDZT//8yYrf4i8/4y8y41Bh7TOauqfO
+#   NIM79evO+f150j26jjDPU1yduOSS2WwEV287/pE65Zknf/U5fzcn+kefgbDGjPp5pqduHWpnbOYt
+#   3QKaCNqg9bI9zbQ55/lzsnjNacw1pwtm8e0zkh9m5GlE+R9n5Pdo8j/NCDWLMzoDreGUlH5OyiwF
+#   qAMN4jgl12x7ZCkilr1F4r7GV1o/hjZrg/uz7Q7OX9x8uP6NbzV8YFJu3v/4vvhc3Hy8vvpU8PnV
+#   x6JF6uXu6moWzb0ta9OkKFavDARDZ0rqu9POvM/nMSX/Dy87Wb+Q6oFiNYOdTbLxciPr0Ap0USO8
+#   MlnPYF1/Ftf1UB9uhtVJ674E1s5Tj5UvxFrEri5XqSk6s5N4EOZJ2Jsx+AvCdRIqfp2rQVWHBgoY
+#   v0htJgHbX4fbKP5n0w+yjo86WOrhYONq1JjdRcskz4Pcyt5noBS6EgJOOmWg4D/bqGE+2NVAL6Yu
+#   05yNoXoPgYM02rdEgumHPmwwNG31FjsICg69p80h0AO9LO9wYrEKm4hG58oGuGrL5YlQp2Xn7bRo
+#   Qc1Fd8cLQLdD3BdCcwWDsuNOK74u2cbSk0/bSF4sl+FCoUvIT7uYM4OtGcdsNszHloZzS4sNec9o
+#   PfOGH7NLeuOYFIt+sLoM6wpsPL8q8fmzbVWGbe3Z4hauH0cLBNE9LRVUCKTbF3Zx14vJcS6Sl5MJ
+#   +ZKQT3fHPd9VGxkpLUmkKqAdLvkaHNLLRdg+EcWbnaeChPwYJf2dLuIwB/t/AWXcobn+CgAA

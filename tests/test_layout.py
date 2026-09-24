@@ -6,7 +6,16 @@ import itertools
 import json
 from pathlib import Path
 
-from generator.layout import Rect, header_elements, overlay_layout, page_layout, split, tab_elements, widget_elements
+from generator.layout import (
+    Rect,
+    header_elements,
+    message_layout,
+    overlay_layout,
+    page_layout,
+    split,
+    tab_elements,
+    widget_elements,
+)
 
 CASES = json.loads((Path(__file__).parent / "layout_cases.json").read_text(encoding="utf-8"))
 
@@ -57,7 +66,8 @@ def test_grid_cells_do_not_overlap_and_fill_width() -> None:
 
 def test_overlays() -> None:
     for case in CASES["overlays"]:
-        lay = overlay_layout(case["input"]["w"], case["input"]["h"])
+        fn = message_layout if case["input"].get("kind") == "message" else overlay_layout
+        lay = fn(case["input"]["w"], case["input"]["h"])
         assert {"panel": lay["panel"].as_list(), "elements": lay["elements"]} == case["expected"]
 
 
@@ -66,3 +76,11 @@ def test_styles() -> None:
 
     for case in CASES["styles"]:
         assert resolve_tile_style(case["input"]["theme"], case["input"]["style"]) == case["expected"]
+
+
+def test_every_widget_type_has_parity_cases() -> None:
+    """A new widget must be added to tools/gen_layout_cases.py (WIDGET_TYPES)."""
+    widgets = Path(__file__).parent.parent / "custom_components" / "cyd_studio" / "widgets"
+    defined = {json.loads(p.read_text(encoding="utf-8"))["type"] for p in widgets.glob("*.json")}
+    covered = {case["input"]["type"] for case in CASES["elements"]}
+    assert defined - {"spacer"} <= covered, sorted(defined - covered)

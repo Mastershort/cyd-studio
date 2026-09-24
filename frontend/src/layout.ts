@@ -43,6 +43,8 @@ export interface Element {
   height?: number;
   /** only for icons with a round background: diameter of the circle */
   circle?: number;
+  /** multi-line text (label long_mode WRAP, clipped at height) */
+  wrap?: boolean;
   /** button_grid cells: font size of the text under the icon (0 = icon only) */
   label_size?: number;
 }
@@ -210,9 +212,9 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
     return e;
   };
 
-  if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value" || wtype === "person_presence") {
+  if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value" || wtype === "person_presence" || wtype === "notification_area") {
     const mainSize = wtype === "sensor_value" ? fs.l : fs[String(props.text_size ?? "s")] ?? fs.s;
-    if (wtype === "person_presence") wtype = "binary_indicator"; // same arrangement
+    if (wtype === "person_presence" || wtype === "notification_area") wtype = "binary_indicator"; // same arrangement
     const subSize = fs.xs;
     const tall = ch >= ib(ics.m) + lineHeight(mainSize) + lineHeight(subSize);
     if (tall) {
@@ -521,6 +523,31 @@ export function overlayLayout(width: number, height: number, fontSizes: Record<s
     el("icon", "close", "TOP_RIGHT", 0, 0, ics.s, "text_muted"),
     el("text", "value", "CENTER", 0, -fdiv(SLIDER_H, 2), fs.xl, "text", cw, "center"),
     { ...el("slider", "slider", "BOTTOM_MID", 0, -fdiv(SLIDER_H, 2), 0, "accent", cw - 2 * SLIDER_H), height: SLIDER_H },
+  ];
+  return { panel, elements };
+}
+
+// ---------------------------------------------------------------------------
+// Message overlay (Home Assistant -> display: show_message)
+// ---------------------------------------------------------------------------
+export const MESSAGE_MAX_W = 260;
+export const MESSAGE_MAX_H = 140;
+
+export function messageLayout(width: number, height: number, fontSizes: Record<string, number> = {},
+  iconSizes: Record<string, number> = {}): { panel: Rect; elements: Element[] } {
+  const fs = { ...DEFAULT_FONT_SIZES, ...fontSizes };
+  const ics = { ...DEFAULT_ICON_SIZES, ...iconSizes };
+  const pw = Math.min(width - 2 * OVERLAY_MARGIN, MESSAGE_MAX_W);
+  const ph = Math.min(height - 2 * OVERLAY_MARGIN, MESSAGE_MAX_H);
+  const panel = { x: fdiv(width - pw, 2), y: fdiv(height - ph, 2), w: pw, h: ph };
+  const cw = pw - 2 * TILE_PAD;
+  const ch = ph - 2 * TILE_PAD;
+  const tx = ics.s + ELEMENT_GAP;
+  const head = Math.max(lineHeight(fs.m), ics.s);
+  const elements: Element[] = [
+    el("icon", "icon", "TOP_LEFT", 0, 0, ics.s, "accent"),
+    el("text", "title", "TOP_LEFT", tx, 0, fs.m, "text", Math.max(cw - tx, 1)),
+    { ...el("text", "text", "TOP_LEFT", 0, head + ELEMENT_GAP, fs.s, "text_muted", cw), wrap: true, height: Math.max(ch - head - ELEMENT_GAP, 1) },
   ];
   return { panel, elements };
 }

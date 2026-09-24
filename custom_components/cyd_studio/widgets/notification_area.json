@@ -1,0 +1,34 @@
+{
+  "type": "notification_area",
+  "name": "Meldungen",
+  "name_en": "Messages",
+  "description": "Zeigt die letzte Meldung aus Home Assistant (Aktion show_message)",
+  "description_en": "Shows the last message from Home Assistant (action show_message)",
+  "icon": "mdi:bell-outline",
+  "domains": [],
+  "entity": "none",
+  "default_size": {
+    "w": 4,
+    "h": 1
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "icon",
+      "type": "icon",
+      "default": "mdi:bell-outline",
+      "label": "Icon",
+      "label_en": "Icon"
+    },
+    {
+      "key": "empty_text",
+      "type": "text",
+      "default": "",
+      "label": "Text ohne Meldung",
+      "label_en": "Text without message"
+    }
+  ]
+}

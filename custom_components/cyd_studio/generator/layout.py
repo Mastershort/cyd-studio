@@ -225,9 +225,9 @@ def widget_elements(
             el["circle"] = ib(size)
         return el
 
-    if wtype in ("toggle_tile", "binary_indicator", "sensor_value", "person_presence"):
+    if wtype in ("toggle_tile", "binary_indicator", "sensor_value", "person_presence", "notification_area"):
         main_size = fs["l"] if wtype == "sensor_value" else fs.get(str(props.get("text_size", "s")), fs["s"])
-        if wtype == "person_presence":
+        if wtype in ("person_presence", "notification_area"):
             wtype = "binary_indicator"  # same arrangement
         sub_size = fs["xs"]
         tall = ch >= ib(ics["m"]) + line_height(main_size) + line_height(sub_size)
@@ -539,6 +539,38 @@ def overlay_layout(
         {
             **_el("slider", "slider", "BOTTOM_MID", 0, -(SLIDER_H // 2), 0, "accent", cw - 2 * SLIDER_H),
             "height": SLIDER_H,
+        },
+    ]
+    return {"panel": panel, "elements": elements}
+
+
+# ---------------------------------------------------------------------------
+# Message overlay (Home Assistant -> display: show_message)
+# ---------------------------------------------------------------------------
+MESSAGE_MAX_W = 260
+MESSAGE_MAX_H = 140
+
+
+def message_layout(
+    width: int, height: int, font_sizes: dict[str, int] | None = None, icon_sizes: dict[str, int] | None = None
+) -> dict[str, Any]:
+    """Panel and elements of the message overlay; the text wraps over several lines."""
+    fs = {**DEFAULT_FONT_SIZES, **(font_sizes or {})}
+    ics = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
+    pw = min(width - 2 * OVERLAY_MARGIN, MESSAGE_MAX_W)
+    ph = min(height - 2 * OVERLAY_MARGIN, MESSAGE_MAX_H)
+    panel = Rect((width - pw) // 2, (height - ph) // 2, pw, ph)
+    cw = pw - 2 * TILE_PAD
+    ch = ph - 2 * TILE_PAD
+    tx = ics["s"] + ELEMENT_GAP
+    head = max(line_height(fs["m"]), ics["s"])
+    elements = [
+        _el("icon", "icon", "TOP_LEFT", 0, 0, ics["s"], "accent"),
+        _el("text", "title", "TOP_LEFT", tx, 0, fs["m"], "text", max(cw - tx, 1)),
+        {
+            **_el("text", "text", "TOP_LEFT", 0, head + ELEMENT_GAP, fs["s"], "text_muted", cw),
+            "wrap": True,
+            "height": max(ch - head - ELEMENT_GAP, 1),
         },
     ]
     return {"panel": panel, "elements": elements}

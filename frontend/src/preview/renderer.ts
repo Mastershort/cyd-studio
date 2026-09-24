@@ -2,7 +2,7 @@
 // Uses the same layout functions as the generator (src/layout.ts == generator/layout.py)
 // and mirrors the LVGL styles written by generator/generate.py.
 import {
-  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight, overlayLayout,
+  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight, messageLayout, overlayLayout,
   navPages, pageLayout, tabElements, widgetElements, type Element, type Rect,
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
@@ -27,6 +27,8 @@ export interface RenderInput {
   night?: boolean;
   /** decoded project images (backgrounds) by asset id */
   images?: Record<string, CanvasImageSource>;
+  /** message sent by Home Assistant (show_message) */
+  message?: { title: string; text: string } | null;
   /** value overlay opened by a long press (same layout as the device) */
   overlay?: { title: string; value: number } | null;
 }
@@ -222,6 +224,33 @@ class Painter {
     }
     ctx.font = textFont(el.size);
     const lh = lineHeight(el.size);
+    if (el.wrap && el.width) {
+      // LVGL long_mode WRAP: break at spaces, clip at the element height
+      const lines: string[] = [];
+      for (const para of text.split("\n")) {
+        let line = "";
+        for (const word of para.split(" ")) {
+          const next = line ? `${line} ${word}` : word;
+          if (ctx.measureText(next).width > el.width && line) {
+            lines.push(line);
+            line = word;
+          } else line = next;
+        }
+        lines.push(line);
+      }
+      const box = { x: 0, y: 0, w: el.width, h: el.height ?? lh };
+      const pos = alignChild(parent, box.w, box.h, el.align, el.x, el.y);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pos.x, pos.y, box.w, box.h);
+      ctx.clip();
+      ctx.fillStyle = color;
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      lines.forEach((l, i) => ctx.fillText(l, pos.x, pos.y + i * lh + Math.round((el.size * ASCENT_PER_MILLE) / 1000)));
+      ctx.restore();
+      return { x: pos.x, y: pos.y, w: box.w, h: box.h };
+    }
     let shown = text;
     let textW = ctx.measureText(shown).width;
     const boxW = el.width ?? Math.ceil(textW);
@@ -278,6 +307,7 @@ export function renderScreen(canvas: HTMLCanvasElement, input: RenderInput): Hit
   }
   renderTopLayer(p, input, page, hits);
   if (input.overlay) renderOverlay(p, input, input.overlay, hits);
+  if (input.message) renderMessage(p, input, input.message, hits);
   if (input.night) {
     const night = project.settings?.brightness_night ?? 25;
     ctx.fillStyle = `rgba(0,0,0,${1 - Math.max(night, 5) / 100})`;
@@ -551,6 +581,17 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
     }
     case "spacer":
       break;
+    case "notification_area": {
+      tileBox();
+      const msg = input.message;
+      const empty = String(props.empty_text || (project.settings?.language === "en" ? "No messages" : "Keine Meldungen"));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, String(props.icon || "mdi:bell-outline"), col(el.color));
+        else if (el.role === "label") draw(el, msg?.title || empty, col(el.color));
+        else if (el.role === "state") draw(el, msg?.text ?? "", col(el.color));
+      }
+      break;
+    }
     case "button_grid": {
       tileBox();
       const buttons = gridButtons(w);
@@ -798,4 +839,20 @@ function countdownValues(w: Widget, entity: HassEntity | undefined, now: Date): 
   }
   const end = parseTime(entity.state);
   return { remaining: end > 0 ? Math.max(0, end - nowS) : -1, total: -1 };
+}
+
+function renderMessage(p: Painter, input: RenderInput, msg: { title: string; text: string }, hits: HitRegion[]): void {
+  const { board, theme } = input;
+  const ctx = p.ctx;
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(0, 0, board.width, board.height);
+  hits.push({ kind: "overlay-close", id: "message", rect: { x: 0, y: 0, w: board.width, h: board.height } });
+  const { panel, elements } = messageLayout(board.width, board.height, theme.font_sizes, theme.icon_sizes);
+  p.box(panel, p.color("tile"), p.color("accent"), theme.radius ?? 8, 2);
+  const content = { x: panel.x + TILE_PAD, y: panel.y + TILE_PAD, w: panel.w - 2 * TILE_PAD, h: panel.h - 2 * TILE_PAD };
+  for (const el of elements) {
+    if (el.role === "icon") p.element(content, el, "mdi:bell-ring-outline", p.color("accent"));
+    else if (el.role === "title") p.element(content, el, msg.title, p.color("text"));
+    else p.element(content, el, msg.text, p.color("text_muted"));
+  }
 }

@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "custom_components" / "cyd_studio"))
 
 from generator.layout import (  # noqa: E402
     header_elements,
+    message_layout,
     overlay_layout,
     page_layout,
     tab_elements,
@@ -51,6 +52,14 @@ WIDGET_TYPES = [
     "gauge",
     "weather",
     "multi_value",
+    "number_stepper",
+    "select",
+    "countdown",
+    "person_presence",
+    "qr_code",
+    "divider",
+    "button_grid",
+    "notification_area",
 ]
 PROPS = [
     {"icon": "mdi:lightbulb", "show_state": True, "show_date": True, "size": "xl", "align": "center"},
@@ -131,6 +140,13 @@ def main() -> None:
         lay = overlay_layout(w, h)
         overlays.append(
             {"input": {"w": w, "h": h}, "expected": {"panel": lay["panel"].as_list(), "elements": lay["elements"]}}
+        )
+        msg = message_layout(w, h)
+        overlays.append(
+            {
+                "input": {"w": w, "h": h, "kind": "message"},
+                "expected": {"panel": msg["panel"].as_list(), "elements": msg["elements"]},
+            }
         )
     from generator.style import load_presets, resolve_tile_style
     from generator.theme import load_themes
