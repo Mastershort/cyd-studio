@@ -58,7 +58,7 @@ class ProjectStore:
         await self._store.async_save(self._data)
 
     # -- queries -----------------------------------------------------------
-    def list(self) -> list[dict[str, Any]]:
+    def summaries(self) -> list[dict[str, Any]]:
         """Summaries of all projects, newest first."""
         out = []
         for project in self._data["projects"].values():

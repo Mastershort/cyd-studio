@@ -140,7 +140,7 @@ async def ws_projects_list(
     hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
 ) -> None:
     """Project summaries."""
-    connection.send_result(msg["id"], runtime.store.list())
+    connection.send_result(msg["id"], runtime.store.summaries())
 
 
 @websocket_api.websocket_command({vol.Required("type"): "cyd_studio/projects/get", vol.Required("project_id"): str})

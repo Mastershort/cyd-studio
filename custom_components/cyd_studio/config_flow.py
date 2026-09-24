@@ -38,7 +38,7 @@ class CydStudioConfigFlow(ConfigFlow, domain=DOMAIN):
         """Inform whether the ESPHome Device Builder directory exists (not required)."""
         if user_input is not None:
             return self.async_create_entry(title="CYD Studio", data={})
-        path = self.hass.config.path(DEFAULT_OPTIONS[CONF_ESPHOME_PATH])
+        path = self.hass.config.path(str(DEFAULT_OPTIONS[CONF_ESPHOME_PATH]))
         exists = await self.hass.async_add_executor_job(os.path.isdir, path)
         return self.async_show_form(
             step_id="esphome",

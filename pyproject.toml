@@ -29,6 +29,11 @@ strict = true
 ignore_missing_imports = true
 exclude = ["reference/", "tests/", "tools/", "frontend/"]
 
+[[tool.mypy.overrides]]
+# HA re-exports websocket_api helpers without __all__
+module = "homeassistant.*"
+implicit_reexport = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

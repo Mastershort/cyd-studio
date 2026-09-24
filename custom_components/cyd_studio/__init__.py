@@ -45,7 +45,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def list_projects(call: ServiceCall) -> ServiceResponse:
         runtime: StudioRuntime | None = hass.data.get(DOMAIN)
-        projects: list[Any] = runtime.store.list() if runtime else []
+        projects: list[Any] = runtime.store.summaries() if runtime else []
         return {"projects": projects}
 
     hass.services.async_register(DOMAIN, "list_projects", list_projects, supports_response=SupportsResponse.ONLY)

@@ -23,7 +23,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "boards": sorted(runtime.data.boards),
         "projects": [
             {k: p[k] for k in ("name", "board", "orientation", "page_count", "widget_count", "updated")}
-            for p in runtime.store.list()
+            for p in runtime.store.summaries()
         ],
         "last_generator_issues": runtime.last_issues,
     }
