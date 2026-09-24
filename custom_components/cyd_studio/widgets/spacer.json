@@ -1,0 +1,19 @@
+{
+  "type": "spacer",
+  "name": "Abstand",
+  "name_en": "Spacer",
+  "description": "Leerer Platzhalter",
+  "description_en": "Empty space",
+  "icon": "mdi:border-none-variant",
+  "domains": [],
+  "entity": "none",
+  "default_size": {
+    "w": 1,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": []
+}

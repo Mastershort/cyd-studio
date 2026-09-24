@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.5.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
 # Projekt: Ümlaut "Test": Küche & Bad · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -974,7 +974,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_9
                   text: Unter-Unterseite
-# cyd_studio_checksum: e77efabbc82a8f5b
+# cyd_studio_checksum: 6cb1f28df219ca2e
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/61WzY7bNhB+FYJF24sVyLK7aHRqixYI0KKXpJdmDZWSxjJhihRIyj+70FPkmkfp

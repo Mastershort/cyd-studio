@@ -60,6 +60,8 @@ PROPS = [
     {"icon": "mdi:fan", "icon_circle": True, "text_size": "l", "show_date": False},
     {"icon": "mdi:weather-sunny", "_count": 2, "text_size": "m"},
     {"icon": "", "_count": 3, "icon_circle": True},
+    {"icon": "mdi:account", "_count": 5, "label": "Gast-WLAN"},
+    {"icon": "mdi:timer", "_count": 6, "text_size": "l", "label": ""},
 ]
 SIZES = [(30, 30), (60, 48), (147, 52), (147, 112), (304, 48), (100, 160), (200, 200)]
 

@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.5.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
 # Projekt: SmartDisplay · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -728,7 +728,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_4
                   text: Ambient
-# cyd_studio_checksum: 0f61b7bb0778570e
+# cyd_studio_checksum: 037c587e97237def
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/52V3Y7bNhCF34XXdiBLWzcroBdtFkhaoEHRH7RFsRBG0khmTZEESdm7WfjdM0NR

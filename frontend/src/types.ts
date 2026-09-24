@@ -114,6 +114,8 @@ export interface PropDef {
   key: string;
   type: "text" | "icon" | "bool" | "int" | "select" | "page" | "entity";
   domains?: string[];
+  /** only shown when the widget's "count" property is at least this number (button_grid) */
+  min_count?: number;
   default: unknown;
   label: string;
   label_en: string;
@@ -130,7 +132,7 @@ export interface WidgetDef {
   description_en: string;
   icon: string;
   domains: string[];
-  entity: "required" | "none" | "action";
+  entity: "required" | "optional" | "none" | "action";
   default_size: { w: number; h: number };
   min_size: { w: number; h: number };
   props: PropDef[];

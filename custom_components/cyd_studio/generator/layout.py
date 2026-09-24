@@ -21,6 +21,7 @@ CIRCLE_PAD = 5
 SMALL_BUTTON_MAX = 40
 TILE_SLIDER_H = 12
 VALUE_W = 44
+BAR_H = 6
 ELEMENT_GAP = 6
 
 # Font metrics of Montserrat as rendered by ESPHome (freetype, ascender 968 / descender 251 per 1000 em)
@@ -224,8 +225,10 @@ def widget_elements(
             el["circle"] = ib(size)
         return el
 
-    if wtype in ("toggle_tile", "binary_indicator", "sensor_value"):
+    if wtype in ("toggle_tile", "binary_indicator", "sensor_value", "person_presence"):
         main_size = fs["l"] if wtype == "sensor_value" else fs.get(str(props.get("text_size", "s")), fs["s"])
+        if wtype == "person_presence":
+            wtype = "binary_indicator"  # same arrangement
         sub_size = fs["xs"]
         tall = ch >= ib(ics["m"]) + line_height(main_size) + line_height(sub_size)
         has_icon = bool(props.get("icon"))
@@ -326,7 +329,7 @@ def widget_elements(
             els.append(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"))
         return els
 
-    if wtype == "climate":
+    if wtype in ("climate", "number_stepper", "select"):
         tall = ch >= 2 * lh_xs + line_height(fs["l"]) + 2 * ELEMENT_GAP
         rows = 2 * lh_xs if tall else lh_xs
         bs = max(min(ch - rows - ELEMENT_GAP, SMALL_BUTTON_MAX, cw // 4), 16)
@@ -384,6 +387,55 @@ def widget_elements(
             vx, vw = split(0, cw, count, ELEMENT_GAP, i)
             els.append(_el("text", f"value{i}", "TOP_LEFT", vx, 0, value_size, "text", vw))
             els.append(_el("text", f"label{i}", "BOTTOM_LEFT", vx, 0, fs["xs"], "text_muted", vw))
+        return els
+
+    if wtype == "countdown":
+        if ch < lh_t + line_height(fs["l"]):
+            # flat tile: name left, time right
+            els.append(_el("text", "label", "LEFT_MID", 0, 0, text_size, "text", max(cw // 2 - ELEMENT_GAP, 1)))
+            els.append(_el("text", "value", "RIGHT_MID", 0, 0, fs["l"], "text", cw - cw // 2, "right"))
+            return els
+        big = fs["xl"] if ch >= lh_t + line_height(fs["xl"]) + BAR_H + 4 else fs["l"]
+        with_bar = ch >= lh_t + line_height(big) + BAR_H + 4
+        els.append(_el("text", "label", "TOP_LEFT", 0, 0, text_size, "text", cw))
+        els.append(_el("text", "value", "BOTTOM_LEFT", 0, -(BAR_H + 4) if with_bar else 0, big, "text", cw))
+        if with_bar:
+            els.append(sized("bar", "bar", "BOTTOM_MID", 0, 0, cw, BAR_H, 0, "accent"))
+        return els
+
+    if wtype == "qr_code":
+        with_label = bool(props.get("label")) and ch >= 48 + lh_xs
+        d = max(min(cw, ch - (lh_xs if with_label else 0)), 16)
+        els.append(sized("qr", "qr", "TOP_MID" if with_label else "CENTER", 0, 0, d, d, 0, "text"))
+        if with_label:
+            els.append(_el("text", "label", "BOTTOM_MID", 0, 0, fs["xs"], "text_muted", cw, "center"))
+        return els
+
+    if wtype == "divider":
+        els.append(sized("line", "line", "CENTER", 0, 0, cw, 2, 0, "text_muted"))
+        return els
+
+    if wtype == "button_grid":
+        count = max(1, min(int(props.get("_count", 1)), 6))
+        cols = count if count <= 3 else (count + 1) // 2
+        rows = (count + cols - 1) // cols
+        for i in range(count):
+            bx, bw = split(0, cw, cols, ELEMENT_GAP, i % cols)
+            by, bh = split(0, ch, rows, ELEMENT_GAP, i // cols)
+            with_text = bh >= ics["s"] + lh_xs + 4
+            el = sized(
+                "button",
+                f"btn{i}",
+                "TOP_LEFT",
+                bx,
+                by,
+                bw,
+                bh,
+                ics["s"] if with_text or bh < ics["m"] + 6 else ics["m"],
+                "accent",
+            )
+            el["label_size"] = fs["xs"] if with_text else 0
+            els.append(el)
         return els
 
     if wtype == "page_title":

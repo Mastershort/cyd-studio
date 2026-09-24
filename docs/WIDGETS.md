@@ -34,6 +34,17 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 | `weather` | weather | Icon je Wetterlage, Temperatur, Beschreibung, optional Luftfeuchte (Texte/Icons: `data/state_texts.json`) |
 | `multi_value` | sensor, input_number, number | bis zu 3 Werte nebeneinander (`entity`, `entity_2`, `entity_3`) |
 
+| `number_stepper` | input_number, number, counter | − / Wert / + (`set_value` mit Schritt, Min/Max; Zähler: `increment`/`decrement`) |
+| `select` | input_select, select | aktuelle Option mit ‹ › (`select_previous` / `select_next`) |
+| `countdown` | timer, sensor (Zeitstempel), input_datetime | Restzeit jede Sekunde neu berechnet (`finishes_at`, `remaining`, `duration`), Fortschrittsbalken bei Timern |
+| `person_presence` | person, device_tracker | zu Hause / unterwegs |
+| `qr_code` | optional sensor, input_text, text | LVGL-QR-Code aus Text oder Entität (schwarz auf weiß) |
+| `divider`, `spacer` | – | Linie bzw. leerer Platz (auf dem Gerät kein Objekt) |
+| `button_grid` | – | 2–6 Tasten mit Icon/Text und eigener Aktion (leer = passend zum Ziel: Szene, Skript, Taste …) |
+
+Zeitstempel wandelt die Hilfsfunktion `cyd_parse_time` (ISO 8601 inkl. Zeitzone, ohne Zone = Ortszeit)
+in UTC-Sekunden um; `cyd_parse_duration` liest `H:MM:SS`.
+
 Kleine Tasten in Kacheln nutzen den Style `cyd_small_btn` (Farbe = Kreis-Hintergrund des Stils,
 Icon = „Icon an“).
 

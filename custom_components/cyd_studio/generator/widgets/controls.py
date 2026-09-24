@@ -57,7 +57,9 @@ def _small_button(ctx: Context, el: dict[str, Any], icon: str, style: dict[str, 
     conf.update({"width": el["width"], "height": el["height"], "styles": "cyd_small_btn"})
     if style["circle_bg"] != ctx.default_style["circle_bg"]:
         conf["bg_color"] = ctx.hex(style["circle_bg"])
-    conf.update({"on_short_click": on_click, "widgets": [label]})
+    if on_click:
+        conf["on_short_click"] = on_click
+    conf["widgets"] = [label]
     return {"button": conf}
 
 

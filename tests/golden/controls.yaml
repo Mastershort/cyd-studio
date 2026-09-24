@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.5.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
 # Projekt: Steuerung · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -1271,7 +1271,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_1
                   text: "CO₂"
-# cyd_studio_checksum: 0c6ead64a6e2a056
+# cyd_studio_checksum: 01d940ed68486d9f
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/61WS47jNhC9C4Hs3IZanm50vJ1BECCLBJkgWQQNgpLKEmH+wI8dT8ObOVHOkKPk

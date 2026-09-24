@@ -20,7 +20,7 @@ from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import opa, page_show
 
-GENERATOR_VERSION = "0.5.0"
+GENERATOR_VERSION = "0.6.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -489,6 +489,44 @@ def _helper_globals(ctx: Context) -> list[Any]:
         )
         out.append({"id": "cyd_ov_entity", "type": "std::string", "restore_value": False})
         out.append({"id": "cyd_ov_kind", "type": "int", "restore_value": False, "initial_value": "0"})
+    if "time_parse" in ctx.helpers:
+        parse_time = "\n".join(
+            [
+                "[](const std::string &s) -> long {",
+                "  // ISO date/time from Home Assistant -> UTC epoch seconds (-1 if not parseable)",
+                "  int y, mo, d, h, mi, se;",
+                "  char sep;",
+                '  if (sscanf(s.c_str(), "%d-%d-%d%c%d:%d:%d", &y, &mo, &d, &sep, &h, &mi, &se) != 7) return -1;',
+                "  y -= mo <= 2;",
+                "  const long era = (y >= 0 ? y : y - 399) / 400;",
+                "  const long yoe = y - era * 400;",
+                "  const long doy = (153 * (mo + (mo > 2 ? -3 : 9)) + 2) / 5 + d - 1;",
+                "  const long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;",
+                "  const long t = (era * 146097 + doe - 719468) * 86400L + h * 3600L + mi * 60L + se;",
+                '  const size_t p = s.find_first_of("+-Z", 19);',
+                "  if (p == std::string::npos) return t - ESPTime::timezone_offset();  // local time",
+                "  if (s[p] == 'Z') return t;",
+                "  int oh = 0, om = 0;",
+                '  sscanf(s.c_str() + p + 1, "%d:%d", &oh, &om);',
+                "  const long off = oh * 3600L + om * 60L;",
+                "  return s[p] == '+' ? t - off : t + off;",
+                "}",
+            ]
+        )
+        parse_duration = "\n".join(
+            [
+                "[](const std::string &s) -> long {",
+                '  // "H:MM:SS" -> seconds (-1 if not parseable)',
+                "  int h, m, sec;",
+                '  if (sscanf(s.c_str(), "%d:%d:%d", &h, &m, &sec) != 3) return -1;',
+                "  return h * 3600L + m * 60L + sec;",
+                "}",
+            ]
+        )
+        out.append({"id": "cyd_parse_time", "type": "std::function<long(const std::string &)>",
+                    "restore_value": False, "initial_value": Block(parse_time)})  # fmt: skip
+        out.append({"id": "cyd_parse_duration", "type": "std::function<long(const std::string &)>",
+                    "restore_value": False, "initial_value": Block(parse_duration)})  # fmt: skip
     return out
 
 

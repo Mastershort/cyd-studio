@@ -1,0 +1,38 @@
+{
+  "type": "qr_code",
+  "name": "QR-Code",
+  "name_en": "QR code",
+  "description": "QR-Code aus Text (z. B. Gäste-WLAN) oder einer Entität",
+  "description_en": "QR code from text (e.g. guest WiFi) or an entity",
+  "icon": "mdi:qrcode",
+  "domains": [
+    "sensor",
+    "input_text",
+    "text"
+  ],
+  "entity": "optional",
+  "default_size": {
+    "w": 1,
+    "h": 2
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "text",
+      "type": "text",
+      "default": "WIFI:T:WPA;S:Gast;P:passwort;;",
+      "label": "Text (oder Entität wählen)",
+      "label_en": "Text (or pick an entity)"
+    },
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    }
+  ]
+}

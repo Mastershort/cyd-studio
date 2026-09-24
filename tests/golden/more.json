@@ -1,0 +1,178 @@
+{
+  "schema": 1,
+  "id": "golden-more",
+  "name": "Mehr",
+  "device_name": "cyd-more",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "oled",
+  "grid": {
+    "cols": 4,
+    "rows": 3,
+    "gap": 8,
+    "padding": 8
+  },
+  "settings": {
+    "language": "de"
+  },
+  "navigation": {
+    "style": "tabbar"
+  },
+  "pages": [
+    {
+      "id": "eins",
+      "name": "Eins",
+      "icon": "mdi:numeric-1",
+      "widgets": [
+        {
+          "id": "n",
+          "type": "number_stepper",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "input_number.soll",
+          "props": {
+            "label": "Soll",
+            "step": "0.5",
+            "min": 10,
+            "max": 30,
+            "unit": "°C",
+            "decimals": 1
+          }
+        },
+        {
+          "id": "z",
+          "type": "number_stepper",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "counter.gaeste",
+          "props": {
+            "label": "Gäste"
+          }
+        },
+        {
+          "id": "s",
+          "type": "select",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "input_select.heizmodus",
+          "props": {
+            "label": "Heizmodus"
+          }
+        },
+        {
+          "id": "c",
+          "type": "countdown",
+          "x": 2,
+          "y": 1,
+          "w": 2,
+          "h": 2,
+          "entity": "timer.waschmaschine",
+          "props": {
+            "label": "Waschmaschine"
+          }
+        },
+        {
+          "id": "d",
+          "type": "countdown",
+          "x": 0,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "sensor.trockner_fertig",
+          "props": {
+            "label": "Trockner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "zwei",
+      "name": "Zwei",
+      "icon": "mdi:numeric-2",
+      "widgets": [
+        {
+          "id": "p",
+          "type": "person_presence",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "person.anna",
+          "props": {
+            "label": "Anna",
+            "icon": "mdi:account"
+          }
+        },
+        {
+          "id": "q",
+          "type": "qr_code",
+          "x": 2,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "props": {
+            "text": "WIFI:T:WPA;S:Gast;P:geheim;;",
+            "label": "Gast-WLAN"
+          }
+        },
+        {
+          "id": "q2",
+          "type": "qr_code",
+          "x": 3,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "entity": "input_text.link",
+          "props": {
+            "text": "x"
+          }
+        },
+        {
+          "id": "l",
+          "type": "divider",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1
+        },
+        {
+          "id": "sp",
+          "type": "spacer",
+          "x": 0,
+          "y": 2,
+          "w": 1,
+          "h": 1
+        },
+        {
+          "id": "g",
+          "type": "button_grid",
+          "x": 1,
+          "y": 2,
+          "w": 3,
+          "h": 1,
+          "props": {
+            "count": "3",
+            "label_1": "Kino",
+            "icon_1": "mdi:movie",
+            "target_1": "scene.kino",
+            "label_2": "Aus",
+            "icon_2": "mdi:power",
+            "target_2": "script.alles_aus",
+            "label_3": "Licht",
+            "icon_3": "mdi:lightbulb",
+            "target_3": "light.flur"
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "updated": "2026-09-24"
+  }
+}

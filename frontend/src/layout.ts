@@ -12,6 +12,7 @@ export const CIRCLE_PAD = 5;
 export const SMALL_BUTTON_MAX = 40;
 export const TILE_SLIDER_H = 12;
 export const VALUE_W = 44;
+export const BAR_H = 6;
 export const ELEMENT_GAP = 6;
 export const ASCENT_PER_MILLE = 968;
 export const LINE_HEIGHT_PER_MILLE = 1219;
@@ -29,7 +30,7 @@ export interface Rect {
 }
 
 export interface Element {
-  kind: "icon" | "text" | "slider" | "button" | "arc";
+  kind: "icon" | "text" | "slider" | "button" | "arc" | "bar" | "qr" | "line";
   role: string;
   align: string;
   x: number;
@@ -42,6 +43,8 @@ export interface Element {
   height?: number;
   /** only for icons with a round background: diameter of the circle */
   circle?: number;
+  /** button_grid cells: font size of the text under the icon (0 = icon only) */
+  label_size?: number;
 }
 
 const fdiv = (a: number, b: number): number => Math.floor(a / b);
@@ -207,8 +210,9 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
     return e;
   };
 
-  if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value") {
+  if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value" || wtype === "person_presence") {
     const mainSize = wtype === "sensor_value" ? fs.l : fs[String(props.text_size ?? "s")] ?? fs.s;
+    if (wtype === "person_presence") wtype = "binary_indicator"; // same arrangement
     const subSize = fs.xs;
     const tall = ch >= ib(ics.m) + lineHeight(mainSize) + lineHeight(subSize);
     if (tall) {
@@ -313,7 +317,7 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
     return els;
   }
 
-  if (wtype === "climate") {
+  if (wtype === "climate" || wtype === "number_stepper" || wtype === "select") {
     const tall = ch >= 2 * lhXs + lineHeight(fs.l) + 2 * ELEMENT_GAP;
     const rows = tall ? 2 * lhXs : lhXs;
     const bs = Math.max(Math.min(ch - rows - ELEMENT_GAP, SMALL_BUTTON_MAX, fdiv(cw, 4)), 16);
@@ -373,6 +377,49 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
       const [vx, vw] = split(0, cw, count, ELEMENT_GAP, i);
       els.push(el("text", `value${i}`, "TOP_LEFT", vx, 0, valueSize, "text", vw));
       els.push(el("text", `label${i}`, "BOTTOM_LEFT", vx, 0, fs.xs, "text_muted", vw));
+    }
+    return els;
+  }
+
+  if (wtype === "countdown") {
+    if (ch < lhT + lineHeight(fs.l)) {
+      // flat tile: name left, time right
+      els.push(el("text", "label", "LEFT_MID", 0, 0, textSize, "text", Math.max(fdiv(cw, 2) - ELEMENT_GAP, 1)));
+      els.push(el("text", "value", "RIGHT_MID", 0, 0, fs.l, "text", cw - fdiv(cw, 2), "right"));
+      return els;
+    }
+    const big = ch >= lhT + lineHeight(fs.xl) + BAR_H + 4 ? fs.xl : fs.l;
+    const withBar = ch >= lhT + lineHeight(big) + BAR_H + 4;
+    els.push(el("text", "label", "TOP_LEFT", 0, 0, textSize, "text", cw));
+    els.push(el("text", "value", "BOTTOM_LEFT", 0, withBar ? -(BAR_H + 4) : 0, big, "text", cw));
+    if (withBar) els.push(sized("bar", "bar", "BOTTOM_MID", 0, 0, cw, BAR_H, 0, "accent"));
+    return els;
+  }
+
+  if (wtype === "qr_code") {
+    const withLabel = Boolean(props.label) && ch >= 48 + lhXs;
+    const d = Math.max(Math.min(cw, ch - (withLabel ? lhXs : 0)), 16);
+    els.push(sized("qr", "qr", withLabel ? "TOP_MID" : "CENTER", 0, 0, d, d, 0, "text"));
+    if (withLabel) els.push(el("text", "label", "BOTTOM_MID", 0, 0, fs.xs, "text_muted", cw, "center"));
+    return els;
+  }
+
+  if (wtype === "divider") {
+    els.push(sized("line", "line", "CENTER", 0, 0, cw, 2, 0, "text_muted"));
+    return els;
+  }
+
+  if (wtype === "button_grid") {
+    const count = Math.max(1, Math.min(Math.trunc(Number(props._count ?? 1)), 6));
+    const cols = count <= 3 ? count : fdiv(count + 1, 2);
+    const rows = fdiv(count + cols - 1, cols);
+    for (let i = 0; i < count; i++) {
+      const [bx, bw] = split(0, cw, cols, ELEMENT_GAP, i % cols);
+      const [by, bh] = split(0, ch, rows, ELEMENT_GAP, fdiv(i, cols));
+      const withText = bh >= ics.s + lhXs + 4;
+      const e = sized("button", `btn${i}`, "TOP_LEFT", bx, by, bw, bh, withText || bh < ics.m + 6 ? ics.s : ics.m, "accent");
+      e.label_size = withText ? fs.xs : 0;
+      els.push(e);
     }
     return els;
   }

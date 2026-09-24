@@ -1,0 +1,51 @@
+{
+  "type": "person_presence",
+  "name": "Person",
+  "name_en": "Person",
+  "description": "Zuhause oder unterwegs",
+  "description_en": "Home or away",
+  "icon": "mdi:account",
+  "domains": [
+    "person",
+    "device_tracker"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "icon",
+      "type": "icon",
+      "default": "mdi:account",
+      "label": "Icon",
+      "label_en": "Icon"
+    },
+    {
+      "key": "text_on",
+      "type": "text",
+      "default": "Zuhause",
+      "label": "Text zuhause",
+      "label_en": "Text at home"
+    },
+    {
+      "key": "text_off",
+      "type": "text",
+      "default": "Unterwegs",
+      "label": "Text unterwegs",
+      "label_en": "Text away"
+    }
+  ]
+}

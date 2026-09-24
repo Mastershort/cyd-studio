@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.5.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
 # Projekt: Hallway · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -741,7 +741,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_9
                   text: Service
-# cyd_studio_checksum: c0f9affe3f3b25cf
+# cyd_studio_checksum: 2ae84b3337a1fbaa
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/7VWXW/rNgz9K5n2mhSu06W9eRsGDBuw4Q7Ywx6GwqBtxhYqS4YkJ82K/PeRkuw4

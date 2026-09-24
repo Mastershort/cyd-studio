@@ -1,0 +1,31 @@
+{
+  "type": "countdown",
+  "name": "Countdown",
+  "name_en": "Countdown",
+  "description": "Restzeit eines Timers (mit Fortschritt) oder bis zu einem Zeitpunkt",
+  "description_en": "Remaining time of a timer (with progress) or until a timestamp",
+  "icon": "mdi:timer-outline",
+  "domains": [
+    "timer",
+    "sensor",
+    "input_datetime"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    }
+  ]
+}

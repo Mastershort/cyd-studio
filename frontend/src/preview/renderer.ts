@@ -8,6 +8,7 @@ import {
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
 import { layoutProps, resolveTileStyle, type TileStyle } from "../style";
 import stateTextsData from "../../../custom_components/cyd_studio/data/state_texts.json";
+import qrcode from "qrcode-generator";
 import { deviceStrings } from "../i18n";
 import type { HassEntity, Page, Project, Theme, Widget } from "../types";
 import { iconFont, textFont } from "./fonts";
@@ -137,6 +138,34 @@ class Painter {
     const k = h + 6;
     this.box({ x: pos.x + filled - Math.floor(k / 2), y: pos.y - 3, w: k, h: k }, knob, null, k, 0);
     return { x: pos.x, y: pos.y, w, h };
+  }
+
+  /** LVGL qrcode: modules scaled to the size, white quiet area. */
+  qr(parent: Rect, el: Element, text: string): void {
+    const d = el.width ?? 60;
+    const pos = alignChild(parent, d, d, el.align, el.x, el.y);
+    const ctx = this.ctx;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(pos.x, pos.y, d, d);
+    const qr = qrcode(0, "M");
+    qr.addData(text || " ");
+    qr.make();
+    const n = qr.getModuleCount();
+    const m = Math.max(1, Math.floor(d / n));
+    const off = Math.floor((d - m * n) / 2);
+    ctx.fillStyle = "#000000";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(pos.x + off + c * m, pos.y + off + r * m, m, m);
+  }
+
+  /** LVGL bar: rounded track with indicator. */
+  bar(parent: Rect, el: Element, fraction: number, track: string, indicator: string): void {
+    const w = el.width ?? 100;
+    const h = el.height ?? 6;
+    const pos = alignChild(parent, w, h, el.align, el.x, el.y);
+    const r = Math.floor(h / 2);
+    this.box({ x: pos.x, y: pos.y, w, h }, track, null, r, 0);
+    const f = Math.round(w * Math.max(0, Math.min(1, fraction)));
+    if (f > 0) this.box({ x: pos.x, y: pos.y, w: Math.max(f, h), h }, indicator, null, r, 0);
   }
 
   /** LVGL arc from 135° over 270° (0° = 3 o'clock, clockwise), rounded ends. */
@@ -458,6 +487,89 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       }
       break;
     }
+    case "number_stepper": {
+      tileBox();
+      const n = st !== undefined ? Number.parseFloat(st) : Number.NaN;
+      const unit = String(props.unit ?? "");
+      const decimals = Math.max(0, Math.min(Number(props.decimals ?? 0), 2));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "value") draw(el, Number.isNaN(n) ? "--" : `${n.toFixed(decimals)}${unit ? ` ${unit}` : ""}`, col(el.color));
+        else if (el.kind === "button") p.smallButton(content, el, el.role === "plus" ? "mdi:plus" : "mdi:minus", style.circle_bg, style.icon_on, style.radius);
+      }
+      break;
+    }
+    case "select": {
+      tileBox();
+      const value = !st || st === "unknown" || st === "unavailable" ? "--" : st;
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "value") draw(el, value, col(el.color));
+        else if (el.kind === "button") p.smallButton(content, el, el.role === "plus" ? "mdi:chevron-right" : "mdi:chevron-left", style.circle_bg, style.icon_on, style.radius);
+      }
+      break;
+    }
+    case "countdown": {
+      tileBox();
+      const { remaining, total } = countdownValues(w, entity, input.now);
+      const text = remaining < 0 ? "–" : remaining >= 3600
+        ? `${Math.floor(remaining / 3600)}:${pad2(Math.floor(remaining / 60) % 60)}:${pad2(remaining % 60)}`
+        : `${pad2(Math.floor(remaining / 60))}:${pad2(remaining % 60)}`;
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "value") draw(el, text, col(el.color));
+        else if (el.kind === "bar") p.bar(content, el, remaining < 0 || total <= 0 ? 0 : (total - remaining) / total, style.circle_bg, style.icon_on);
+      }
+      break;
+    }
+    case "person_presence": {
+      tileBox();
+      const home = st === "home";
+      const textOn = String(props.text_on || (project.settings?.language === "en" ? "Home" : "Zuhause"));
+      const textOff = String(props.text_off || (project.settings?.language === "en" ? "Away" : "Unterwegs"));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, String(props.icon || "mdi:account"), home ? style.icon_on : style.icon, home);
+        else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "state") draw(el, st === undefined ? strings.unknown : home ? textOn : textOff, col(el.color));
+      }
+      break;
+    }
+    case "qr_code": {
+      const text = (w.entity && st) || String(props.text || " ");
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.kind === "qr") p.qr(content, el, text);
+        else draw(el, String(props.label ?? ""), col(el.color));
+      }
+      break;
+    }
+    case "divider": {
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        const pos = alignChild(content, el.width ?? 10, el.height ?? 2, el.align, el.x, el.y);
+        p.box({ x: pos.x, y: pos.y, w: el.width ?? 10, h: el.height ?? 2 }, style.sub, null, 1, 0, 0.5);
+      }
+      break;
+    }
+    case "spacer":
+      break;
+    case "button_grid": {
+      tileBox();
+      const buttons = gridButtons(w);
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp({ _count: buttons.length }), fs, ics)) {
+        const b = buttons[Number(el.role.slice(3))];
+        if (!el.label_size) {
+          p.smallButton(content, el, b.icon || "mdi:gesture-tap", style.circle_bg, style.icon_on, style.radius);
+          continue;
+        }
+        const pos = alignChild(content, el.width ?? 20, el.height ?? 20, el.align, el.x, el.y);
+        const cell = { x: pos.x, y: pos.y, w: el.width ?? 20, h: el.height ?? 20 };
+        p.box(cell, style.circle_bg, null, Math.min(style.radius, 10), 0);
+        const lh = lineHeight(el.label_size);
+        p.element(cell, { ...el, kind: "icon", align: "CENTER", x: 0, y: -Math.floor(lh / 2), width: null }, b.icon || "mdi:gesture-tap", style.icon_on);
+        p.element(cell, { kind: "text", role: "text", align: "BOTTOM_MID", x: 0, y: -2, size: el.label_size, color: "text",
+          width: Math.max(cell.w - 4, 1), text_align: "center" }, b.label || fallbackLabel(b.target), style.text);
+      }
+      break;
+    }
     default: {
       // Unknown / future widget: draw a placeholder box
       p.box(rect, null, p.color("warning"), style.radius, 1);
@@ -535,6 +647,15 @@ export function sampleState(project: Project): StateResolver {
       if (domain === "weather") { state = "partlycloudy"; attributes.temperature = 17; attributes.humidity = 62; }
       if (domain === "media_player") { state = "playing"; attributes.volume_level = 0.35; }
       if (domain === "input_number" || domain === "number") state = "21";
+      if (domain === "counter") state = "3";
+      if (domain === "input_select" || domain === "select") state = "Komfort";
+      if (domain === "person" || domain === "device_tracker") state = i % 2 === 0 ? "home" : "not_home";
+      if (domain === "timer") {
+        state = "active";
+        attributes.duration = "1:30:00";
+        attributes.finishes_at = "2026-09-24T09:22:40+00:00";
+      }
+      if (domain === "sensor" && /fertig|finish|ende|end/i.test(w.entity)) state = "2026-09-24T08:45:00+00:00";
       values.set(w.entity, { entity_id: w.entity, state, attributes });
       i++;
     }
@@ -631,4 +752,50 @@ export function multiItems(w: Widget): { entity: string; label: string; unit: st
     if (e) out.push({ entity: String(e), label: String(p[`label_${n}`] ?? ""), unit: String(p[`unit_${n}`] ?? "") });
   }
   return out;
+}
+
+const DEFAULT_ACTIONS: Record<string, string> = {
+  scene: "scene.turn_on", script: "script.turn_on", button: "button.press", input_button: "input_button.press", automation: "automation.trigger",
+};
+
+/** Buttons of a button_grid (mirrors generator/widgets/more.grid_buttons). */
+export function gridButtons(w: Widget): { label: string; icon: string; target: string; service: string }[] {
+  const p = w.props ?? {};
+  const count = Math.max(1, Math.min(Math.trunc(Number(p.count ?? 4)), 6));
+  const out = [];
+  for (let i = 1; i <= count; i++) {
+    const target = String(p[`target_${i}`] ?? "");
+    let service = String(p[`service_${i}`] ?? "") || DEFAULT_ACTIONS[target.split(".")[0]] || "";
+    if (target && !service) service = "homeassistant.toggle";
+    out.push({ label: String(p[`label_${i}`] ?? ""), icon: String(p[`icon_${i}`] ?? ""), target, service });
+  }
+  return out;
+}
+
+function parseTime(s: string | undefined): number {
+  if (!s) return -1;
+  const t = Date.parse(s.includes("T") || s.includes("+") || s.endsWith("Z") ? s : s.replace(" ", "T"));
+  return Number.isNaN(t) ? -1 : Math.floor(t / 1000);
+}
+
+function parseDuration(s: unknown): number {
+  const m = /^(\d+):(\d+):(\d+)/.exec(String(s ?? ""));
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : -1;
+}
+
+/** Remaining / total seconds of a countdown widget (mirrors generator/widgets/more.countdown). */
+function countdownValues(w: Widget, entity: HassEntity | undefined, now: Date): { remaining: number; total: number } {
+  const nowS = Math.floor(now.getTime() / 1000);
+  if (!entity) return { remaining: -1, total: -1 };
+  if ((w.entity ?? "").startsWith("timer.")) {
+    const total = parseDuration(entity.attributes.duration);
+    if (entity.state === "active") {
+      const end = parseTime(String(entity.attributes.finishes_at ?? ""));
+      return { remaining: end > 0 ? Math.max(0, end - nowS) : -1, total };
+    }
+    if (entity.state === "paused") return { remaining: parseDuration(entity.attributes.remaining), total };
+    return { remaining: -1, total };
+  }
+  const end = parseTime(entity.state);
+  return { remaining: end > 0 ? Math.max(0, end - nowS) : -1, total: -1 };
 }

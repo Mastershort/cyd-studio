@@ -1,0 +1,30 @@
+{
+  "type": "select",
+  "name": "Auswahl",
+  "name_en": "Select",
+  "description": "Option wählen mit ‹ › (input_select, select)",
+  "description_en": "Pick an option with ‹ › (input_select, select)",
+  "icon": "mdi:form-dropdown",
+  "domains": [
+    "input_select",
+    "select"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    }
+  ]
+}

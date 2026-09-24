@@ -1,0 +1,75 @@
+{
+  "type": "number_stepper",
+  "name": "Zahl +/−",
+  "name_en": "Number +/−",
+  "description": "Wert mit − / + ändern (input_number, number, Zähler)",
+  "description_en": "Change a value with − / + (input_number, number, counter)",
+  "icon": "mdi:plus-minus-variant",
+  "domains": [
+    "input_number",
+    "number",
+    "counter"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "step",
+      "type": "select",
+      "default": "1",
+      "options": [
+        "0.1",
+        "0.5",
+        "1",
+        "5",
+        "10"
+      ],
+      "label": "Schrittweite",
+      "label_en": "Step"
+    },
+    {
+      "key": "min",
+      "type": "int",
+      "default": 0,
+      "label": "Minimum",
+      "label_en": "Minimum"
+    },
+    {
+      "key": "max",
+      "type": "int",
+      "default": 100,
+      "label": "Maximum",
+      "label_en": "Maximum"
+    },
+    {
+      "key": "unit",
+      "type": "text",
+      "default": "",
+      "label": "Einheit",
+      "label_en": "Unit"
+    },
+    {
+      "key": "decimals",
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 2,
+      "label": "Nachkommastellen",
+      "label_en": "Decimals"
+    }
+  ]
+}

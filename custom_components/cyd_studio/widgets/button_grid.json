@@ -1,0 +1,280 @@
+{
+  "type": "button_grid",
+  "name": "Tastenfeld",
+  "name_en": "Button grid",
+  "description": "Bis zu 6 Aktionen in einer Kachel (Szenen, Skripte, …)",
+  "description_en": "Up to 6 actions in one tile (scenes, scripts, …)",
+  "icon": "mdi:view-grid",
+  "domains": [],
+  "entity": "none",
+  "default_size": {
+    "w": 2,
+    "h": 2
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "count",
+      "type": "select",
+      "default": "4",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "label": "Anzahl Tasten",
+      "label_en": "Number of buttons"
+    },
+    {
+      "key": "label_1",
+      "type": "text",
+      "default": "",
+      "label": "Taste 1: Text",
+      "label_en": "Button 1: text",
+      "min_count": 1
+    },
+    {
+      "key": "icon_1",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 1: Icon",
+      "label_en": "Button 1: icon",
+      "min_count": 1
+    },
+    {
+      "key": "target_1",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 1: Ziel",
+      "label_en": "Button 1: target",
+      "min_count": 1
+    },
+    {
+      "key": "service_1",
+      "type": "text",
+      "default": "",
+      "label": "Taste 1: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 1: action (empty = matches target)",
+      "min_count": 1
+    },
+    {
+      "key": "label_2",
+      "type": "text",
+      "default": "",
+      "label": "Taste 2: Text",
+      "label_en": "Button 2: text",
+      "min_count": 2
+    },
+    {
+      "key": "icon_2",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 2: Icon",
+      "label_en": "Button 2: icon",
+      "min_count": 2
+    },
+    {
+      "key": "target_2",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 2: Ziel",
+      "label_en": "Button 2: target",
+      "min_count": 2
+    },
+    {
+      "key": "service_2",
+      "type": "text",
+      "default": "",
+      "label": "Taste 2: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 2: action (empty = matches target)",
+      "min_count": 2
+    },
+    {
+      "key": "label_3",
+      "type": "text",
+      "default": "",
+      "label": "Taste 3: Text",
+      "label_en": "Button 3: text",
+      "min_count": 3
+    },
+    {
+      "key": "icon_3",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 3: Icon",
+      "label_en": "Button 3: icon",
+      "min_count": 3
+    },
+    {
+      "key": "target_3",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 3: Ziel",
+      "label_en": "Button 3: target",
+      "min_count": 3
+    },
+    {
+      "key": "service_3",
+      "type": "text",
+      "default": "",
+      "label": "Taste 3: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 3: action (empty = matches target)",
+      "min_count": 3
+    },
+    {
+      "key": "label_4",
+      "type": "text",
+      "default": "",
+      "label": "Taste 4: Text",
+      "label_en": "Button 4: text",
+      "min_count": 4
+    },
+    {
+      "key": "icon_4",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 4: Icon",
+      "label_en": "Button 4: icon",
+      "min_count": 4
+    },
+    {
+      "key": "target_4",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 4: Ziel",
+      "label_en": "Button 4: target",
+      "min_count": 4
+    },
+    {
+      "key": "service_4",
+      "type": "text",
+      "default": "",
+      "label": "Taste 4: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 4: action (empty = matches target)",
+      "min_count": 4
+    },
+    {
+      "key": "label_5",
+      "type": "text",
+      "default": "",
+      "label": "Taste 5: Text",
+      "label_en": "Button 5: text",
+      "min_count": 5
+    },
+    {
+      "key": "icon_5",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 5: Icon",
+      "label_en": "Button 5: icon",
+      "min_count": 5
+    },
+    {
+      "key": "target_5",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 5: Ziel",
+      "label_en": "Button 5: target",
+      "min_count": 5
+    },
+    {
+      "key": "service_5",
+      "type": "text",
+      "default": "",
+      "label": "Taste 5: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 5: action (empty = matches target)",
+      "min_count": 5
+    },
+    {
+      "key": "label_6",
+      "type": "text",
+      "default": "",
+      "label": "Taste 6: Text",
+      "label_en": "Button 6: text",
+      "min_count": 6
+    },
+    {
+      "key": "icon_6",
+      "type": "icon",
+      "default": "mdi:gesture-tap",
+      "label": "Taste 6: Icon",
+      "label_en": "Button 6: icon",
+      "min_count": 6
+    },
+    {
+      "key": "target_6",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "scene",
+        "script",
+        "button",
+        "input_button",
+        "automation",
+        "light",
+        "switch"
+      ],
+      "label": "Taste 6: Ziel",
+      "label_en": "Button 6: target",
+      "min_count": 6
+    },
+    {
+      "key": "service_6",
+      "type": "text",
+      "default": "",
+      "label": "Taste 6: Aktion (leer = passend zum Ziel)",
+      "label_en": "Button 6: action (empty = matches target)",
+      "min_count": 6
+    }
+  ]
+}

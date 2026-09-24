@@ -1,0 +1,19 @@
+{
+  "type": "divider",
+  "name": "Trennlinie",
+  "name_en": "Divider",
+  "description": "Waagerechte Linie zur Gliederung",
+  "description_en": "Horizontal line",
+  "icon": "mdi:minus",
+  "domains": [],
+  "entity": "none",
+  "default_size": {
+    "w": 4,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": []
+}

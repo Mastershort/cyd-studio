@@ -1,0 +1,1109 @@
+# ======================================================================
+# Erzeugt von CYD Studio (Generator 0.6.0) – ESPHome >= 2026.9.0
+# Projekt: Mehr · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Stand: 2026-09-24
+#
+# Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
+# nächsten Export überschrieben.
+#
+# WLAN-Zugangsdaten kommen aus secrets.yaml (wifi_ssid, wifi_password).
+# In Home Assistant beim ESPHome-Gerät „Dem Gerät erlauben,
+# Home-Assistant-Aktionen auszuführen“ aktivieren – sonst reagieren
+# die Schalter nicht.
+#
+# Hardware-Grundkonfiguration nach github.com/akuehlewind/ESPHome-touch-display-mount (MIT, (c) 2023 Adrian Kuehlewind)
+# ======================================================================
+
+substitutions:
+  device_name: cyd-more
+  friendly_name: Mehr
+  ent_counter_gaeste: counter.gaeste
+  ent_input_number_soll: input_number.soll
+  ent_input_select_heizmodus: input_select.heizmodus
+  ent_input_text_link: input_text.link
+  ent_light_flur: light.flur
+  ent_person_anna: person.anna
+  ent_scene_kino: scene.kino
+  ent_script_alles_aus: script.alles_aus
+  ent_sensor_trockner_fertig: sensor.trockner_fertig
+  ent_timer_waschmaschine: timer.waschmaschine
+
+esphome:
+  name: "${device_name}"
+  friendly_name: "${friendly_name}"
+  min_version: 2026.9.0
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - script.execute: cyd_update_time
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    id: cyd_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Mehr Fallback"
+
+captive_portal:
+
+globals:
+  - id: cyd_page
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: cyd_tile_state
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, const uint32_t *)>"
+    restore_value: false
+    initial_value: |-
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,
+          const std::string &x, float value, int kind, const char *text_on, const char *text_off,
+          const uint32_t *c) {
+        // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of
+        // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only
+        const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        const int k = on ? 0 : 1;
+        if (tile != nullptr) {
+          lv_obj_set_state(tile, LV_STATE_CHECKED, on);
+          lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
+        }
+        if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);
+        if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);
+        if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);
+        if (label == nullptr) return;
+        lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);
+        std::string text;
+        if (on && kind > 0 && !std::isnan(value)) {
+          char buf[12];
+          snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(kind == 1 ? value * 100.0f / 255.0f : value));
+          text = buf;
+        }
+        else if (x == "unavailable") text = "Nicht verfügbar";
+        else if (x.empty() || x == "unknown") text = "–";
+        else if (x == "opening") text = "Öffnet";
+        else if (x == "closing") text = "Schließt";
+        else if (on && text_on != nullptr) text = text_on;
+        else if (!on && text_off != nullptr) text = text_off;
+        else if (x == "on") text = "An";
+        else if (x == "off") text = "Aus";
+        else if (x == "open") text = "Offen";
+        else if (x == "closed") text = "Geschlossen";
+        else if (x == "locked") text = "Verriegelt";
+        else if (x == "unlocked") text = "Entriegelt";
+        else text = x;
+        lv_label_set_text(label, text.c_str());
+      }
+  - id: cyd_parse_time
+    type: "std::function<long(const std::string &)>"
+    restore_value: false
+    initial_value: |-
+      [](const std::string &s) -> long {
+        // ISO date/time from Home Assistant -> UTC epoch seconds (-1 if not parseable)
+        int y, mo, d, h, mi, se;
+        char sep;
+        if (sscanf(s.c_str(), "%d-%d-%d%c%d:%d:%d", &y, &mo, &d, &sep, &h, &mi, &se) != 7) return -1;
+        y -= mo <= 2;
+        const long era = (y >= 0 ? y : y - 399) / 400;
+        const long yoe = y - era * 400;
+        const long doy = (153 * (mo + (mo > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+        const long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+        const long t = (era * 146097 + doe - 719468) * 86400L + h * 3600L + mi * 60L + se;
+        const size_t p = s.find_first_of("+-Z", 19);
+        if (p == std::string::npos) return t - ESPTime::timezone_offset();  // local time
+        if (s[p] == 'Z') return t;
+        int oh = 0, om = 0;
+        sscanf(s.c_str() + p + 1, "%d:%d", &oh, &om);
+        const long off = oh * 3600L + om * 60L;
+        return s[p] == '+' ? t - off : t + off;
+      }
+  - id: cyd_parse_duration
+    type: "std::function<long(const std::string &)>"
+    restore_value: false
+    initial_value: |-
+      [](const std::string &s) -> long {
+        // "H:MM:SS" -> seconds (-1 if not parseable)
+        int h, m, sec;
+        if (sscanf(s.c_str(), "%d:%d:%d", &h, &m, &sec) != 3) return -1;
+        return h * 3600L + m * 60L + sec;
+      }
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - script.execute: cyd_update_time
+    on_time:
+      - seconds: "/1"
+        then:
+          - script.execute: cyd_update_time
+
+spi:
+  - id: spi_display
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+  - id: spi_touch
+    clk_pin: GPIO25
+    mosi_pin: GPIO32
+    miso_pin: GPIO39
+
+display:
+  - platform: mipi_spi
+    id: cyd_display
+    spi_id: spi_display
+    model: ILI9341
+    color_order: BGR
+    data_rate: 10MHz
+    cs_pin:
+      number: 15
+      ignore_strapping_warning: true
+    dc_pin:
+      number: 2
+      ignore_strapping_warning: true
+    invert_colors: false
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: xpt2046
+    id: cyd_touch
+    spi_id: spi_touch
+    cs_pin: 33
+    interrupt_pin: 36
+    update_interval: 20ms
+    threshold: 300
+    calibration:
+      x_min: 280
+      x_max: 3860
+      y_min: 340
+      y_max: 3860
+    transform:
+      swap_xy: false
+      mirror_x: true
+      mirror_y: false
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Display-Beleuchtung
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+sensor:
+  - platform: wifi_signal
+    name: WLAN-Signal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Laufzeit
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: homeassistant
+    id: ha_input_number_soll_num
+    entity_id: "${ent_input_number_soll}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_eins_n_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.1f", x);
+              return std::string(buf) + " °C";
+  - platform: homeassistant
+    id: ha_counter_gaeste_num
+    entity_id: "${ent_counter_gaeste}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_eins_z_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf);
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_input_select_heizmodus
+    entity_id: "${ent_input_select_heizmodus}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_eins_s_value
+            text: !lambda |-
+              if (x.empty() || x == "unknown" || x == "unavailable") return std::string("--");
+              return x;
+  - platform: homeassistant
+    id: ha_timer_waschmaschine
+    entity_id: "${ent_timer_waschmaschine}"
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_timer_waschmaschine_finishes_at
+    entity_id: "${ent_timer_waschmaschine}"
+    attribute: finishes_at
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_timer_waschmaschine_remaining
+    entity_id: "${ent_timer_waschmaschine}"
+    attribute: remaining
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_timer_waschmaschine_duration
+    entity_id: "${ent_timer_waschmaschine}"
+    attribute: duration
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_sensor_trockner_fertig
+    entity_id: "${ent_sensor_trockner_fertig}"
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_person_anna
+    entity_id: "${ent_person_anna}"
+    on_value:
+      then:
+        - lambda: !lambda |-
+            static const uint32_t c[] = {0x22D3EE, 0x5C5C5C, 0xD9D9D9, 0xD9D9D9, 0x7A7A7A, 0x7A7A7A, 0x22D3EE, 0x141414};
+            id(cyd_tile_state)(nullptr, id(w_zwei_p_icon), nullptr, id(w_zwei_p_state), nullptr, x, NAN, 0, "Zuhause", "Unterwegs", c);
+  - platform: homeassistant
+    id: ha_input_text_link
+    entity_id: "${ent_input_text_link}"
+    on_value:
+      then:
+        - lvgl.qrcode.update:
+            id: w_zwei_q2_qr
+            text: !lambda |-
+              return x.empty() ? std::string(" ") : x;
+
+button:
+  - platform: restart
+    name: Neustart
+    entity_category: diagnostic
+
+font:
+  - file: "gfonts://Montserrat@500"
+    id: font_12
+    size: 12
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_16
+    size: 16
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - "\U000F0141\U000F0142\U000F0374\U000F0415\U000F0B3A\U000F0B3B"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F0004\U000F0335\U000F0381\U000F0425"
+
+script:
+  - id: cyd_update_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: w_eins_c_value
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("–");
+            const std::string st = id(ha_timer_waschmaschine).state;
+            long rem = -2;
+            if (st == "active") {
+              const long end = id(cyd_parse_time)(id(ha_timer_waschmaschine_finishes_at).state);
+              if (end > 0) rem = std::max(0L, end - (long) now.timestamp);
+            }
+            else if (st == "paused") rem = id(cyd_parse_duration)(id(ha_timer_waschmaschine_remaining).state);
+            if (rem < 0) return std::string("–");
+            char buf[16];
+            if (rem >= 3600)
+              snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", rem / 3600, (rem / 60) % 60, rem % 60);
+            else snprintf(buf, sizeof(buf), "%02ld:%02ld", rem / 60, rem % 60);
+            return std::string(buf);
+      - lvgl.bar.update:
+          id: w_eins_c_bar
+          value: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return 0;
+            const std::string st = id(ha_timer_waschmaschine).state;
+            long rem = -2;
+            if (st == "active") {
+              const long end = id(cyd_parse_time)(id(ha_timer_waschmaschine_finishes_at).state);
+              if (end > 0) rem = std::max(0L, end - (long) now.timestamp);
+            }
+            else if (st == "paused") rem = id(cyd_parse_duration)(id(ha_timer_waschmaschine_remaining).state);
+            const long total = id(cyd_parse_duration)(id(ha_timer_waschmaschine_duration).state);
+            if (rem < 0 || total <= 0) return 0;
+            return (int) std::min(100L, std::max(0L, (total - rem) * 100 / total));
+      - lvgl.label.update:
+          id: w_eins_d_value
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("–");
+            long rem = -2;
+            const long end = id(cyd_parse_time)(id(ha_sensor_trockner_fertig).state);
+            if (end > 0) rem = std::max(0L, end - (long) now.timestamp);
+            if (rem < 0) return std::string("–");
+            char buf[16];
+            if (rem >= 3600)
+              snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", rem / 3600, (rem / 60) % 60, rem % 60);
+            else snprintf(buf, sizeof(buf), "%02ld:%02ld", rem / 60, rem % 60);
+            return std::string(buf);
+      - lvgl.label.update:
+          id: cyd_header_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+  - id: cyd_on_page
+    mode: restart
+    parameters:
+      page: int
+      root: int
+    then:
+      - lambda: !lambda |-
+          id(cyd_page) = page;
+      - lvgl.label.update:
+          id: cyd_title
+          text: !lambda |-
+            static const char *const names[] = {"Eins", "Zwei"};
+            if (page < 0 || page >= 2) return std::string("");
+            return std::string(names[page]);
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 0;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_eins_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_eins_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_eins_icon
+                text_color: 0x5C5C5C
+            - lvgl.label.update:
+                id: cyd_tab_eins_label
+                text_color: 0x5C5C5C
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 1;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_zwei_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_zwei_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_zwei_icon
+                text_color: 0x5C5C5C
+            - lvgl.label.update:
+                id: cyd_tab_zwei_label
+                text_color: 0x5C5C5C
+
+lvgl:
+  displays:
+    - cyd_display
+  touchscreens:
+    - touchscreen_id: cyd_touch
+  rotation: 90
+  page_wrap: false
+  theme:
+    button:
+      bg_color: 0x0B0B0B
+      bg_opa: COVER
+      radius: 10
+      border_width: 0
+      border_color: 0x0B0B0B
+      shadow_width: 0
+      pad_all: 6
+      text_color: 0xD9D9D9
+      pressed:
+        bg_color: 0x141414
+      checked:
+        bg_color: 0x141414
+        bg_opa: COVER
+        border_color: 0x141414
+      disabled:
+        bg_opa: "50%"
+  style_definitions:
+    - id: cyd_tile
+      bg_color: 0x0B0B0B
+      bg_opa: COVER
+      radius: 10
+      border_width: 0
+      border_color: 0x0B0B0B
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_plain
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_bar
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_navbar
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_tab
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_text_1
+      text_font: font_12
+      text_color: 0x7A7A7A
+    - id: cyd_text_2
+      text_font: font_16
+      text_color: 0xD9D9D9
+      text_align: CENTER
+    - id: cyd_text_3
+      text_font: icons_20
+      text_color: 0x22D3EE
+    - id: cyd_text_4
+      text_font: font_14
+      text_color: 0xD9D9D9
+    - id: cyd_text_5
+      text_font: font_28
+      text_color: 0xD9D9D9
+    - id: cyd_text_6
+      text_font: font_20
+      text_color: 0xD9D9D9
+      text_align: RIGHT
+    - id: cyd_text_7
+      text_font: icons_28
+      text_color: 0x5C5C5C
+    - id: cyd_text_8
+      text_font: font_12
+      text_color: 0x7A7A7A
+      text_align: CENTER
+    - id: cyd_text_9
+      text_font: icons_28
+      text_color: 0x22D3EE
+    - id: cyd_text_10
+      text_font: font_12
+      text_color: 0x22D3EE
+      text_align: CENTER
+    - id: cyd_text_11
+      text_font: icons_20
+      text_color: 0x5C5C5C
+    - id: cyd_text_12
+      text_font: font_12
+      text_color: 0x5C5C5C
+      text_align: CENTER
+    - id: cyd_small_btn
+      bg_color: 0x141414
+      bg_opa: COVER
+      radius: 10
+      border_width: 0
+      pad_all: 0
+      shadow_width: 0
+  on_idle:
+    - timeout: 30s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) != 0;
+            then:
+              - lvgl.page.show: page_eins
+  top_layer:
+    widgets:
+      - obj:
+          id: cyd_header
+          x: 0
+          y: 0
+          width: 320
+          height: 28
+          styles: cyd_bar
+          pad_left: 6
+          pad_right: 6
+          scrollable: false
+          clickable: false
+          widgets:
+            - label:
+                id: cyd_title
+                align: LEFT_MID
+                styles: cyd_text_4
+                text: Eins
+            - label:
+                id: cyd_header_time
+                align: RIGHT_MID
+                styles: cyd_text_4
+                text: "--:--"
+      - obj:
+          id: cyd_tabbar
+          x: 0
+          y: 200
+          width: 320
+          height: 40
+          styles: cyd_navbar
+          scrollable: false
+          clickable: false
+          widgets:
+            - button:
+                id: cyd_tab_eins
+                x: 0
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_eins
+                widgets:
+                  - label:
+                      id: cyd_tab_eins_icon
+                      align: TOP_MID
+                      y: 2
+                      styles: cyd_text_3
+                      text: "\U000F0B3A"
+                  - label:
+                      id: cyd_tab_eins_label
+                      align: BOTTOM_MID
+                      y: -1
+                      width: 158
+                      long_mode: DOT
+                      styles: cyd_text_10
+                      text: Eins
+            - button:
+                id: cyd_tab_zwei
+                x: 160
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_zwei
+                widgets:
+                  - label:
+                      id: cyd_tab_zwei_icon
+                      align: TOP_MID
+                      y: 2
+                      styles: cyd_text_11
+                      text: "\U000F0B3B"
+                  - label:
+                      id: cyd_tab_zwei_label
+                      align: BOTTOM_MID
+                      y: -1
+                      width: 158
+                      long_mode: DOT
+                      styles: cyd_text_12
+                      text: Zwei
+  pages:
+    - id: page_eins
+      bg_color: 0x000000
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 0
+            root: 0
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_eins_n
+            x: 8
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 62
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: Soll
+              - label:
+                  id: w_eins_n_value
+                  align: CENTER
+                  y: 7
+                  width: 92
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: "--"
+              - button:
+                  align: LEFT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: input_number.set_value
+                        data:
+                          entity_id: "${ent_input_number_soll}"
+                          value: !lambda |-
+                            float v = id(ha_input_number_soll_num).state;
+                            if (std::isnan(v)) v = 10.0f;
+                            v = std::min(30.0f, std::max(10.0f, v + (-0.5f)));
+                            char buf[16];
+                            snprintf(buf, sizeof(buf), "%.1f", v);
+                            return std::string(buf);
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0374"
+              - button:
+                  align: RIGHT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: input_number.set_value
+                        data:
+                          entity_id: "${ent_input_number_soll}"
+                          value: !lambda |-
+                            float v = id(ha_input_number_soll_num).state;
+                            if (std::isnan(v)) v = 10.0f;
+                            v = std::min(30.0f, std::max(10.0f, v + (0.5f)));
+                            char buf[16];
+                            snprintf(buf, sizeof(buf), "%.1f", v);
+                            return std::string(buf);
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0415"
+        - obj:
+            id: w_eins_z
+            x: 164
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 62
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "Gäste"
+              - label:
+                  id: w_eins_z_value
+                  align: CENTER
+                  y: 7
+                  width: 92
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: "--"
+              - button:
+                  align: LEFT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: counter.decrement
+                        data:
+                          entity_id: "${ent_counter_gaeste}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0374"
+              - button:
+                  align: RIGHT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: counter.increment
+                        data:
+                          entity_id: "${ent_counter_gaeste}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0415"
+        - obj:
+            id: w_eins_s
+            x: 8
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 62
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: Heizmodus
+              - label:
+                  id: w_eins_s_value
+                  align: CENTER
+                  y: 7
+                  width: 92
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: "--"
+              - button:
+                  align: LEFT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: input_select.select_previous
+                        data:
+                          entity_id: "${ent_input_select_heizmodus}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0141"
+              - button:
+                  align: RIGHT_MID
+                  y: 7
+                  width: 16
+                  height: 16
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: input_select.select_next
+                        data:
+                          entity_id: "${ent_input_select_heizmodus}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_3
+                        text: "\U000F0142"
+        - obj:
+            id: w_eins_c
+            x: 164
+            y: 90
+            width: 148
+            height: 102
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_4
+                  text: Waschmaschine
+              - label:
+                  id: w_eins_c_value
+                  align: BOTTOM_LEFT
+                  y: -10
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: "–"
+              - bar:
+                  id: w_eins_c_bar
+                  align: BOTTOM_MID
+                  width: 136
+                  height: 6
+                  min_value: 0
+                  max_value: 100
+                  value: 0
+                  bg_color: 0x141414
+                  bg_opa: COVER
+                  indicator:
+                    bg_color: 0x22D3EE
+                    bg_opa: COVER
+        - obj:
+            id: w_eins_d
+            x: 8
+            y: 145
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: LEFT_MID
+                  width: 62
+                  long_mode: DOT
+                  styles: cyd_text_4
+                  text: Trockner
+              - label:
+                  id: w_eins_d_value
+                  align: RIGHT_MID
+                  width: 68
+                  long_mode: DOT
+                  styles: cyd_text_6
+                  text: "–"
+    - id: page_zwei
+      bg_color: 0x000000
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 1
+            root: 1
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_zwei_p
+            x: 8
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_zwei_p_icon
+                  align: LEFT_MID
+                  styles: cyd_text_7
+                  text: "\U000F0004"
+              - label:
+                  id: w_zwei_p_label
+                  align: TOP_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_4
+                  text: Anna
+              - label:
+                  id: w_zwei_p_state
+                  align: BOTTOM_LEFT
+                  x: 34
+                  width: 102
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "–"
+        - obj:
+            id: w_zwei_q
+            x: 164
+            y: 36
+            width: 70
+            height: 101
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - qrcode:
+                  id: w_zwei_q_qr
+                  align: TOP_MID
+                  size: 58
+                  dark_color: 0x000000
+                  light_color: 0xFFFFFF
+                  text: "WIFI:T:WPA;S:Gast;P:geheim;;"
+              - label:
+                  align: BOTTOM_MID
+                  width: 58
+                  long_mode: DOT
+                  styles: cyd_text_8
+                  text: Gast-WLAN
+        - obj:
+            id: w_zwei_q2
+            x: 242
+            y: 36
+            width: 70
+            height: 101
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - qrcode:
+                  id: w_zwei_q2_qr
+                  align: CENTER
+                  size: 58
+                  dark_color: 0x000000
+                  light_color: 0xFFFFFF
+                  text: x
+        - obj:
+            id: w_zwei_l
+            x: 8
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_plain
+            scrollable: false
+            clickable: false
+            widgets:
+              - obj:
+                  align: CENTER
+                  width: 136
+                  height: 2
+                  bg_color: 0x7A7A7A
+                  bg_opa: "50%"
+                  border_width: 0
+                  radius: 1
+                  scrollable: false
+                  clickable: false
+        - obj:
+            id: w_zwei_g
+            x: 86
+            y: 145
+            width: 226
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - button:
+                  align: TOP_LEFT
+                  width: 67
+                  height: 35
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: scene.turn_on
+                        data:
+                          entity_id: "${ent_scene_kino}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_9
+                        text: "\U000F0381"
+              - button:
+                  align: TOP_LEFT
+                  x: 73
+                  width: 67
+                  height: 35
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: script.turn_on
+                        data:
+                          entity_id: "${ent_script_alles_aus}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_9
+                        text: "\U000F0425"
+              - button:
+                  align: TOP_LEFT
+                  x: 146
+                  width: 68
+                  height: 35
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: homeassistant.toggle
+                        data:
+                          entity_id: "${ent_light_flur}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_9
+                        text: "\U000F0335"
+# cyd_studio_checksum: 26d49f0ece134ea5
+
+# Projektdaten für den Import in CYD Studio (nicht bearbeiten)
+# cyd_studio_project: H4sIAAAAAAAC/61W727jNgx/F31ODce5K27up2LYn8NuwwF3QIENhUHbjCNUllxJTtoe8jZ7gD3D
+#   9mIjJcVxrkF7A/YlcCjyR/JHUuIXURuwrSgFumFVXBRvVoXLi3dWLOJJtQUrQXtR6lGphWhxKxus
+#   NPRIRs1je9Ebi6TdKVODEuUXsTbGo+Uv1FArJPQ1KIcLsUHZbQhqdbkQO9l26J0o/7jd8wm0X9l4
+#   O85Mindzky8ClOw0RaBw7cm7fxw4ngE6rLz0CsV+cVSyAWPSapRp7sT+dk+OOytbdtsYRcBvSACD
+#   KMnZAG0rdRe+rdnR4YrUWVl0RrWoD4n36IERxqEFz4GLIi8uL/LviEyKQiSqfsUNk6phKzvw0mi2
+#   2ZgeKw6aCyC1IwW3MbtKNob+JAqCREGN6ijyj4ptPNQ1MKzbSU4tnkZpNRgnoyMqpfemZwYs6Enq
+#   lGw5g52FoQJrRn0oFYVtrETtU6RCgW5dAwOrc7yxCExeZbZoLQOlDuHYyaJvJQl6tLK5WIrEXMpR
+#   6mrOQ4xawaMZPdPLJZl4+yGaDGDx2IWBkkPPpKRlj2RfuYPOvFvIVPpHQpN6IB2Kq0abOaMUQW9E
+#   uUzxafZkzeC4OC02sgcmfcnREf+k8Sna9PBADZHTh6QEljmXBKlxRJ69peNRS87k77++5w5IbRe9
+#   Vqw4IBdtR229EARE5hRczi07RdpQOWiMsg6QLE7DfJqHeYjsp3/+ZMVv8Vec8ReZcaiw8RlN3VNv
+#   2tGd+nXn/P486R5dR5jnKS5PXHLJbLYD12x6/pE65Vkkf805fzcn+kefgbDW7PTzTE/dOtTO2Mxb
+#   ugU0EbRG62V3mml7zvPnZPGa05hrQRfM4ttnpDjMyNMO5X+ckd+jyf80I9QszugMtIZTUoY5KbMU
+#   oAk0iOOUXLPtkaWIWA0WifsGX2n9GNqsDe7Ptjs4f3Hz4fo3vtXwgUm5ef/j+/JzefPx+upTyedX
+#   H8sOqZf7q6tZNPe2akyboli+MhAMnSmp7047876Yx5T8P7zsZPVCqgeK1Qz2CNbKrWzPXRnLF8Hc
+#   cBbNDdAcwJYnDfsSWDdPONa7FCsRe7laplbozVbiQVgk4WB2wV8QrpJQ8Ztcj6o+tE3A+EVqMwnY
+#   /jrcQfE/m36QTXzKwVLnBhvXoMbsLlomeRHkVg4+A6XQVRBw0ikDBf/ZWo3zca5Heid1laZrF2r2
+#   EDhIA31LJJhhHMLeQjPWbLCHoODQe9oXAj0wyOoOJxbrsH9odK5qgauW5ydCnVact5yo7sa4D4Tm
+#   CUdVz51Ufl2ctaUnnbaNoszzcGHQJeOnXcuZ0TaMY9ZrznxDw7ehxYX8ZLR+ecOP1SW9YZy+RT9a
+#   XYV1BNaeX434vNmursI29nyZC/eLow2BmJ22BuIc6XqFbVzmoEn7Qyt5+5igLwn6FG/Pl9FaRvYq
+#   EqkaaElLF9fokJ4mwvZpBeLVzRP3IUFGSX+nmza0/P5fGPVjXN8KAAA=

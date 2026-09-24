@@ -665,7 +665,7 @@ export class CydEditor extends LitElement {
     const sim = w.entity ? this._sim[w.entity] ?? "" : "";
     return html`
       <h3>${def ? loc(def, "name") : w.type}</h3>
-      ${def?.entity === "required" ? html`<div class="field"><span>${t("entity")}</span>
+      ${def?.entity === "required" || def?.entity === "optional" ? html`<div class="field"><span>${t("entity")}</span>
         <cyd-entity-picker .hass=${this.hass} .value=${w.entity ?? null} .domains=${def.domains}
           @value-changed=${(e: CustomEvent<{ value: string }>) => this.pickEntity(w, e.detail.value)}></cyd-entity-picker></div>` : nothing}
       ${def?.entity === "action" ? html`
@@ -673,7 +673,7 @@ export class CydEditor extends LitElement {
           <cyd-entity-picker .hass=${this.hass} .value=${w.action?.target ?? null} .domains=${def.domains}
             @value-changed=${(e: CustomEvent<{ value: string }>) => this.pickActionTarget(w, e.detail.value)}></cyd-entity-picker></div>
         ${this.text(t("action_service"), w.action?.service, (v) => set((x) => { x.action = { ...(x.action ?? { service: "" }), service: v.trim() }; }))}` : nothing}
-      ${def?.props.map(prop)}
+      ${def?.props.filter((d) => !d.min_count || Number(w.props.count ?? 4) >= d.min_count).map(prop)}
       ${this.renderAppearance(w)}
       <h3>${t("position")}</h3>
       <div class="row4">

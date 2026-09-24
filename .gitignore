@@ -21,3 +21,4 @@ reference/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+.esphome-cache/

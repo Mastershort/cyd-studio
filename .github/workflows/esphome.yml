@@ -24,6 +24,23 @@ jobs:
         run: pytest -q tests/test_generator.py
       - run: bash tools/validate_esphome.sh config
 
+  # C++ in lambdas is only checked by a real compile: compile every golden file changed by a push
+  compile-changed:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Changed golden files
+        id: changed
+        run: |
+          files=$(git diff --name-only HEAD~1 -- 'tests/golden/*.yaml' | xargs -r -n1 basename | tr '
+' ' ')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+      - if: steps.changed.outputs.files != ''
+        run: bash tools/validate_esphome.sh compile ${{ steps.changed.outputs.files }}
+
   compile:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     runs-on: ubuntu-latest
