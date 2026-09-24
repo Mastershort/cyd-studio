@@ -35,5 +35,21 @@
       "name": "Projekte auflisten",
       "description": "Gibt alle CYD-Studio-Projekte zurück."
     }
+  },
+  "issues": {
+    "actions_not_allowed": {
+      "title": "Display „{device}“ darf Home Assistant nicht steuern",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Aktionen für „{device}“ erlauben",
+            "description": "Das Display des CYD-Studio-Projekts „{project}“ sendet Berührungen (Licht schalten, Regler, Szenen) als Home-Assistant-Aktionen. Home Assistant blockiert sie, solange das ESPHome-Gerät keine Aktionen ausführen darf.\n\nMit „Absenden“ wird für {device} „Dem Gerät erlauben, Home-Assistant-Aktionen auszuführen“ eingeschaltet. Du kannst das später in den Optionen des ESPHome-Geräts wieder ändern."
+          }
+        },
+        "abort": {
+          "device_removed": "Das ESPHome-Gerät existiert nicht mehr."
+        }
+      }
+    }
   }
 }

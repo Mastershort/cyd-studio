@@ -178,6 +178,14 @@ export interface GenerateResult {
   memory: { objects: number; ram_bytes: number; flash_fonts_bytes: number; budget_bytes: number; ratio: number } | null;
 }
 
+export interface DeviceStatus {
+  found: boolean;
+  entry_id: string | null;
+  title: string | null;
+  loaded: boolean;
+  actions_allowed: boolean;
+}
+
 export interface StudioInfo {
   version: string;
   generator_version: string;

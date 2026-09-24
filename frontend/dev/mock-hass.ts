@@ -20,6 +20,7 @@ const states: Record<string, HassEntity> = Object.fromEntries([
 ].map((e) => [e.entity_id, e]));
 
 const projects = new Map<string, Project>();
+const allowed = new Set<string>();
 for (const g of goldens) projects.set(g.project.id, structuredClone(g.project));
 
 const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
@@ -52,6 +53,12 @@ const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
     p.name += " (Kopie)";
     projects.set(p.id, p);
     return p;
+  },
+  "cyd_studio/esphome/devices": () => Object.fromEntries([...projects.values()].map((p) => [p.id,
+    { found: true, entry_id: "e1", title: p.name, loaded: true, actions_allowed: allowed.has(p.id) }])),
+  "cyd_studio/esphome/allow_actions": (m) => {
+    allowed.add(m.project_id as string);
+    return { found: true, entry_id: "e1", title: "Display", loaded: true, actions_allowed: true };
   },
   "cyd_studio/generate/yaml": () => ({ ok: true, yaml: "# Dev-Modus: YAML erzeugt nur das echte Backend\n", issues: [], memory: null }),
 };

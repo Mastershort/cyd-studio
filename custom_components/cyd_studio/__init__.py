@@ -10,9 +10,10 @@ from typing import Any
 from homeassistant.components import frontend as ha_frontend
 from homeassistant.components import panel_custom
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.config_entries import SIGNAL_CONFIG_ENTRY_CHANGED, ConfigEntry, ConfigEntryChange
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -28,6 +29,7 @@ from .const import (
     STATIC_URL,
 )
 from .data import FRONTEND_DIST, load_studio_data
+from .esphome_bridge import ESPHOME_DOMAIN, async_update_issues
 from .runtime import StudioRuntime
 from .store import ProjectStore
 from .websocket_api import async_register as async_register_websocket
@@ -77,6 +79,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     runtime.panel_registered = True
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
+    # Re-check "allow actions" whenever an ESPHome device is added, changed or removed
+    @callback
+    def _esphome_changed(change: ConfigEntryChange, changed: ConfigEntry) -> None:
+        if changed.domain == ESPHOME_DOMAIN and DOMAIN in hass.data:
+            async_update_issues(hass, runtime.store.all())
+
+    entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CONFIG_ENTRY_CHANGED, _esphome_changed))
+    async_update_issues(hass, store.all())
     return True
 
 

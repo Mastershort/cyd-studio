@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import Unauthorized
 
 from .const import CONF_ESPHOME_PATH, CONF_REQUIRE_ADMIN, DOMAIN
+from .esphome_bridge import async_allow_actions, async_update_issues, device_status, find_device_entry
 from .generator import generate_yaml
 from .generator.generate import decode_project, split_generated
 from .runtime import StudioRuntime
@@ -63,6 +64,8 @@ def async_register(hass: HomeAssistant) -> None:
         ws_generate_yaml,
         ws_esphome_status,
         ws_info,
+        ws_esphome_devices,
+        ws_esphome_allow_actions,
     ):
         websocket_api.async_register_command(hass, handler)
 
@@ -169,6 +172,7 @@ async def ws_projects_save(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid", str(err))
         return
+    async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], project)
 
 
@@ -180,6 +184,7 @@ async def ws_projects_delete(
 ) -> None:
     """Delete a project (ESPHome files are never touched)."""
     await runtime.store.async_delete(msg["project_id"])
+    async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"])
 
 
@@ -197,6 +202,7 @@ async def ws_projects_duplicate(
     except KeyError:
         connection.send_error(msg["id"], "not_found", "Project not found")
         return
+    async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], project)
 
 
@@ -224,6 +230,7 @@ async def ws_projects_restore(
     except KeyError:
         connection.send_error(msg["id"], "not_found", "History entry not found")
         return
+    async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], project)
 
 
@@ -254,6 +261,7 @@ async def ws_projects_import(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid", str(err))
         return
+    async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], stored)
 
 
@@ -309,3 +317,33 @@ async def ws_esphome_status(
             "esphome_integration_loaded": "esphome" in hass.config.components,
         },
     )
+
+
+@websocket_api.websocket_command({vol.Required("type"): "cyd_studio/esphome/devices"})
+@websocket_api.async_response
+@_guarded
+async def ws_esphome_devices(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """ESPHome device status per project (found in HA, loaded, actions allowed)."""
+    result = {p["id"]: device_status(hass, p.get("device_name", "")) for p in runtime.store.all()}
+    connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "cyd_studio/esphome/allow_actions", vol.Required("project_id"): str}
+)
+@websocket_api.async_response
+@_guarded
+async def ws_esphome_allow_actions(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Enable "allow actions" on the ESPHome device of a project (the panel asks for confirmation)."""
+    project = runtime.store.get(msg["project_id"])
+    entry = find_device_entry(hass, project.get("device_name", "")) if project else None
+    if entry is None:
+        connection.send_error(msg["id"], "not_found", "ESPHome device not found")
+        return
+    async_allow_actions(hass, entry)
+    async_update_issues(hass, runtime.store.all())
+    connection.send_result(msg["id"], device_status(hass, entry.data.get("device_name", "")))

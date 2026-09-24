@@ -3,6 +3,7 @@ import { LitElement, css, html, nothing } from "lit";
 import type { Api } from "../api";
 import { lang, t } from "../i18n";
 import type { GenerateResult, Project, StudioInfo } from "../types";
+import "../views/device-status";
 
 export function highlightYaml(yaml: string) {
   return yaml.split("\n").map((line) => {
@@ -119,6 +120,8 @@ export class CydExportDialog extends LitElement {
               <p>${t("install_steps")}</p>
               <p>${t("secrets_hint")}</p>
               <p><strong>${t("allow_actions_hint")}</strong></p>
+              ${this.project.id ? html`<cyd-device-status .api=${this.api} .projectId=${this.project.id}
+                .deviceName=${this.project.device_name}></cyd-device-status>` : nothing}
               <h4>${t("first_install")}</h4>
               <p>${t("first_install_steps")}</p>
               ${mem ? html`<h4>${t("memory")}</h4><p>${t("memory_estimate", {

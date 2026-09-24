@@ -69,6 +69,18 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
 - Kopfzeile und Tab-Leiste liegen im LVGL-`top_layer` und werden einmal (anhand der Startseite)
   angelegt. `page.show_header` wird deshalb in Phase 1 nicht im UI angeboten.
 
+## ESPHome-Gerät & „Aktionen erlauben“ (ab 0.2.1)
+
+- Geprüft im HA-Quellcode (`homeassistant/components/esphome`): Gerätename in
+  `entry.data["device_name"]`, Freigabe in `entry.options["allow_service_calls"]`. Neue Geräte
+  bekommen ausdrücklich `False`, ein fehlender Schlüssel gilt als `True`. Der Wert wird bei jeder
+  Aktion gelesen – Setzen über `async_update_entry` wirkt sofort, ohne Neustart oder Neu-Flashen.
+- Zuordnung Projekt → Gerät über den ESPHome-Gerätenamen (`device_name` im Projekt).
+- Geprüft wird beim Start, bei jeder Änderung an ESPHome-Einträgen (`SIGNAL_CONFIG_ENTRY_CHANGED`)
+  und nach dem Speichern/Löschen/Importieren von Projekten. Fehlt die Freigabe: behebbarer
+  Reparaturhinweis (Einstellungen → Reparaturen) und Hinweis mit Knopf im Panel. Gesetzt wird die
+  Option nur nach Bestätigung.
+
 ## Gemeinsame Gerätelogik (ab 0.2)
 
 - LVGL-Widget-IDs sind in ESPHome-Lambdas `lv_obj_t *` (nicht zusammengesetzte Widgets,

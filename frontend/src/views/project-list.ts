@@ -4,7 +4,8 @@ import type { Api } from "../api";
 import { loc, t } from "../i18n";
 import { normalize, resolveBoard } from "../model";
 import { renderScreen, sampleState } from "../preview/renderer";
-import type { Board, Project, ProjectSummary, Theme } from "../types";
+import "./device-status";
+import type { Board, DeviceStatus, Project, ProjectSummary, Theme } from "../types";
 
 export class CydProjectList extends LitElement {
   static properties = {
@@ -13,6 +14,7 @@ export class CydProjectList extends LitElement {
     themes: { attribute: false },
     _projects: { state: true },
     _thumbs: { state: true },
+    _devices: { state: true },
   };
 
   declare api: Api;
@@ -20,11 +22,13 @@ export class CydProjectList extends LitElement {
   declare themes: Record<string, Theme>;
   declare _projects: ProjectSummary[] | null;
   declare _thumbs: Record<string, string>;
+  declare _devices: Record<string, DeviceStatus>;
 
   constructor() {
     super();
     this._projects = null;
     this._thumbs = {};
+    this._devices = {};
   }
 
   static styles = css`
@@ -53,6 +57,7 @@ export class CydProjectList extends LitElement {
 
   async refresh() {
     this._projects = await this.api.projects();
+    this._devices = await this.api.devices().catch(() => ({}));
     for (const s of this._projects) void this.thumb(s.id);
   }
 
@@ -130,6 +135,8 @@ export class CydProjectList extends LitElement {
             <span class="name">${s.name}</span>
             <span class="meta">${this.boards[s.board] ? loc(this.boards[s.board], "name") : s.board} · ${s.device_name}</span>
             <span class="meta">${t("pages_count", { n: s.page_count })} · ${t("widgets_count", { n: s.widget_count })}${s.updated ? ` · ${new Date(s.updated).toLocaleString()}` : ""}</span>
+            <cyd-device-status compact .api=${this.api} .projectId=${s.id} .deviceName=${s.device_name}
+              .status=${this._devices[s.id] ?? null}></cyd-device-status>
             <span class="status ${s.changed_since_export ? "changed" : ""}">${!s.exported ? t("never_exported") : s.changed_since_export ? t("changed_since_export") : `✓ ${t("exported")}`}</span>
           </div>
           <div class="actions">

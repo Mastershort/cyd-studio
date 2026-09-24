@@ -14,6 +14,7 @@ import { WIDGET_DND_TYPE, type CydScreen } from "../preview/screen";
 import "../preview/screen";
 import "./pickers";
 import "../export/export-dialog";
+import "../views/device-status";
 import type { Board, Hass, HassEntity, Issue, Page, Project, PropDef, StudioInfo, Theme, Widget, WidgetDef } from "../types";
 
 const UNDO_LIMIT = 100;
@@ -524,6 +525,8 @@ export class CydEditor extends LitElement {
         </div>
         <div class="col right">${this.renderProperties()}</div>
       </div>
+      ${p.id ? html`<cyd-device-status style="padding:6px 12px" .api=${this.api} .projectId=${p.id}
+        .deviceName=${p.device_name}></cyd-device-status>` : nothing}
       <div class="issues">
         ${this._issues.length ? this._issues.map((i) => html`<div class="issue ${i.level}" @click=${() => this.focusIssue(i)}>
           ${i.level === "error" ? "⛔" : "⚠"} ${lang() === "de" ? i.message : i.message_en}</div>`)

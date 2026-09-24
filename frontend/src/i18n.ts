@@ -148,6 +148,13 @@ const de = {
   state_locked: "Verriegelt",
   state_unlocked: "Entriegelt",
   state_unavailable: "Nicht verfügbar",
+  device_connected: "Display verbunden",
+  device_offline: "Display in HA angelegt, aber gerade nicht erreichbar",
+  device_not_found: "Noch kein ESPHome-Gerät „{name}“ in Home Assistant",
+  actions_blocked: "Das Display darf Home Assistant noch nicht steuern – Tippen und Regler bewirken nichts.",
+  allow_actions: "Jetzt erlauben",
+  allow_actions_confirm: "Für das ESPHome-Gerät „{device}“ die Option „Dem Gerät erlauben, Home-Assistant-Aktionen auszuführen“ einschalten?",
+  actions_allowed_done: "Erlaubt – das Display kann jetzt schalten.",
 };
 
 type Key = keyof typeof de;
@@ -298,6 +305,13 @@ const en: Record<Key, string> = {
   state_locked: "Locked",
   state_unlocked: "Unlocked",
   state_unavailable: "Unavailable",
+  device_connected: "Display connected",
+  device_offline: "Display is set up in HA but currently unreachable",
+  device_not_found: "No ESPHome device \"{name}\" in Home Assistant yet",
+  actions_blocked: "The display may not control Home Assistant yet – taps and sliders do nothing.",
+  allow_actions: "Allow now",
+  allow_actions_confirm: "Enable \"Allow the device to perform Home Assistant actions\" for the ESPHome device \"{device}\"?",
+  actions_allowed_done: "Allowed – the display can switch things now.",
 };
 
 let current: Record<Key, string> = de;

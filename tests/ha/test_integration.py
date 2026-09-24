@@ -160,3 +160,63 @@ async def test_unload_keeps_projects(hass: HomeAssistant, setup_studio: MockConf
         assert await hass.config_entries.async_unload(setup_studio.entry_id)
         assert remove.called
     assert DOMAIN not in hass.data
+
+
+async def test_actions_not_allowed_issue_and_fix(
+    hass: HomeAssistant, setup_studio: MockConfigEntry, hass_ws_client: Any
+) -> None:
+    """A project whose ESPHome device may not perform actions gets a fixable repair issue."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.cyd_studio.repairs import async_create_fix_flow
+
+    esphome = MockConfigEntry(
+        domain="esphome", title="Wohnzimmer", data={"device_name": "cyd-wohnzimmer"},
+        options={"allow_service_calls": False},
+    )  # fmt: skip
+    esphome.add_to_hass(hass)
+    client = await hass_ws_client(hass)
+
+    async def call(type_: str, **data: Any) -> Any:
+        await client.send_json_auto_id({"type": f"cyd_studio/{type_}", **data})
+        msg = await client.receive_json()
+        assert msg["success"], msg
+        return msg["result"]
+
+    project = json.loads((GOLDEN / "multipage.json").read_text(encoding="utf-8"))
+    project["id"] = ""
+    saved = await call("projects/save", project=project)
+    status = (await call("esphome/devices"))[saved["id"]]
+    assert status["found"] and not status["actions_allowed"]
+
+    issue_id = f"actions_not_allowed_{esphome.entry_id}"
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.is_fixable
+
+    # repair flow: confirm -> option set
+    flow = await async_create_fix_flow(hass, issue_id, issue.data)
+    flow.hass = hass
+    result = await flow.async_step_init()
+    assert result["type"] is FlowResultType.FORM
+    result = await flow.async_step_confirm({})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert esphome.options["allow_service_calls"] is True
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+    # panel button path
+    hass.config_entries.async_update_entry(esphome, options={"allow_service_calls": False})
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
+    status = await call("esphome/allow_actions", project_id=saved["id"])
+    assert status["actions_allowed"] is True
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_device_without_option_counts_as_allowed(hass: HomeAssistant, setup_studio: MockConfigEntry) -> None:
+    """Older ESPHome entries without the option key: HA treats them as allowed."""
+    from custom_components.cyd_studio.esphome_bridge import device_status
+
+    MockConfigEntry(domain="esphome", title="Alt", data={"device_name": "cyd-alt"}).add_to_hass(hass)
+    assert device_status(hass, "cyd-alt")["actions_allowed"] is True
+    assert device_status(hass, "unbekannt")["found"] is False

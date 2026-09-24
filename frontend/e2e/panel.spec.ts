@@ -16,6 +16,11 @@ test("create a project and add a widget", async ({ page }) => {
   await expect(page.locator("cyd-screen .w")).toHaveCount(1);
   await page.keyboard.press("Control+z");
   await expect(page.locator("cyd-screen .w")).toHaveCount(0);
+  // ESPHome device may not perform actions yet -> banner with one-click fix (after confirmation)
+  await expect(page.getByText("darf Home Assistant noch nicht steuern")).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Jetzt erlauben" }).first().click();
+  await expect(page.getByText("Erlaubt – das Display kann jetzt schalten.")).toBeVisible();
   await page.getByRole("button", { name: "Code erzeugen" }).click();
   await expect(page.locator("cyd-export-dialog pre")).toContainText("Dev-Modus");
 });

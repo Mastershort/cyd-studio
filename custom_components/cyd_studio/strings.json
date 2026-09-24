@@ -35,5 +35,21 @@
       "name": "List projects",
       "description": "Returns all CYD Studio projects."
     }
+  },
+  "issues": {
+    "actions_not_allowed": {
+      "title": "Display \"{device}\" may not control Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Allow actions for \"{device}\"",
+            "description": "The display of the CYD Studio project \"{project}\" sends its taps (switching lights, sliders, scenes) as Home Assistant actions. Home Assistant blocks them until the ESPHome device is allowed to perform actions.\n\nSubmit to enable \"Allow the device to perform Home Assistant actions\" for {device}. You can change it later in the ESPHome device options."
+          }
+        },
+        "abort": {
+          "device_removed": "The ESPHome device no longer exists."
+        }
+      }
+    }
   }
 }

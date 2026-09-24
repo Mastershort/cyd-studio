@@ -1,6 +1,6 @@
 // WebSocket API of the backend (custom_components/cyd_studio/websocket_api.py)
 import type {
-  Board, GenerateResult, Hass, Project, ProjectSummary, StudioInfo, Template, Theme, WidgetDef,
+  Board, DeviceStatus, GenerateResult, Hass, Project, ProjectSummary, StudioInfo, Template, Theme, WidgetDef,
 } from "./types";
 
 export class Api {
@@ -26,6 +26,8 @@ export class Api {
   duplicate = (projectId: string) => this.ws<Project>("projects/duplicate", { project_id: projectId });
   importProject = (project: Project) => this.ws<Project>("projects/import", { project });
   importYaml = (yaml: string) => this.ws<Project>("projects/import", { yaml });
+  devices = () => this.ws<Record<string, DeviceStatus>>("esphome/devices");
+  allowActions = (projectId: string) => this.ws<DeviceStatus>("esphome/allow_actions", { project_id: projectId });
   generate = (project: Project, markExported = false) =>
     this.ws<GenerateResult>("generate/yaml", { project, mark_exported: markExported });
 }
