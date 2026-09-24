@@ -35,8 +35,7 @@ jobs:
       - name: Changed golden files
         id: changed
         run: |
-          files=$(git diff --name-only HEAD~1 -- 'tests/golden/*.yaml' | xargs -r -n1 basename | tr '
-' ' ')
+          files=$(git diff --name-only HEAD~1 -- 'tests/golden/*.yaml' | xargs -r -n1 basename | paste -sd ' ' -)
           echo "files=$files" >> "$GITHUB_OUTPUT"
       - if: steps.changed.outputs.files != ''
         run: bash tools/validate_esphome.sh compile ${{ steps.changed.outputs.files }}
