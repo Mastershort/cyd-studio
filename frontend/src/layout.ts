@@ -8,6 +8,7 @@ export const TABBAR_H_ICONS = 32;
 export const TABBAR_W_LEFT = 48;
 export const HEADER_PAD_X = 6;
 export const TILE_PAD = 6;
+export const CIRCLE_PAD = 5;
 export const ELEMENT_GAP = 6;
 export const ASCENT_PER_MILLE = 968;
 export const LINE_HEIGHT_PER_MILLE = 1219;
@@ -36,6 +37,8 @@ export interface Element {
   text_align: string;
   /** only for kind "slider" */
   height?: number;
+  /** only for icons with a round background: diameter of the circle */
+  circle?: number;
 }
 
 const fdiv = (a: number, b: number): number => Math.floor(a / b);
@@ -192,28 +195,40 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
   const els: Element[] = [];
   const hasIcon = Boolean(props.icon);
 
+  const circle = Boolean(props.icon_circle);
+  // Box of an icon: the glyph, or the round background around it
+  const ib = (size: number) => (circle ? size + 2 * CIRCLE_PAD : size);
+  const icon = (role: string, align: string, x: number, y: number, size: number, color: string): Element => {
+    const e = el("icon", role, align, x, y, size, color);
+    if (circle) e.circle = ib(size);
+    return e;
+  };
+
   if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value") {
-    const mainSize = wtype === "sensor_value" ? fs.l : fs.s;
+    const mainSize = wtype === "sensor_value" ? fs.l : fs[String(props.text_size ?? "s")] ?? fs.s;
     const subSize = fs.xs;
-    const tall = ch >= ics.m + lineHeight(mainSize) + fdiv(lineHeight(subSize), 2);
+    const tall = ch >= ib(ics.m) + lineHeight(mainSize) + lineHeight(subSize);
     if (tall) {
       if (wtype === "sensor_value") {
-        const big = ch >= ics.s + lineHeight(fs.xl) ? fs.xl : fs.l;
-        els.push(el("text", "label", "TOP_LEFT", 0, 0, subSize, "text_muted", cw - (hasIcon ? ics.s + ELEMENT_GAP : 0)));
-        if (hasIcon) els.push(el("icon", "icon", "TOP_RIGHT", 0, 0, ics.s, "accent"));
+        const big = ch >= ib(ics.s) + lineHeight(fs.xl) ? fs.xl : fs.l;
+        els.push(el("text", "label", "TOP_LEFT", 0, 0, subSize, "text_muted", cw - (hasIcon ? ib(ics.s) + ELEMENT_GAP : 0)));
+        if (hasIcon) els.push(icon("icon", "TOP_RIGHT", 0, 0, ics.s, "accent"));
         els.push(el("text", "value", "BOTTOM_LEFT", 0, 0, big, "text", cw));
       } else {
-        if (hasIcon) els.push(el("icon", "icon", "TOP_LEFT", 0, 0, ics.m, "state_icon"));
+        // icon on top, name and state stacked at the bottom (home app style)
+        if (hasIcon) els.push(icon("icon", "TOP_LEFT", 0, 0, ics.m, "state_icon"));
         if ((wtype === "toggle_tile" && (props.show_state ?? true)) || wtype === "binary_indicator") {
-          els.push(el("text", "state", "TOP_RIGHT", 0, 0, subSize, "text_muted", cw - (hasIcon ? ics.m + ELEMENT_GAP : 0), "right"));
+          els.push(el("text", "label", "BOTTOM_LEFT", 0, -lineHeight(subSize), mainSize, "text", cw));
+          els.push(el("text", "state", "BOTTOM_LEFT", 0, 0, subSize, "text_muted", cw));
+        } else {
+          els.push(el("text", "label", "BOTTOM_LEFT", 0, 0, mainSize, "text", cw));
         }
-        els.push(el("text", "label", "BOTTOM_LEFT", 0, 0, mainSize, "text", cw));
       }
     } else {
-      const iconSize = ch >= ics.m && cw >= 3 * ics.m ? ics.m : ics.s;
-      const tx = hasIcon ? iconSize + ELEMENT_GAP : 0;
+      const iconSize = ch >= ib(ics.m) && cw >= 3 * ib(ics.m) ? ics.m : ics.s;
+      const tx = hasIcon ? ib(iconSize) + ELEMENT_GAP : 0;
       const tw = Math.max(cw - tx, 1);
-      if (hasIcon) els.push(el("icon", "icon", "LEFT_MID", 0, 0, iconSize, wtype === "sensor_value" ? "accent" : "state_icon"));
+      if (hasIcon) els.push(icon("icon", "LEFT_MID", 0, 0, iconSize, wtype === "sensor_value" ? "accent" : "state_icon"));
       if (wtype === "sensor_value") {
         els.push(el("text", "value", "TOP_LEFT", tx, 0, mainSize, "text", tw));
         els.push(el("text", "label", "BOTTOM_LEFT", tx, 0, subSize, "text_muted", tw));
@@ -257,16 +272,18 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
   }
 
   if (wtype === "scene_button" || wtype === "page_button") {
-    const lh = lineHeight(fs.s);
-    if (hasIcon && ch >= ics.m + lh + 2) {
-      els.push(el("icon", "icon", "CENTER", 0, -fdiv(lh, 2) - 1, ics.m, "accent"));
-      els.push(el("text", "label", "CENTER", 0, fdiv(ics.m, 2) + 1, fs.s, "text", cw, "center"));
+    const size = fs[String(props.text_size ?? "s")] ?? fs.s;
+    const lh = lineHeight(size);
+    if (hasIcon && ch >= ib(ics.m) + lh + 2) {
+      els.push(icon("icon", "CENTER", 0, -fdiv(lh, 2) - 1, ics.m, "accent"));
+      els.push(el("text", "label", "CENTER", 0, fdiv(ib(ics.m), 2) + 1, size, "text", cw, "center"));
     } else if (hasIcon) {
-      const iconSize = ch >= ics.m ? ics.m : ics.s;
-      els.push(el("icon", "icon", "LEFT_MID", 0, 0, iconSize, "accent"));
-      els.push(el("text", "label", "LEFT_MID", iconSize + ELEMENT_GAP, 0, fs.s, "text", Math.max(cw - iconSize - ELEMENT_GAP, 1)));
+      const iconSize = ch >= ib(ics.m) ? ics.m : ics.s;
+      const tx = ib(iconSize) + ELEMENT_GAP;
+      els.push(icon("icon", "LEFT_MID", 0, 0, iconSize, "accent"));
+      els.push(el("text", "label", "LEFT_MID", tx, 0, size, "text", Math.max(cw - tx, 1)));
     } else {
-      els.push(el("text", "label", "CENTER", 0, 0, fs.s, "text", cw, "center"));
+      els.push(el("text", "label", "CENTER", 0, 0, size, "text", cw, "center"));
     }
     return els;
   }

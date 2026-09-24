@@ -21,6 +21,18 @@
   },
   "radius": 10,
   "border_width": 1,
-  "font_sizes": {"xs": 12, "s": 14, "m": 16, "l": 20, "xl": 28, "xxl": 40},
-  "icon_sizes": {"s": 20, "m": 28, "l": 40}
+  "font_sizes": {
+    "xs": 12,
+    "s": 14,
+    "m": 16,
+    "l": 20,
+    "xl": 28,
+    "xxl": 40
+  },
+  "icon_sizes": {
+    "s": 20,
+    "m": 28,
+    "l": 40
+  },
+  "default_tile_style": "card"
 }

@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "id": "golden-styled",
+  "name": "Stil-Test",
+  "device_name": "cyd-styled",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "home",
+  "grid": {
+    "cols": 4,
+    "rows": 3,
+    "gap": 8,
+    "padding": 8
+  },
+  "settings": {
+    "language": "de"
+  },
+  "navigation": {
+    "style": "none",
+    "swipe": false
+  },
+  "pages": [
+    {
+      "id": "home",
+      "name": "Wohnzimmer",
+      "icon": "mdi:sofa",
+      "widgets": [
+        {
+          "id": "l1",
+          "type": "toggle_tile",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "light.decke",
+          "props": {
+            "label": "Decke",
+            "icon": "mdi:ceiling-light"
+          }
+        },
+        {
+          "id": "l2",
+          "type": "toggle_tile",
+          "x": 2,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "entity": "light.stehlampe",
+          "props": {
+            "label": "Stehlampe",
+            "icon": "mdi:floor-lamp"
+          },
+          "style": {
+            "text_size": "m"
+          }
+        },
+        {
+          "id": "c1",
+          "type": "toggle_tile",
+          "x": 3,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "entity": "cover.rollo",
+          "props": {
+            "label": "Rollo",
+            "icon": "mdi:roller-shade"
+          },
+          "style": {
+            "preset": "outline",
+            "circle": true,
+            "icon_on": "#34c759",
+            "radius": 20
+          }
+        },
+        {
+          "id": "t1",
+          "type": "sensor_value",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "sensor.temp",
+          "props": {
+            "label": "Temperatur",
+            "icon": "mdi:thermometer",
+            "unit": "°C"
+          },
+          "style": {
+            "preset": "glass",
+            "bg": "#0a84ff",
+            "bg_opa": 35,
+            "circle": true
+          }
+        },
+        {
+          "id": "s1",
+          "type": "scene_button",
+          "x": 0,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "action": {
+            "service": "scene.turn_on",
+            "target": "scene.film"
+          },
+          "props": {
+            "label": "Filmabend",
+            "icon": "mdi:movie-open"
+          },
+          "style": {
+            "preset": "flat",
+            "bg": "#5e5ce6",
+            "text": "#ffffff",
+            "icon_on": "#ffffff",
+            "text_size": "l"
+          }
+        },
+        {
+          "id": "b1",
+          "type": "binary_indicator",
+          "x": 2,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "binary_sensor.tuer",
+          "props": {
+            "label": "Haustür",
+            "icon": "mdi:door",
+            "text_on": "Offen",
+            "text_off": "Zu"
+          },
+          "style": {
+            "circle": true,
+            "circle_bg": "#2c2c34"
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "updated": "2026-09-24"
+  }
+}

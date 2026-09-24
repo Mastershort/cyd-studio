@@ -37,6 +37,30 @@ Kachel mit einer Zeile aufruft. Beschriftungen teilen sich LVGL-Styles (`cyd_tex
 Globale Elemente (im `top_layer`): Kopfzeile mit Seitentitel (+ Zurück-Pfeil auf Unterseiten),
 Uhr, Text; Tab-Leiste mit Icon/Beschriftung je Hauptseite.
 
+## Aussehen (ab 0.3)
+
+Jedes Widget hat ein optionales `style`-Objekt, das Projekt ein `tile_style`. Reihenfolge:
+Theme-Standard (`default_tile_style`) < Projekt-Stil < Widget-Stil. Die Vorlagen liegen als Daten in
+`styles/tile_presets.json` (Karte, Flach, Umriss, Glas, Kräftig); Farbwerte sind Theme-Rollen oder
+`#rrggbb`.
+
+| Schlüssel | Bedeutung |
+|---|---|
+| `preset` | Stil-Vorlage |
+| `bg`, `bg_on`, `bg_opa`, `bg_opa_on` | Hintergrund aus/an und Deckkraft (0–100) |
+| `border`, `border_on`, `border_width`, `radius` | Rahmenfarbe aus/an, Rahmenbreite, Ecken |
+| `text`, `text_on`, `sub`, `sub_on` | Farbe von Name und Zustand/Beschriftung aus/an |
+| `icon`, `icon_on` | Icon-Farbe aus/an |
+| `circle`, `circle_bg`, `circle_bg_on` | Icon im runden Hintergrund und dessen Farben |
+| `text_size` | `s`, `m`, `l` für den Namen |
+
+`resolve_tile_style()` (Python) und `resolveTileStyle()` (TypeScript) liefern für alle Themes und
+Beispiel-Überschreibungen identische Werte (`styles` in `tests/layout_cases.json`). Auf dem Gerät
+schreibt der Generator nur die Abweichungen vom Projekt-Standard pro Widget; ändert sich die
+Rahmenbreite, wird `pad_all` angepasst, damit die Inhaltsbox bei 6 px bleibt.
+
+Themes: mastershort dark, Hell, Kontrast, OLED-Schwarz, Home (iOS-Stil, Standard „Kräftig“ mit Kreis-Icons).
+
 ## Neues Widget hinzufügen
 
 1. `widgets/<type>.json` anlegen.

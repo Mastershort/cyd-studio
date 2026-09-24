@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.3.0) – ESPHome >= 2026.9.0
 # Projekt: Office · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -70,21 +70,25 @@ globals:
     restore_value: false
     initial_value: "false"
   - id: cyd_tile_state
-    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, const uint32_t *)>"
     restore_value: false
     initial_value: |-
-      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,
-          const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {
-        // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.
-        // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,
+          const std::string &x, float value, int kind, const char *text_on, const char *text_off,
+          const uint32_t *c) {
+        // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of
+        // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only
         const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        const int k = on ? 0 : 1;
         if (tile != nullptr) {
           lv_obj_set_state(tile, LV_STATE_CHECKED, on);
           lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
         }
-        if (icon != nullptr)
-          lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);
+        if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);
+        if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);
+        if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);
         if (label == nullptr) return;
+        lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);
         std::string text;
         if (on && kind > 0 && !std::isnan(value)) {
           char buf[12];
@@ -219,7 +223,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_state), id(ha_light_wohnzimmer_schrank).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_label), id(w_home_t1_state), nullptr, id(ha_light_wohnzimmer_schrank).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_wohnzimmer_licht_brightness_num
     entity_id: "${ent_light_wohnzimmer_licht}"
@@ -227,7 +232,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_state), id(ha_light_wohnzimmer_licht).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_label), id(w_home_t2_state), nullptr, id(ha_light_wohnzimmer_licht).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_retro_lampe_brightness_num
     entity_id: "${ent_light_retro_lampe}"
@@ -235,7 +241,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_state), id(ha_light_retro_lampe).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_label), id(w_home_t3_state), nullptr, id(ha_light_retro_lampe).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_desk_ambient_brightness_num
     entity_id: "${ent_light_desk_ambient}"
@@ -243,7 +250,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_state), id(ha_light_desk_ambient).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_label), id(w_home_t4_state), nullptr, id(ha_light_desk_ambient).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_cover_wohnzimmer_fenster_current_position_num
     entity_id: "${ent_cover_wohnzimmer_fenster}"
@@ -251,7 +259,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_state), id(ha_cover_wohnzimmer_fenster).state, x, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_label), id(w_home_t5_state), nullptr, id(ha_cover_wohnzimmer_fenster).state, x, 2, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_fan_air_purifier_percentage_num
     entity_id: "${ent_fan_air_purifier}"
@@ -259,7 +268,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_state), id(ha_fan_air_purifier).state, x, 3, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_label), id(w_home_t6_state), nullptr, id(ha_fan_air_purifier).state, x, 3, nullptr, nullptr, c);
 
 text_sensor:
   - platform: homeassistant
@@ -268,42 +278,48 @@ text_sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_state), x, id(ha_light_wohnzimmer_schrank_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t1), id(w_home_t1_icon), id(w_home_t1_label), id(w_home_t1_state), nullptr, x, id(ha_light_wohnzimmer_schrank_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_wohnzimmer_licht
     entity_id: "${ent_light_wohnzimmer_licht}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_state), x, id(ha_light_wohnzimmer_licht_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t2), id(w_home_t2_icon), id(w_home_t2_label), id(w_home_t2_state), nullptr, x, id(ha_light_wohnzimmer_licht_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_retro_lampe
     entity_id: "${ent_light_retro_lampe}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_state), x, id(ha_light_retro_lampe_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t3), id(w_home_t3_icon), id(w_home_t3_label), id(w_home_t3_state), nullptr, x, id(ha_light_retro_lampe_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_desk_ambient
     entity_id: "${ent_light_desk_ambient}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_state), x, id(ha_light_desk_ambient_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t4), id(w_home_t4_icon), id(w_home_t4_label), id(w_home_t4_state), nullptr, x, id(ha_light_desk_ambient_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_cover_wohnzimmer_fenster
     entity_id: "${ent_cover_wohnzimmer_fenster}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_state), x, id(ha_cover_wohnzimmer_fenster_current_position_num).state, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t5), id(w_home_t5_icon), id(w_home_t5_label), id(w_home_t5_state), nullptr, x, id(ha_cover_wohnzimmer_fenster_current_position_num).state, 2, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_fan_air_purifier
     entity_id: "${ent_fan_air_purifier}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_state), x, id(ha_fan_air_purifier_percentage_num).state, 3, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_t6), id(w_home_t6_icon), id(w_home_t6_label), id(w_home_t6_state), nullptr, x, id(ha_fan_air_purifier_percentage_num).state, 3, nullptr, nullptr, c);
 
 button:
   - platform: restart
@@ -420,6 +436,7 @@ lvgl:
         bg_color: 0x1B2430
       checked:
         bg_color: 0x1B2430
+        bg_opa: COVER
         border_color: 0x22D3EE
       disabled:
         bg_opa: "50%"
@@ -890,7 +907,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_3
                   text: "–"
-# cyd_studio_checksum: 319c00e25785d753
+# cyd_studio_checksum: 609ebb462c16a577
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/41VXY/bNhD8L3y2DrLsujkBeUgboEiApkX6kRbBgVhJK4kVRQokZedy8H/vLiXb

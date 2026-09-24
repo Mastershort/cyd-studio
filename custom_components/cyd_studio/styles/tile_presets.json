@@ -1,0 +1,46 @@
+{
+  "_doc": "Tile style presets. Color values are theme color roles or #rrggbb. Numbers: opacity 0-100, px.",
+  "presets": {
+    "card": {
+      "name": "Karte", "name_en": "Card",
+      "bg": "tile", "bg_opa": 100, "bg_on": "tile_on", "bg_opa_on": 100,
+      "border": "border", "border_on": "accent", "border_width": "theme", "radius": "theme",
+      "text": "text", "text_on": "text", "sub": "text_muted", "sub_on": "text_muted",
+      "icon": "off", "icon_on": "on", "circle": false, "circle_bg": "tile_on", "circle_bg_on": "accent",
+      "text_size": "s"
+    },
+    "flat": {
+      "name": "Flach", "name_en": "Flat",
+      "bg": "tile", "bg_opa": 100, "bg_on": "tile_on", "bg_opa_on": 100,
+      "border": "tile", "border_on": "tile_on", "border_width": 0, "radius": "theme",
+      "text": "text", "text_on": "text", "sub": "text_muted", "sub_on": "text_muted",
+      "icon": "off", "icon_on": "accent", "circle": false, "circle_bg": "tile_on", "circle_bg_on": "accent",
+      "text_size": "s"
+    },
+    "outline": {
+      "name": "Umriss", "name_en": "Outline",
+      "bg": "background", "bg_opa": 0, "bg_on": "accent", "bg_opa_on": 20,
+      "border": "border", "border_on": "accent", "border_width": 2, "radius": "theme",
+      "text": "text", "text_on": "text", "sub": "text_muted", "sub_on": "text",
+      "icon": "off", "icon_on": "accent", "circle": false, "circle_bg": "tile", "circle_bg_on": "accent",
+      "text_size": "s"
+    },
+    "glass": {
+      "name": "Glas (für Hintergrundbilder)", "name_en": "Glass (for background images)",
+      "bg": "tile", "bg_opa": 55, "bg_on": "tile_on", "bg_opa_on": 80,
+      "border": "border", "border_on": "accent", "border_width": 1, "radius": "theme",
+      "text": "text", "text_on": "text", "sub": "text_muted", "sub_on": "text_muted",
+      "icon": "off", "icon_on": "on", "circle": false, "circle_bg": "tile_on", "circle_bg_on": "accent",
+      "text_size": "s"
+    },
+    "solid": {
+      "name": "Kräftig (an = hell)", "name_en": "Bold (on = light)",
+      "bg": "tile", "bg_opa": 100, "bg_on": "on_bg", "bg_opa_on": 100,
+      "border": "tile", "border_on": "on_bg", "border_width": 0, "radius": "theme",
+      "text": "text", "text_on": "on_text", "sub": "text_muted", "sub_on": "on_sub",
+      "icon": "off", "icon_on": "#ffffff", "circle": true, "circle_bg": "tile_on", "circle_bg_on": "accent",
+      "text_size": "s"
+    }
+  },
+  "role_defaults": {"on_bg": "#f2f2f2", "on_text": "#111111", "on_sub": "#5f6b76"}
+}

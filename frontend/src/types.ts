@@ -24,6 +24,8 @@ export interface Widget {
   entity?: string | null;
   action?: WidgetAction | null;
   props: Record<string, unknown>;
+  /** appearance overrides (preset, colors, opacity, radius, circle, text size) – see styles/tile_presets.json */
+  style?: Record<string, unknown>;
 }
 
 export interface Page {
@@ -55,6 +57,8 @@ export interface Project {
   grid?: GridConfig;
   theme: string;
   theme_overrides?: Record<string, string>;
+  /** project wide tile style (applies to every widget, widgets can override) */
+  tile_style?: Record<string, unknown>;
   settings?: {
     brightness_day?: number;
     brightness_night?: number;

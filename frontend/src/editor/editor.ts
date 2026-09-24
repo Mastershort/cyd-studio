@@ -4,6 +4,7 @@ import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues } from "
 import type { Api } from "../api";
 import { lang, loc, t } from "../i18n";
 import { navPages, pageGrid } from "../layout";
+import { PRESETS, resolveTileStyle } from "../style";
 import {
   defaultProps, findFreeSpot, newWidgetId, normalize, overlapsAny, pageIdFrom, resolveBoard, rootOf, slugify,
 } from "../model";
@@ -462,6 +463,9 @@ export class CydEditor extends LitElement {
     .note { font-size: 12px; color: var(--secondary-text-color); max-width: 640px; text-align: center; }
     .zoom { display: flex; gap: 4px; align-items: center; }
     .danger { color: var(--error-color, #ef4444); }
+    .crow { display: flex; gap: 4px; align-items: center; }
+    .field.color input[type=color] { width: 100%; height: 30px; padding: 0 2px; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
+    input[type=range] { width: 100%; }
   `;
 
   private fitScale(): number {
@@ -525,7 +529,7 @@ export class CydEditor extends LitElement {
         </div>
         <div class="col right">${this.renderProperties()}</div>
       </div>
-      ${p.id ? html`<cyd-device-status style="padding:6px 12px" .api=${this.api} .projectId=${p.id}
+      ${p.id ? html`<cyd-device-status collapsed style="padding:6px 12px" .api=${this.api} .projectId=${p.id}
         .deviceName=${p.device_name}></cyd-device-status>` : nothing}
       <div class="issues">
         ${this._issues.length ? this._issues.map((i) => html`<div class="issue ${i.level}" @click=${() => this.focusIssue(i)}>
@@ -659,6 +663,7 @@ export class CydEditor extends LitElement {
             @value-changed=${(e: CustomEvent<{ value: string }>) => this.pickActionTarget(w, e.detail.value)}></cyd-entity-picker></div>
         ${this.text(t("action_service"), w.action?.service, (v) => set((x) => { x.action = { ...(x.action ?? { service: "" }), service: v.trim() }; }))}` : nothing}
       ${def?.props.map(prop)}
+      ${this.renderAppearance(w)}
       <h3>${t("position")}</h3>
       <div class="row4">
         ${this.num("x", w.x, (v) => set((x) => { x.x = Math.max(0, v ?? 0); }), 0)}
@@ -672,6 +677,55 @@ export class CydEditor extends LitElement {
         <button @click=${() => this.copySelected()}>${t("copy")}</button>
         <button class="danger" @click=${() => this.deleteSelected()}>${t("delete_widget")}</button>
       </div>`;
+  }
+
+  /** Theme of the project with the user's color overrides. */
+  private themed() {
+    const p = this._project!;
+    const th = this.themes[p.theme];
+    return { ...th, colors: { ...th.colors, ...(p.theme_overrides ?? {}) } };
+  }
+
+  private presetOptions(withDefault: string): [string, string][] {
+    return [["", withDefault], ...Object.entries(PRESETS.presets).map(([id, pr]): [string, string] => [id, loc(pr, "name")])];
+  }
+
+  /** "Aussehen": preset, colors, opacity, corners, border, icon circle, text size – with apply-to-page / as default. */
+  private renderAppearance(w: Widget) {
+    const p = this._project!;
+    const st = w.style ?? {};
+    const resolved = resolveTileStyle(this.themed(), { ...(p.tile_style ?? {}), ...st });
+    const set = (key: string, value: unknown) => this.editWidget(w.id, (x) => {
+      const next = { ...(x.style ?? {}) };
+      if (value === null || value === undefined || value === "") delete next[key];
+      else next[key] = value;
+      x.style = next;
+    });
+    const color = (key: keyof typeof resolved, label: string) => html`<label class="field color"><span>${label}</span>
+      <span class="crow"><input type="color" .value=${String(resolved[key])} @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)} />
+      ${st[key] ? html`<button class="small" title=${t("reset")} @click=${() => set(key, null)}>↺</button>` : nothing}</span></label>`;
+    const range = (key: keyof typeof resolved, label: string, max: number) => html`<label class="field"><span>${label}: ${resolved[key]}</span>
+      <input type="range" min="0" max=${max} .value=${String(resolved[key])} @change=${(e: Event) => set(key, Number((e.target as HTMLInputElement).value))} /></label>`;
+    const isTile = ["toggle_tile", "sensor_value", "binary_indicator", "scene_button", "page_button"].includes(w.type) || (w.type === "label" && w.props.background);
+    return html`
+      <h3>${t("appearance")}</h3>
+      ${this.select(t("style_preset"), st.preset ?? "", this.presetOptions(t("style_project_default")), (v) => set("preset", v || null))}
+      ${isTile ? html`<div class="row2">${color("bg", t("color_bg"))}${w.type === "toggle_tile" ? color("bg_on", t("color_bg_on")) : color("border", t("color_border"))}</div>` : nothing}
+      <div class="row2">${color("text", t("color_text"))}${color("icon_on", t("color_icon"))}</div>
+      ${w.type === "toggle_tile" ? html`<div class="row2">${color("text_on", t("color_text_on"))}${color("icon", t("color_icon_off"))}</div>` : nothing}
+      ${isTile ? html`${range("bg_opa", t("opacity"), 100)}${range("radius", t("corners"), 40)}${range("border_width", t("border_width"), 4)}` : nothing}
+      <div class="row2">
+        ${this.check(t("icon_circle"), resolved.circle, (v) => set("circle", v))}
+        ${this.select(t("text_size"), resolved.text_size, [["s", "S"], ["m", "M"], ["l", "L"]], (v) => set("text_size", v))}
+      </div>
+      <div class="row2">
+        <button @click=${() => this.editPage((pg) => { for (const x of pg.widgets) if (x.id !== w.id) x.style = { ...(w.style ?? {}) }; })}>${t("style_to_page")}</button>
+        <button @click=${() => this.mutate((pp) => {
+          pp.tile_style = { ...(w.style ?? {}) };
+          for (const pg of pp.pages) for (const x of pg.widgets) if (x.id === w.id && pg.id === this._pageId) x.style = {};
+        })}>${t("style_as_default")}</button>
+      </div>
+      ${Object.keys(st).length ? html`<button class="small" @click=${() => this.editWidget(w.id, (x) => { x.style = {}; })}>↺ ${t("style_reset")}</button>` : nothing}`;
   }
 
   private pickEntity(w: Widget, entityId: string) {
@@ -742,6 +796,10 @@ export class CydEditor extends LitElement {
         ${this.num(t("padding"), p.grid?.padding, (v) => set((pp) => { pp.grid = { ...pp.grid, padding: Math.max(0, v ?? 8) }; }), 0, 32)}
       </div>
       ${this.select(t("theme"), p.theme, Object.values(this.themes).map((th): [string, string] => [th.id, th.name]), (v) => set((pp) => { pp.theme = v; }))}
+      ${this.select(t("style_default"), p.tile_style?.preset ?? "", this.presetOptions(t("style_theme_default")),
+        (v) => set((pp) => { pp.tile_style = { ...(pp.tile_style ?? {}), preset: v || undefined }; if (!v) delete pp.tile_style.preset; }))}
+      ${this.check(t("icon_circle"), resolveTileStyle(this.themed(), p.tile_style ?? {}).circle,
+        (v) => set((pp) => { pp.tile_style = { ...(pp.tile_style ?? {}), circle: v }; }))}
       <label class="field"><span>${t("accent")}</span><input type="color" .value=${p.theme_overrides?.accent ?? this.themes[p.theme]?.colors.accent ?? "#22d3ee"}
         @change=${(e: Event) => set((pp) => { pp.theme_overrides = { ...pp.theme_overrides, accent: (e.target as HTMLInputElement).value }; })} /></label>
       ${this.select(t("language"), s.language ?? "de", [["de", "Deutsch"], ["en", "English"]], (v) => set((pp) => { pp.settings = { ...pp.settings, language: v as "de" | "en" }; }))}

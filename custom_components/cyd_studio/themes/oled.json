@@ -1,0 +1,41 @@
+{
+  "id": "oled",
+  "name": "OLED-Schwarz",
+  "name_en": "OLED black",
+  "colors": {
+    "background": "#000000",
+    "tile": "#0b0b0b",
+    "tile_on": "#141414",
+    "border": "#1c1c1c",
+    "text": "#d9d9d9",
+    "text_muted": "#7a7a7a",
+    "accent": "#22d3ee",
+    "on": "#a3e635",
+    "off": "#5c5c5c",
+    "warning": "#f59e0b",
+    "error": "#ef4444",
+    "header_bg": "#000000",
+    "nav_bg": "#000000",
+    "nav_active": "#22d3ee",
+    "nav_inactive": "#5c5c5c",
+    "on_bg": "#1f2a1a",
+    "on_text": "#e8ffd0",
+    "on_sub": "#a3e635"
+  },
+  "radius": 10,
+  "border_width": 0,
+  "default_tile_style": "flat",
+  "font_sizes": {
+    "xs": 12,
+    "s": 14,
+    "m": 16,
+    "l": 20,
+    "xl": 28,
+    "xxl": 40
+  },
+  "icon_sizes": {
+    "s": 20,
+    "m": 28,
+    "l": 40
+  }
+}

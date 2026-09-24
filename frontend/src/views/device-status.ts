@@ -10,6 +10,7 @@ export class CydDeviceStatus extends LitElement {
     projectId: {},
     deviceName: {},
     compact: { type: Boolean },
+    collapsed: { type: Boolean },
     status: { attribute: false },
     _busy: { state: true },
     _done: { state: true },
@@ -20,6 +21,7 @@ export class CydDeviceStatus extends LitElement {
   declare projectId: string;
   declare deviceName: string;
   declare compact: boolean;
+  declare collapsed: boolean;
   declare status: DeviceStatus | null;
   declare _busy: boolean;
   declare _done: boolean;
@@ -29,6 +31,7 @@ export class CydDeviceStatus extends LitElement {
   constructor() {
     super();
     this.compact = false;
+    this.collapsed = false;
     this.status = null;
     this._busy = false;
     this._done = false;
@@ -80,7 +83,7 @@ export class CydDeviceStatus extends LitElement {
   }
 
   private guideNotFound() {
-    return html`<details ?open=${!this.compact}>
+    return html`<details ?open=${!this.compact && !this.collapsed}>
       <summary>○ ${t("device_not_found", { name: this.deviceName })} – ${t("how_to_connect")}</summary>
       <ol>
         <li>${t("connect_step_flash")}</li>

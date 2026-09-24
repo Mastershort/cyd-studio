@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.3.0) – ESPHome >= 2026.9.0
 # Projekt: Ümlaut "Test": Küche & Bad · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -63,21 +63,25 @@ globals:
     restore_value: false
     initial_value: "false"
   - id: cyd_tile_state
-    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, const uint32_t *)>"
     restore_value: false
     initial_value: |-
-      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,
-          const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {
-        // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.
-        // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,
+          const std::string &x, float value, int kind, const char *text_on, const char *text_off,
+          const uint32_t *c) {
+        // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of
+        // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only
         const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        const int k = on ? 0 : 1;
         if (tile != nullptr) {
           lv_obj_set_state(tile, LV_STATE_CHECKED, on);
           lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
         }
-        if (icon != nullptr)
-          lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);
+        if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);
+        if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);
+        if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);
         if (label == nullptr) return;
+        lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);
         std::string text;
         if (on && kind > 0 && !std::isnan(value)) {
           char buf[12];
@@ -211,9 +215,11 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_eins_a), id(w_eins_a_icon), id(w_eins_a_state), id(ha_light_kueche).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_eins_a), id(w_eins_a_icon), id(w_eins_a_label), id(w_eins_a_state), nullptr, id(ha_light_kueche).state, x, 1, nullptr, nullptr, c);
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_eins_b), nullptr, id(w_eins_b_state), id(ha_light_kueche).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_eins_b), nullptr, id(w_eins_b_label), id(w_eins_b_state), nullptr, id(ha_light_kueche).state, x, 1, nullptr, nullptr, c);
 
 text_sensor:
   - platform: homeassistant
@@ -222,9 +228,11 @@ text_sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_eins_a), id(w_eins_a_icon), id(w_eins_a_state), x, id(ha_light_kueche_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_eins_a), id(w_eins_a_icon), id(w_eins_a_label), id(w_eins_a_state), nullptr, x, id(ha_light_kueche_brightness_num).state, 1, nullptr, nullptr, c);
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_eins_b), nullptr, id(w_eins_b_state), x, id(ha_light_kueche_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_eins_b), nullptr, id(w_eins_b_label), id(w_eins_b_state), nullptr, x, id(ha_light_kueche_brightness_num).state, 1, nullptr, nullptr, c);
         - lvgl.label.update:
             id: w_eins_c_value
             text: !lambda |-
@@ -392,6 +400,7 @@ lvgl:
         bg_color: 0x1B2430
       checked:
         bg_color: 0x1B2430
+        bg_opa: COVER
         border_color: 0x22D3EE
       disabled:
         bg_opa: "50%"
@@ -434,45 +443,44 @@ lvgl:
       text_font: icons_28
       text_color: 0x8B98A5
     - id: cyd_text_2
-      text_font: font_12
-      text_color: 0x8B98A5
-      text_align: RIGHT
-    - id: cyd_text_3
       text_font: font_14
       text_color: 0xE6EDF3
-    - id: cyd_text_4
+    - id: cyd_text_3
       text_font: font_12
       text_color: 0x8B98A5
-    - id: cyd_text_5
+    - id: cyd_text_4
       text_font: font_28
       text_color: 0xE6EDF3
-    - id: cyd_text_6
+    - id: cyd_text_5
       text_font: font_14
       text_color: 0xE6EDF3
       text_align: CENTER
-    - id: cyd_text_7
+    - id: cyd_text_6
       text_font: font_20
       text_color: 0xE6EDF3
       text_align: CENTER
-    - id: cyd_text_8
+    - id: cyd_text_7
       text_font: font_12
       text_color: 0x8B98A5
       text_align: CENTER
-    - id: cyd_text_9
+    - id: cyd_text_8
       text_font: icons_20
-      text_color: 0x22D3EE
-    - id: cyd_text_10
+      text_color: 0xA3E635
+    - id: cyd_text_9
       text_font: font_16
       text_color: 0xE6EDF3
-    - id: cyd_text_11
+    - id: cyd_text_10
       text_font: icons_28
-      text_color: 0x22D3EE
-    - id: cyd_text_12
+      text_color: 0xA3E635
+    - id: cyd_text_11
       text_font: font_14
+      text_color: 0x8B98A5
+    - id: cyd_text_12
+      text_font: icons_20
       text_color: 0x8B98A5
     - id: cyd_text_13
       text_font: icons_20
-      text_color: 0x8B98A5
+      text_color: 0x22D3EE
     - id: cyd_text_14
       text_font: font_12
       text_color: 0x22D3EE
@@ -519,7 +527,7 @@ lvgl:
           widgets:
             - label:
                 align: CENTER
-                styles: cyd_text_12
+                styles: cyd_text_11
                 text: "Ümlaut \"Test\": Küche & Bad"
       - obj:
           id: cyd_tabbar
@@ -546,7 +554,7 @@ lvgl:
                       id: cyd_tab_eins_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_13
+                      styles: cyd_text_12
                       text: "\U000F03A4"
                   - label:
                       id: cyd_tab_eins_label
@@ -554,7 +562,7 @@ lvgl:
                       y: -1
                       width: 46
                       long_mode: DOT
-                      styles: cyd_text_8
+                      styles: cyd_text_7
                       text: "Eins mit sehr langem Seitennamen"
             - button:
                 id: cyd_tab_zwei
@@ -571,7 +579,7 @@ lvgl:
                       id: cyd_tab_zwei_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_9
+                      styles: cyd_text_13
                       text: "\U000F03A7"
                   - label:
                       id: cyd_tab_zwei_label
@@ -611,12 +619,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 202
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_ov_close
                       align: TOP_RIGHT
-                      styles: cyd_text_13
+                      styles: cyd_text_12
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_overlay
@@ -737,19 +745,20 @@ lvgl:
                   styles: cyd_text_1
                   text: "\U000F0335"
               - label:
-                  id: w_eins_a_state
-                  align: TOP_RIGHT
-                  width: 84
+                  id: w_eins_a_label
+                  align: BOTTOM_LEFT
+                  y: -15
+                  width: 118
                   long_mode: DOT
                   styles: cyd_text_2
-                  text: "–"
+                  text: "Küchenlicht mit einem wirklich sehr langen Namen"
               - label:
-                  id: w_eins_a_label
+                  id: w_eins_a_state
                   align: BOTTOM_LEFT
                   width: 118
                   long_mode: DOT
                   styles: cyd_text_3
-                  text: "Küchenlicht mit einem wirklich sehr langen Namen"
+                  text: "–"
         - button:
             id: w_eins_b
             x: 186
@@ -772,19 +781,20 @@ lvgl:
                     return id(cyd_percent)(id(ha_light_kueche).state, id(ha_light_kueche_brightness_num).state, 1);
             widgets:
               - label:
-                  id: w_eins_b_state
-                  align: TOP_RIGHT
-                  width: 84
+                  id: w_eins_b_label
+                  align: BOTTOM_LEFT
+                  y: -15
+                  width: 118
                   long_mode: DOT
                   styles: cyd_text_2
-                  text: "–"
+                  text: "Dasselbe Licht"
               - label:
-                  id: w_eins_b_label
+                  id: w_eins_b_state
                   align: BOTTOM_LEFT
                   width: 118
                   long_mode: DOT
                   styles: cyd_text_3
-                  text: "Dasselbe Licht"
+                  text: "–"
         - obj:
             id: w_eins_c
             x: 52
@@ -799,14 +809,14 @@ lvgl:
                   align: TOP_LEFT
                   width: 73
                   long_mode: DOT
-                  styles: cyd_text_4
+                  styles: cyd_text_3
                   text: "Als Text"
               - label:
                   id: w_eins_c_value
                   align: BOTTOM_LEFT
                   width: 73
                   long_mode: DOT
-                  styles: cyd_text_5
+                  styles: cyd_text_4
                   text: "--"
         - obj:
             id: w_eins_d
@@ -822,7 +832,7 @@ lvgl:
                   align: CENTER
                   width: 163
                   long_mode: DOT
-                  styles: cyd_text_6
+                  styles: cyd_text_5
                   text: "Sonderzeichen: \\ \" ' # : { } [ ] % @ ` ✓"
         - obj:
             id: w_eins_e
@@ -840,7 +850,7 @@ lvgl:
                   y: -7
                   width: 163
                   long_mode: DOT
-                  styles: cyd_text_7
+                  styles: cyd_text_6
                   text: "--:--"
               - label:
                   id: w_eins_e_date
@@ -848,7 +858,7 @@ lvgl:
                   y: 12
                   width: 163
                   long_mode: DOT
-                  styles: cyd_text_8
+                  styles: cyd_text_7
                   text: ""
     - id: page_zwei
       bg_color: 0x0A0E14
@@ -899,14 +909,14 @@ lvgl:
             widgets:
               - label:
                   align: LEFT_MID
-                  styles: cyd_text_9
+                  styles: cyd_text_8
                   text: "\U000F0141"
               - label:
                   align: LEFT_MID
                   x: 26
                   width: 226
                   long_mode: DOT
-                  styles: cyd_text_10
+                  styles: cyd_text_9
                   text: Unterseite
         - button:
             id: w_unter_u
@@ -923,14 +933,14 @@ lvgl:
             widgets:
               - label:
                   align: LEFT_MID
-                  styles: cyd_text_11
+                  styles: cyd_text_10
                   text: "\U000F0131"
               - label:
                   align: LEFT_MID
                   x: 34
                   width: 39
                   long_mode: DOT
-                  styles: cyd_text_3
+                  styles: cyd_text_2
                   text: Unter-Unterseite
     - id: page_unter2
       skip: true
@@ -962,9 +972,9 @@ lvgl:
                   align: LEFT_MID
                   width: 252
                   long_mode: DOT
-                  styles: cyd_text_10
+                  styles: cyd_text_9
                   text: Unter-Unterseite
-# cyd_studio_checksum: ed0477c11a46bc45
+# cyd_studio_checksum: 3118cd483656b72a
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/61WzY7bNhB+FYJF24sVyLK7aHRqixYI0KKXpJdmDZWSxjJhihRIyj+70FPkmkfp

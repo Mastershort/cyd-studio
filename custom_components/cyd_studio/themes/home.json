@@ -1,0 +1,41 @@
+{
+  "id": "home",
+  "name": "Home (iOS-Stil)",
+  "name_en": "Home (iOS style)",
+  "colors": {
+    "background": "#1c1c24",
+    "tile": "#3a3a44",
+    "tile_on": "#4a4a56",
+    "border": "#3a3a44",
+    "text": "#ffffff",
+    "text_muted": "#c7c7cc",
+    "accent": "#ffcc00",
+    "on": "#ffcc00",
+    "off": "#c7c7cc",
+    "warning": "#ff9500",
+    "error": "#ff3b30",
+    "header_bg": "#1c1c24",
+    "nav_bg": "#26262f",
+    "nav_active": "#ffcc00",
+    "nav_inactive": "#8e8e93",
+    "on_bg": "#f2f2f7",
+    "on_text": "#000000",
+    "on_sub": "#6e6e73"
+  },
+  "radius": 16,
+  "border_width": 0,
+  "default_tile_style": "solid",
+  "font_sizes": {
+    "xs": 12,
+    "s": 14,
+    "m": 16,
+    "l": 20,
+    "xl": 28,
+    "xxl": 40
+  },
+  "icon_sizes": {
+    "s": 20,
+    "m": 28,
+    "l": 40
+  }
+}

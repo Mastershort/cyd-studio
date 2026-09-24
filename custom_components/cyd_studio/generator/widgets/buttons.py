@@ -13,12 +13,15 @@ def _button(
     ctx: Context, wid: str, widget: dict[str, Any], rect: Rect, text: str, icon: str, on_click: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
     children = []
-    for el in elements(ctx, widget, rect, {"icon": icon}):
+    style = ctx.widget_style(widget)
+    for el in elements(ctx, widget, rect, {"icon": icon}, style=style):
         if el["role"] == "icon":
-            children.append(ctx.label(el, None, icon))
+            children.append(ctx.element(el, None, icon, style))
         else:
-            children.append(ctx.label(el, None, text))
-    return [box(ctx, "button", wid, rect, children, clickable=True, style=None, on_short_click=on_click)]
+            children.append(ctx.element(el, None, text, style))
+    return [
+        box(ctx, "button", wid, rect, children, clickable=True, style=None, tile_style=style, on_short_click=on_click)
+    ]
 
 
 def scene_button(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:

@@ -1,0 +1,41 @@
+{
+  "id": "contrast",
+  "name": "Kontrast",
+  "name_en": "High contrast",
+  "colors": {
+    "background": "#000000",
+    "tile": "#000000",
+    "tile_on": "#ffd400",
+    "border": "#ffffff",
+    "text": "#ffffff",
+    "text_muted": "#ffffff",
+    "accent": "#ffd400",
+    "on": "#ffd400",
+    "off": "#ffffff",
+    "warning": "#ffd400",
+    "error": "#ff3b30",
+    "header_bg": "#000000",
+    "nav_bg": "#000000",
+    "nav_active": "#ffd400",
+    "nav_inactive": "#ffffff",
+    "on_bg": "#ffd400",
+    "on_text": "#000000",
+    "on_sub": "#000000"
+  },
+  "radius": 6,
+  "border_width": 2,
+  "default_tile_style": "solid",
+  "font_sizes": {
+    "xs": 12,
+    "s": 14,
+    "m": 16,
+    "l": 20,
+    "xl": 28,
+    "xxl": 40
+  },
+  "icon_sizes": {
+    "s": 20,
+    "m": 28,
+    "l": 40
+  }
+}

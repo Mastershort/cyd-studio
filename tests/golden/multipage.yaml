@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.3.0) – ESPHome >= 2026.9.0
 # Projekt: Wohnzimmer · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -72,21 +72,25 @@ globals:
     restore_value: false
     initial_value: "false"
   - id: cyd_tile_state
-    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, const uint32_t *)>"
     restore_value: false
     initial_value: |-
-      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,
-          const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {
-        // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.
-        // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,
+          const std::string &x, float value, int kind, const char *text_on, const char *text_off,
+          const uint32_t *c) {
+        // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of
+        // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only
         const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        const int k = on ? 0 : 1;
         if (tile != nullptr) {
           lv_obj_set_state(tile, LV_STATE_CHECKED, on);
           lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
         }
-        if (icon != nullptr)
-          lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);
+        if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);
+        if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);
+        if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);
         if (label == nullptr) return;
+        lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);
         std::string text;
         if (on && kind > 0 && !std::isnan(value)) {
           char buf[12];
@@ -233,9 +237,11 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_w3), id(w_home_w3_icon), id(w_home_w3_state), id(ha_light_wohnzimmer).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_w3), id(w_home_w3_icon), id(w_home_w3_label), id(w_home_w3_state), nullptr, id(ha_light_wohnzimmer).state, x, 1, nullptr, nullptr, c);
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_licht_details_l1), id(w_licht_details_l1_icon), id(w_licht_details_l1_state), id(ha_light_wohnzimmer).state, x, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_licht_details_l1), id(w_licht_details_l1_icon), id(w_licht_details_l1_label), id(w_licht_details_l1_state), nullptr, id(ha_light_wohnzimmer).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_sensor_wohnzimmer_luftfeuchte_num
     entity_id: "${ent_sensor_wohnzimmer_luftfeuchte}"
@@ -267,7 +273,8 @@ sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_licht_details_l3), id(w_licht_details_l3_icon), id(w_licht_details_l3_state), id(ha_cover_rollladen).state, x, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_licht_details_l3), id(w_licht_details_l3_icon), id(w_licht_details_l3_label), id(w_licht_details_l3_state), nullptr, id(ha_cover_rollladen).state, x, 2, nullptr, nullptr, c);
 
 text_sensor:
   - platform: homeassistant
@@ -276,30 +283,35 @@ text_sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_home_w3), id(w_home_w3_icon), id(w_home_w3_state), x, id(ha_light_wohnzimmer_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_home_w3), id(w_home_w3_icon), id(w_home_w3_label), id(w_home_w3_state), nullptr, x, id(ha_light_wohnzimmer_brightness_num).state, 1, nullptr, nullptr, c);
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_licht_details_l1), id(w_licht_details_l1_icon), id(w_licht_details_l1_state), x, id(ha_light_wohnzimmer_brightness_num).state, 1, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_licht_details_l1), id(w_licht_details_l1_icon), id(w_licht_details_l1_label), id(w_licht_details_l1_state), nullptr, x, id(ha_light_wohnzimmer_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_binary_sensor_fenster_wohnzimmer
     entity_id: "${ent_binary_sensor_fenster_wohnzimmer}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(nullptr, id(w_home_w4_icon), id(w_home_w4_state), x, NAN, 0, "Offen", "Zu", 0xEF4444, 0xA3E635);
+            static const uint32_t c[] = {0xEF4444, 0xA3E635, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x1B2430, 0x1B2430};
+            id(cyd_tile_state)(nullptr, id(w_home_w4_icon), nullptr, id(w_home_w4_state), nullptr, x, NAN, 0, "Offen", "Zu", c);
   - platform: homeassistant
     id: ha_switch_stehlampe
     entity_id: "${ent_switch_stehlampe}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_licht_details_l2), id(w_licht_details_l2_icon), id(w_licht_details_l2_state), x, NAN, 0, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_licht_details_l2), id(w_licht_details_l2_icon), id(w_licht_details_l2_label), id(w_licht_details_l2_state), nullptr, x, NAN, 0, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_cover_rollladen
     entity_id: "${ent_cover_rollladen}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(id(w_licht_details_l3), id(w_licht_details_l3_icon), id(w_licht_details_l3_state), x, id(ha_cover_rollladen_current_position_num).state, 2, nullptr, nullptr, 0xA3E635, 0x8B98A5);
+            static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
+            id(cyd_tile_state)(id(w_licht_details_l3), id(w_licht_details_l3_icon), id(w_licht_details_l3_label), id(w_licht_details_l3_state), nullptr, x, id(ha_cover_rollladen_current_position_num).state, 2, nullptr, nullptr, c);
 
 button:
   - platform: restart
@@ -482,6 +494,7 @@ lvgl:
         bg_color: 0x1B2430
       checked:
         bg_color: 0x1B2430
+        bg_opa: COVER
         border_color: 0x22D3EE
       disabled:
         bg_opa: "50%"
@@ -530,7 +543,7 @@ lvgl:
       text_align: CENTER
     - id: cyd_text_3
       text_font: icons_28
-      text_color: 0x22D3EE
+      text_color: 0xA3E635
     - id: cyd_text_4
       text_font: font_20
       text_color: 0xE6EDF3
@@ -545,21 +558,24 @@ lvgl:
       text_color: 0xE6EDF3
     - id: cyd_text_8
       text_font: icons_20
-      text_color: 0x22D3EE
+      text_color: 0xA3E635
     - id: cyd_text_9
       text_font: font_28
       text_color: 0xE6EDF3
     - id: cyd_text_10
+      text_font: icons_20
+      text_color: 0x22D3EE
+    - id: cyd_text_11
       text_font: font_12
       text_color: 0x22D3EE
       text_align: CENTER
-    - id: cyd_text_11
+    - id: cyd_text_12
       text_font: icons_20
       text_color: 0x8B98A5
-    - id: cyd_text_12
+    - id: cyd_text_13
       text_font: font_16
       text_color: 0xE6EDF3
-    - id: cyd_text_13
+    - id: cyd_text_14
       text_font: font_28
       text_color: 0xE6EDF3
       text_align: CENTER
@@ -604,7 +620,7 @@ lvgl:
             - label:
                 id: cyd_back
                 align: LEFT_MID
-                styles: cyd_text_8
+                styles: cyd_text_10
                 text: "\U000F0141"
                 hidden: true
                 on_short_click:
@@ -653,7 +669,7 @@ lvgl:
                       id: cyd_tab_home_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F02DC"
                   - label:
                       id: cyd_tab_home_label
@@ -661,7 +677,7 @@ lvgl:
                       y: -1
                       width: 158
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_11
                       text: Start
             - button:
                 id: cyd_tab_klima
@@ -678,7 +694,7 @@ lvgl:
                       id: cyd_tab_klima_icon
                       align: TOP_MID
                       y: 2
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: "\U000F0393"
                   - label:
                       id: cyd_tab_klima_label
@@ -718,12 +734,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 202
                       long_mode: DOT
-                      styles: cyd_text_12
+                      styles: cyd_text_13
                       text: ""
                   - label:
                       id: cyd_ov_close
                       align: TOP_RIGHT
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_overlay
@@ -733,7 +749,7 @@ lvgl:
                       y: -9
                       width: 228
                       long_mode: DOT
-                      styles: cyd_text_13
+                      styles: cyd_text_14
                       text: ""
                   - slider:
                       id: cyd_ov_slider
@@ -934,6 +950,7 @@ lvgl:
                   styles: cyd_text_6
                   text: "\U000F11DC"
               - label:
+                  id: w_home_w4_label
                   align: TOP_LEFT
                   x: 34
                   width: 102
@@ -1243,7 +1260,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_5
                   text: "–"
-# cyd_studio_checksum: 8dd06e782e695273
+# cyd_studio_checksum: 8ded89e906d6f66d
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/7VXXW7jNhC+SkCgb3Ygy0m6EdCHNot22253F0mL7c8GAiWNJNYUKZBUHCfwy56j

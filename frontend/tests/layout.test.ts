@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { headerElements, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
-import type { Project } from "../src/types";
+import { resolveTileStyle } from "../src/style";
+import type { Project, Theme } from "../src/types";
 
 interface Cases {
   layouts: { input: { project: Project; width: number; height: number }; expected: Record<string, unknown> }[];
   elements: { input: { type: string; w: number; h: number; props: Record<string, unknown> }; expected: unknown[] }[];
   tabs: { input: { icons: boolean; labels: boolean; tab: number[] }; expected: unknown[] }[];
+  styles: { input: { theme: Theme; style: Record<string, unknown> }; expected: unknown }[];
   overlays: { input: { w: number; h: number }; expected: { panel: number[]; elements: unknown[] } }[];
 }
 
@@ -50,5 +52,9 @@ describe("layout parity with generator/layout.py", () => {
       const lay = overlayLayout(c.input.w, c.input.h);
       expect({ panel: list(lay.panel), elements: lay.elements }).toEqual(c.expected);
     }
+  });
+
+  it("tile styles", () => {
+    for (const c of cases.styles) expect(resolveTileStyle(c.input.theme, c.input.style)).toEqual(c.expected);
   });
 });

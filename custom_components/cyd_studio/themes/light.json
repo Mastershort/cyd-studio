@@ -1,0 +1,41 @@
+{
+  "id": "light",
+  "name": "Hell",
+  "name_en": "Light",
+  "colors": {
+    "background": "#eef1f5",
+    "tile": "#ffffff",
+    "tile_on": "#e3f6fb",
+    "border": "#d5dbe3",
+    "text": "#1a2129",
+    "text_muted": "#5f6b76",
+    "accent": "#0891b2",
+    "on": "#16a34a",
+    "off": "#8b98a5",
+    "warning": "#d97706",
+    "error": "#dc2626",
+    "header_bg": "#eef1f5",
+    "nav_bg": "#ffffff",
+    "nav_active": "#0891b2",
+    "nav_inactive": "#8b98a5",
+    "on_bg": "#0891b2",
+    "on_text": "#ffffff",
+    "on_sub": "#d9f3f9"
+  },
+  "radius": 12,
+  "border_width": 1,
+  "default_tile_style": "card",
+  "font_sizes": {
+    "xs": 12,
+    "s": 14,
+    "m": 16,
+    "l": 20,
+    "xl": 28,
+    "xxl": 40
+  },
+  "icon_sizes": {
+    "s": 20,
+    "m": 28,
+    "l": 40
+  }
+}

@@ -63,13 +63,14 @@ def clock(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect
     if "%S" in fmt:
         ctx.needs_seconds = True
     children = []
-    for el in elements(ctx, widget, rect):
+    style = ctx.widget_style(widget)
+    for el in elements(ctx, widget, rect, style=style):
         if el["role"] == "time":
-            children.append(ctx.label(el, f"{wid}_time", "--:--"))
+            children.append(ctx.element(el, f"{wid}_time", "--:--", style))
             ctx.time_updates.append({"lvgl.label.update": {"id": f"{wid}_time", "text": time_lambda(fmt)}})
         elif el["role"] == "date":
             register_date_glyphs(ctx, el["size"])
-            children.append(ctx.label(el, f"{wid}_date", ""))
+            children.append(ctx.element(el, f"{wid}_date", "", style))
             ctx.time_updates.append({"lvgl.label.update": {"id": f"{wid}_date", "text": date_lambda(ctx)}})
     return [box(ctx, "obj", wid, rect, children, clickable=False, style="cyd_plain")]
 
@@ -78,9 +79,12 @@ def label(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect
     """Free text."""
     wid = widget_id(page, widget)
     props = widget.get("props", {})
-    children = [ctx.label(el, None, str(props.get("text", ""))) for el in elements(ctx, widget, rect)]
-    style = "cyd_tile" if props.get("background") else "cyd_plain"
-    return [box(ctx, "obj", wid, rect, children, clickable=False, style=style)]
+    style = ctx.widget_style(widget)
+    text = str(props.get("text", ""))
+    children = [ctx.element(el, None, text, style) for el in elements(ctx, widget, rect, style=style)]
+    if props.get("background"):
+        return [box(ctx, "obj", wid, rect, children, clickable=False, tile_style=style)]
+    return [box(ctx, "obj", wid, rect, children, clickable=False, style="cyd_plain")]
 
 
 def page_title(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:
@@ -90,11 +94,12 @@ def page_title(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect:
     parent = page.get("parent")
     has_back = bool(parent and props.get("show_back", True) and parent in ctx.page_ids)
     children = []
-    for el in elements(ctx, widget, rect, {"_has_back": has_back}):
+    style = ctx.widget_style(widget)
+    for el in elements(ctx, widget, rect, {"_has_back": has_back}, style=style):
         if el["role"] == "back":
-            children.append(ctx.label(el, None, "mdi:chevron-left"))
+            children.append(ctx.element(el, None, "mdi:chevron-left", style))
         else:
-            children.append(ctx.label(el, None, page.get("name", "")))
+            children.append(ctx.element(el, None, page.get("name", ""), style))
     extra: dict[str, Any] = {}
     if has_back and parent:
         extra["on_short_click"] = [page_show(ctx, parent, "MOVE_RIGHT")]

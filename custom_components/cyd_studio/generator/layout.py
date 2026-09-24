@@ -17,6 +17,7 @@ TABBAR_H_ICONS = 32
 TABBAR_W_LEFT = 48
 HEADER_PAD_X = 6
 TILE_PAD = 6
+CIRCLE_PAD = 5
 ELEMENT_GAP = 6
 
 # Font metrics of Montserrat as rendered by ESPHome (freetype, ascender 968 / descender 251 per 1000 em)
@@ -208,62 +209,47 @@ def widget_elements(
     ch = max(h - 2 * TILE_PAD, 1)
     els: list[dict[str, Any]] = []
 
+    circle = bool(props.get("icon_circle"))
+
+    def ib(size: int) -> int:
+        """Box of an icon: the glyph, or the round background around it."""
+        return size + 2 * CIRCLE_PAD if circle else size
+
+    def icon(role: str, align: str, x: int, y: int, size: int, color: str) -> dict[str, Any]:
+        el = _el("icon", role, align, x, y, size, color)
+        if circle:
+            el["circle"] = ib(size)
+        return el
+
     if wtype in ("toggle_tile", "binary_indicator", "sensor_value"):
-        main_size = fs["l"] if wtype == "sensor_value" else fs["s"]
+        main_size = fs["l"] if wtype == "sensor_value" else fs.get(str(props.get("text_size", "s")), fs["s"])
         sub_size = fs["xs"]
-        tall = ch >= ics["m"] + line_height(main_size) + line_height(sub_size) // 2
+        tall = ch >= ib(ics["m"]) + line_height(main_size) + line_height(sub_size)
         has_icon = bool(props.get("icon"))
         if tall:
             if wtype == "sensor_value":
-                big = fs["xl"] if ch >= ics["s"] + line_height(fs["xl"]) else fs["l"]
-                els.append(
-                    _el(
-                        "text",
-                        "label",
-                        "TOP_LEFT",
-                        0,
-                        0,
-                        sub_size,
-                        "text_muted",
-                        cw - (ics["s"] + ELEMENT_GAP if has_icon else 0),
-                    )
-                )
+                big = fs["xl"] if ch >= ib(ics["s"]) + line_height(fs["xl"]) else fs["l"]
+                label_w = cw - (ib(ics["s"]) + ELEMENT_GAP if has_icon else 0)
+                els.append(_el("text", "label", "TOP_LEFT", 0, 0, sub_size, "text_muted", label_w))
                 if has_icon:
-                    els.append(_el("icon", "icon", "TOP_RIGHT", 0, 0, ics["s"], "accent"))
+                    els.append(icon("icon", "TOP_RIGHT", 0, 0, ics["s"], "accent"))
                 els.append(_el("text", "value", "BOTTOM_LEFT", 0, 0, big, "text", cw))
             else:
+                # icon on top, name and state stacked at the bottom (home app style)
                 if has_icon:
-                    els.append(_el("icon", "icon", "TOP_LEFT", 0, 0, ics["m"], "state_icon"))
+                    els.append(icon("icon", "TOP_LEFT", 0, 0, ics["m"], "state_icon"))
                 if (wtype == "toggle_tile" and props.get("show_state", True)) or wtype == "binary_indicator":
-                    els.append(
-                        _el(
-                            "text",
-                            "state",
-                            "TOP_RIGHT",
-                            0,
-                            0,
-                            sub_size,
-                            "text_muted",
-                            cw - (ics["m"] + ELEMENT_GAP if has_icon else 0),
-                            "right",
-                        )
-                    )
-                els.append(_el("text", "label", "BOTTOM_LEFT", 0, 0, main_size, "text", cw))
+                    els.append(_el("text", "label", "BOTTOM_LEFT", 0, -line_height(sub_size), main_size, "text", cw))
+                    els.append(_el("text", "state", "BOTTOM_LEFT", 0, 0, sub_size, "text_muted", cw))
+                else:
+                    els.append(_el("text", "label", "BOTTOM_LEFT", 0, 0, main_size, "text", cw))
         else:
-            icon_size = ics["m"] if ch >= ics["m"] and cw >= 3 * ics["m"] else ics["s"]
-            tx = icon_size + ELEMENT_GAP if has_icon else 0
+            icon_size = ics["m"] if ch >= ib(ics["m"]) and cw >= 3 * ib(ics["m"]) else ics["s"]
+            tx = ib(icon_size) + ELEMENT_GAP if has_icon else 0
             tw = max(cw - tx, 1)
             if has_icon:
                 els.append(
-                    _el(
-                        "icon",
-                        "icon",
-                        "LEFT_MID",
-                        0,
-                        0,
-                        icon_size,
-                        "accent" if wtype == "sensor_value" else "state_icon",
-                    )
+                    icon("icon", "LEFT_MID", 0, 0, icon_size, "accent" if wtype == "sensor_value" else "state_icon")
                 )
             if wtype == "sensor_value":
                 els.append(_el("text", "value", "TOP_LEFT", tx, 0, main_size, "text", tw))
@@ -301,27 +287,18 @@ def widget_elements(
 
     if wtype in ("scene_button", "page_button"):
         has_icon = bool(props.get("icon"))
-        lh = line_height(fs["s"])
-        if has_icon and ch >= ics["m"] + lh + 2:
-            els.append(_el("icon", "icon", "CENTER", 0, -(lh // 2) - 1, ics["m"], "accent"))
-            els.append(_el("text", "label", "CENTER", 0, ics["m"] // 2 + 1, fs["s"], "text", cw, "center"))
+        size = fs.get(str(props.get("text_size", "s")), fs["s"])
+        lh = line_height(size)
+        if has_icon and ch >= ib(ics["m"]) + lh + 2:
+            els.append(icon("icon", "CENTER", 0, -(lh // 2) - 1, ics["m"], "accent"))
+            els.append(_el("text", "label", "CENTER", 0, ib(ics["m"]) // 2 + 1, size, "text", cw, "center"))
         elif has_icon:
-            icon_size = ics["m"] if ch >= ics["m"] else ics["s"]
-            els.append(_el("icon", "icon", "LEFT_MID", 0, 0, icon_size, "accent"))
-            els.append(
-                _el(
-                    "text",
-                    "label",
-                    "LEFT_MID",
-                    icon_size + ELEMENT_GAP,
-                    0,
-                    fs["s"],
-                    "text",
-                    max(cw - icon_size - ELEMENT_GAP, 1),
-                )
-            )
+            icon_size = ics["m"] if ch >= ib(ics["m"]) else ics["s"]
+            tx = ib(icon_size) + ELEMENT_GAP
+            els.append(icon("icon", "LEFT_MID", 0, 0, icon_size, "accent"))
+            els.append(_el("text", "label", "LEFT_MID", tx, 0, size, "text", max(cw - tx, 1)))
         else:
-            els.append(_el("text", "label", "CENTER", 0, 0, fs["s"], "text", cw, "center"))
+            els.append(_el("text", "label", "CENTER", 0, 0, size, "text", cw, "center"))
         return els
 
     if wtype == "page_title":

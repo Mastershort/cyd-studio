@@ -59,3 +59,10 @@ def test_overlays() -> None:
     for case in CASES["overlays"]:
         lay = overlay_layout(case["input"]["w"], case["input"]["h"])
         assert {"panel": lay["panel"].as_list(), "elements": lay["elements"]} == case["expected"]
+
+
+def test_styles() -> None:
+    from generator.style import resolve_tile_style
+
+    for case in CASES["styles"]:
+        assert resolve_tile_style(case["input"]["theme"], case["input"]["style"]) == case["expected"]

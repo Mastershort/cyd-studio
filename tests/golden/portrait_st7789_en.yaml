@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.2.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.3.0) – ESPHome >= 2026.9.0
 # Projekt: Hallway · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -57,21 +57,25 @@ globals:
     restore_value: false
     initial_value: "0"
   - id: cyd_tile_state
-    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, uint32_t, uint32_t)>"
+    type: "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, const char *, const char *, const uint32_t *)>"
     restore_value: false
     initial_value: |-
-      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,
-          const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {
-        // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.
-        // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only
+      [](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,
+          const std::string &x, float value, int kind, const char *text_on, const char *text_off,
+          const uint32_t *c) {
+        // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of
+        // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only
         const bool on = x == "on" || x == "open" || x == "opening" || x == "unlocked" || x == "home" || x == "playing";
+        const int k = on ? 0 : 1;
         if (tile != nullptr) {
           lv_obj_set_state(tile, LV_STATE_CHECKED, on);
           lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");
         }
-        if (icon != nullptr)
-          lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);
+        if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);
+        if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);
+        if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);
         if (label == nullptr) return;
+        lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);
         std::string text;
         if (on && kind > 0 && !std::isnan(value)) {
           char buf[12];
@@ -209,14 +213,16 @@ text_sensor:
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(nullptr, id(w_main_door_icon), id(w_main_door_state), x, NAN, 0, "Open", "Closed", 0xEF4444, 0xA3E635);
+            static const uint32_t c[] = {0xEF4444, 0xA3E635, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x1B2430, 0x1B2430};
+            id(cyd_tile_state)(nullptr, id(w_main_door_icon), nullptr, id(w_main_door_state), nullptr, x, NAN, 0, "Open", "Closed", c);
   - platform: homeassistant
     id: ha_lock_front_door
     entity_id: "${ent_lock_front_door}"
     on_value:
       then:
         - lambda: !lambda |-
-            id(cyd_tile_state)(nullptr, id(w_main_lock_icon), id(w_main_lock_state), x, NAN, 0, "On", "Off", 0xF472B6, 0xA3E635);
+            static const uint32_t c[] = {0xF472B6, 0xA3E635, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x1B2430, 0x1B2430};
+            id(cyd_tile_state)(nullptr, id(w_main_lock_icon), nullptr, id(w_main_lock_state), nullptr, x, NAN, 0, "On", "Off", c);
   - platform: homeassistant
     id: ha_sensor_outside_condition
     entity_id: "${ent_sensor_outside_condition}"
@@ -353,6 +359,7 @@ lvgl:
         bg_color: 0x1B2430
       checked:
         bg_color: 0x1B2430
+        bg_opa: COVER
         border_color: 0xF472B6
       disabled:
         bg_opa: "50%"
@@ -409,10 +416,10 @@ lvgl:
       text_color: 0xE6EDF3
     - id: cyd_text_6
       text_font: icons_28
-      text_color: 0xF472B6
+      text_color: 0xA3E635
     - id: cyd_text_7
       text_font: icons_20
-      text_color: 0xF472B6
+      text_color: 0xA3E635
     - id: cyd_text_8
       text_font: font_28
       text_color: 0xE6EDF3
@@ -552,6 +559,7 @@ lvgl:
                   styles: cyd_text_2
                   text: "\U000F081A"
               - label:
+                  id: w_main_door_label
                   align: TOP_LEFT
                   x: 34
                   width: 182
@@ -582,6 +590,7 @@ lvgl:
                   styles: cyd_text_2
                   text: "\U000F033E"
               - label:
+                  id: w_main_lock_label
                   align: TOP_LEFT
                   x: 34
                   width: 65
@@ -732,7 +741,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_9
                   text: Service
-# cyd_studio_checksum: 91c023485eb257fa
+# cyd_studio_checksum: 26505e0f29805f21
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/7VWXW/rNgz9K5n2mhSu06W9eRsGDBuw4Q7Ywx6GwqBtxhYqS4YkJ82K/PeRkuw4

@@ -50,6 +50,8 @@ PROPS = [
     {"icon": "mdi:lightbulb", "show_state": True, "show_date": True, "size": "xl", "align": "center"},
     {"icon": "", "show_state": False, "show_date": False, "size": "m", "align": "left"},
     {"icon": "mdi:home", "_has_back": True, "size": "l", "align": "right", "muted": True},
+    {"icon": "mdi:lightbulb", "icon_circle": True, "text_size": "m", "show_state": True},
+    {"icon": "mdi:fan", "icon_circle": True, "text_size": "l", "show_date": False},
 ]
 SIZES = [(30, 30), (60, 48), (147, 52), (147, 112), (304, 48), (100, 160), (200, 200)]
 
@@ -120,7 +122,22 @@ def main() -> None:
         overlays.append(
             {"input": {"w": w, "h": h}, "expected": {"panel": lay["panel"].as_list(), "elements": lay["elements"]}}
         )
-    out = {"layouts": layouts, "elements": elements, "tabs": tabs, "overlays": overlays}
+    from generator.style import load_presets, resolve_tile_style
+    from generator.theme import load_themes
+
+    styles = []
+    overrides = [
+        {},
+        {"preset": "solid"},
+        {"preset": "glass", "bg": "#123456", "bg_opa": 40, "radius": 20},
+        {"preset": "outline", "icon_on": "warning", "text_size": "l", "circle": True},
+        {"preset": "nope", "border_width": 3, "text_on": "#ABCDEF"},
+    ]
+    for theme in load_themes().values():
+        for ov in overrides:
+            styles.append({"input": {"theme": theme, "style": ov}, "expected": resolve_tile_style(theme, ov)})
+    out = {"layouts": layouts, "elements": elements, "tabs": tabs, "overlays": overlays, "styles": styles}
+    assert load_presets()
     path = ROOT / "tests" / "layout_cases.json"
     path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"wrote {len(layouts)} layouts, {len(elements)} element cases, {len(tabs)} tab cases to {path}")

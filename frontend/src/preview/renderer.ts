@@ -6,6 +6,7 @@ import {
   navPages, pageLayout, tabElements, widgetElements, type Element, type Rect,
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
+import { layoutProps, resolveTileStyle, type TileStyle } from "../style";
 import { deviceStrings } from "../i18n";
 import type { HassEntity, Page, Project, Theme, Widget } from "../types";
 import { iconFont, textFont } from "./fonts";
@@ -112,8 +113,17 @@ class Painter {
   }
 
   /** Draw one layout element inside the parent's content box (like an LVGL label). */
-  element(parent: Rect, el: Element, text: string, color: string): Rect | null {
+  element(parent: Rect, el: Element, text: string, color: string, circleColor?: string): Rect | null {
     const ctx = this.ctx;
+    if (el.kind === "icon" && el.circle && circleColor) {
+      // round background (LVGL obj with radius) with the icon centered inside
+      const c = el.circle;
+      const pos = alignChild(parent, c, c, el.align, el.x, el.y);
+      const box = { x: pos.x, y: pos.y, w: c, h: c };
+      this.box(box, circleColor, null, c, 0);
+      this.element(box, { ...el, align: "CENTER", x: 0, y: 0, circle: undefined }, text, color);
+      return box;
+    }
     if (el.kind === "icon") {
       const glyph = iconChar(text);
       if (!glyph) return null;
@@ -194,30 +204,43 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
   const { project, theme } = input;
   const props = w.props ?? {};
   const strings = deviceStrings(project.settings?.language ?? "de");
-  const radius = theme.radius ?? 8;
-  const bw = theme.border_width ?? 0;
   const fs = theme.font_sizes;
   const ics = theme.icon_sizes;
   const content = inset(rect, TILE_PAD);
   const entity = w.entity ? input.state(w.entity) : undefined;
   const st = entity?.state;
   const pressed = input.pressed === w.id;
+  const style = resolveTileStyle(theme, { ...(project.tile_style ?? {}), ...(w.style ?? {}) });
+  const lp = (extra: Record<string, unknown> = {}) => layoutProps({ ...props, ...extra }, style);
+  // element color role -> style color ("on" state variants for tiles that are on)
+  const col = (role: string, on = false): string => {
+    const map: Record<string, [keyof TileStyle, keyof TileStyle]> = {
+      text: ["text_on", "text"], text_muted: ["sub_on", "sub"], accent: ["icon_on", "icon_on"], state_icon: ["icon_on", "icon"],
+    };
+    const m = map[role];
+    return m ? String(style[m[on ? 0 : 1]]) : p.color(role);
+  };
+  const draw = (el: Element, text: string, color: string, on = false) =>
+    p.element(content, el, text, color, el.circle ? (on ? style.circle_bg_on : style.circle_bg) : undefined);
 
-  const tileBox = () => p.box(rect, p.color("tile"), p.color("border"), radius, bw);
-  const buttonBox = (checked: boolean, disabled: boolean) =>
-    p.box(rect, checked || pressed ? p.color("tile_on") : p.color("tile"), checked ? p.color("accent") : p.color("border"),
-      radius, bw, disabled ? 0.5 : 1);
+  const tileBox = () => p.box(rect, style.bg, style.border, style.radius, style.border_width, style.bg_opa / 100);
+  const buttonBox = (on: boolean, disabled: boolean) => {
+    const active = on || pressed;
+    const alpha = (on ? style.bg_opa_on : style.bg_opa) / 100;
+    p.box(rect, active ? style.bg_on : style.bg, on ? style.border_on : style.border, style.radius, style.border_width,
+      disabled ? alpha * 0.5 : pressed && !on ? Math.max(alpha, 0.5) : alpha);
+  };
 
   switch (w.type) {
     case "toggle_tile": {
       const on = isOn(st);
       buttonBox(on, st === "unavailable");
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
-        if (el.role === "icon") p.element(content, el, String(props.icon ?? ""), on ? p.color("on") : p.color("off"));
-        else if (el.role === "label") p.element(content, el, String(props.label || fallbackLabel(w.entity)), p.color(el.color));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, String(props.icon ?? ""), on ? style.icon_on : style.icon, on);
+        else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color, on));
         else if (el.role === "state") {
           const pct = (props.show_value ?? true) ? tileValuePercent(w.entity, entity) : null;
-          p.element(content, el, on && pct !== null ? `${pct} %` : stateText(st, strings), p.color(el.color));
+          draw(el, on && pct !== null ? `${pct} %` : stateText(st, strings), col(el.color, on));
         }
       }
       break;
@@ -234,10 +257,10 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
         } else value = st;
         if (value !== "--" && unit) value += ` ${unit}`;
       }
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
-        if (el.role === "icon") p.element(content, el, String(props.icon ?? ""), p.color(el.color));
-        else if (el.role === "label") p.element(content, el, String(props.label || fallbackLabel(w.entity)), p.color(el.color));
-        else if (el.role === "value") p.element(content, el, value, p.color(el.color));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, String(props.icon ?? ""), col(el.color));
+        else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "value") draw(el, value, col(el.color));
       }
       break;
     }
@@ -246,35 +269,33 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       const on = isOn(st);
       const textOn = String(props.text_on || strings.on);
       const textOff = String(props.text_off || strings.off);
-      const iconColor = st === undefined ? p.color("off") : on ? (props.alert_on ?? true ? p.color("error") : p.color("accent")) : p.color("on");
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
-        if (el.role === "icon") p.element(content, el, String(props.icon ?? ""), iconColor);
-        else if (el.role === "label") p.element(content, el, String(props.label || fallbackLabel(w.entity)), p.color(el.color));
-        else if (el.role === "state") p.element(content, el, stateText(st, strings, textOn, textOff), p.color(el.color));
+      const iconColor = st === undefined ? style.icon : on ? (props.alert_on ?? true ? p.color("error") : p.color("accent")) : p.color("on");
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, String(props.icon ?? ""), iconColor);
+        else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "state") draw(el, stateText(st, strings, textOn, textOff), col(el.color));
       }
       break;
     }
     case "clock": {
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
         const text = el.role === "time"
           ? formatTime(input.now, String(props.format ?? "HH:mm"))
           : formatDate(input.now, project.settings?.language ?? "de");
-        p.element(content, el, text, p.color(el.color));
+        draw(el, text, col(el.color));
       }
       break;
     }
     case "label": {
       if (props.background) tileBox();
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
-        p.element(content, el, String(props.text ?? ""), p.color(el.color));
-      }
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) draw(el, String(props.text ?? ""), col(el.color));
       break;
     }
     case "scene_button": {
       buttonBox(false, false);
       const text = String(props.label || fallbackLabel(w.action?.target) || w.action?.service || "");
-      for (const el of widgetElements(w.type, rect.w, rect.h, props, fs, ics)) {
-        p.element(content, el, el.role === "icon" ? String(props.icon ?? "") : text, p.color(el.color));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        draw(el, el.role === "icon" ? String(props.icon ?? "") : text, col(el.color));
       }
       break;
     }
@@ -283,21 +304,21 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       const target = project.pages.find((pg) => pg.id === props.target);
       const text = String(props.label || target?.name || "?");
       const icon = String(props.icon || target?.icon || "");
-      for (const el of widgetElements(w.type, rect.w, rect.h, { ...props, icon }, fs, ics)) {
-        p.element(content, el, el.role === "icon" ? icon : text, p.color(el.color));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp({ icon }), fs, ics)) {
+        draw(el, el.role === "icon" ? icon : text, col(el.color));
       }
       break;
     }
     case "page_title": {
       const hasBack = Boolean(page.parent && (props.show_back ?? true));
-      for (const el of widgetElements(w.type, rect.w, rect.h, { ...props, _has_back: hasBack }, fs, ics)) {
-        p.element(content, el, el.role === "back" ? "mdi:chevron-left" : page.name, p.color(el.color));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp({ _has_back: hasBack }), fs, ics)) {
+        draw(el, el.role === "back" ? "mdi:chevron-left" : page.name, col(el.color));
       }
       break;
     }
     default: {
       // Unknown / future widget: draw a placeholder box
-      p.box(rect, null, p.color("warning"), radius, 1);
+      p.box(rect, null, p.color("warning"), style.radius, 1);
     }
   }
 }

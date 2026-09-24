@@ -12,15 +12,15 @@ from typing import Any
 from .board import resolve_board
 from .context import ON_STATES, Context, cpp_str
 from .emit import Block, Comment, Lambda, Raw, Secret, dump
-from .layout import HEADER_PAD_X, header_elements, nav_pages, overlay_layout, page_layout, tab_elements
+from .layout import HEADER_PAD_X, TILE_PAD, header_elements, nav_pages, overlay_layout, page_layout, tab_elements
 from .memory import MemoryEstimate, estimate
 from .model import Issue, normalize, safe_id, validate
 from .theme import resolve_theme
 from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
-from .widgets.common import page_show
+from .widgets.common import opa, page_show
 
-GENERATOR_VERSION = "0.2.0"
+GENERATOR_VERSION = "0.3.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -396,8 +396,8 @@ def _document(ctx: Context) -> dict[Any, Any]:
 
 
 STATE_HELPER_TYPE = (
-    "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, "
-    "const char *, const char *, uint32_t, uint32_t)>"
+    "std::function<void(lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, lv_obj_t *, const std::string &, float, int, "
+    "const char *, const char *, const uint32_t *)>"
 )
 PERCENT_TEXT = 'char buf[12];\nsnprintf(buf, sizeof(buf), "%d %%", (int) lroundf({v}));\nreturn std::string(buf);'
 
@@ -412,18 +412,22 @@ def _helper_globals(ctx: Context) -> list[Any]:
         on_expr = " || ".join(f'x == "{st}"' for st in ON_STATES)
         code = "\n".join(
             [
-                "[](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *label, const std::string &x, float value, int kind,",
-                "    const char *text_on, const char *text_off, uint32_t color_on, uint32_t color_off) {",
-                "  // Tile state: checked when on/open, disabled when unavailable, icon color, state or value text.",
-                "  // kind: 1 = brightness 0..255, 2 = position %, 3 = percentage %, 0 = state text only",
+                "[](lv_obj_t *tile, lv_obj_t *icon, lv_obj_t *title, lv_obj_t *label, lv_obj_t *circle,",
+                "    const std::string &x, float value, int kind, const char *text_on, const char *text_off,",
+                "    const uint32_t *c) {",
+                "  // Tile state: checked when on/open, disabled when unavailable; colors c[] = on/off pairs of",
+                "  // icon, title, state text, icon circle. kind: 1 = brightness 0..255, 2/3 = percent, 0 = text only",
                 f"  const bool on = {on_expr};",
+                "  const int k = on ? 0 : 1;",
                 "  if (tile != nullptr) {",
                 "    lv_obj_set_state(tile, LV_STATE_CHECKED, on);",
                 '    lv_obj_set_state(tile, LV_STATE_DISABLED, x == "unavailable");',
                 "  }",
-                "  if (icon != nullptr)",
-                "    lv_obj_set_style_text_color(icon, lv_color_hex(on ? color_on : color_off), LV_PART_MAIN);",
+                "  if (icon != nullptr) lv_obj_set_style_text_color(icon, lv_color_hex(c[k]), LV_PART_MAIN);",
+                "  if (title != nullptr) lv_obj_set_style_text_color(title, lv_color_hex(c[2 + k]), LV_PART_MAIN);",
+                "  if (circle != nullptr) lv_obj_set_style_bg_color(circle, lv_color_hex(c[6 + k]), LV_PART_MAIN);",
                 "  if (label == nullptr) return;",
+                "  lv_obj_set_style_text_color(label, lv_color_hex(c[4 + k]), LV_PART_MAIN);",
                 "  std::string text;",
                 "  if (on && kind > 0 && !std::isnan(value)) {",
                 "    char buf[12];",
@@ -607,9 +611,7 @@ def _scripts(ctx: Context, pages: list[dict[str, Any]]) -> list[Any]:
 def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_layer: list[Any]) -> dict[str, Any]:
     p = ctx.project
     s = p["settings"]
-    t = ctx.theme
-    radius = int(t.get("radius", 8))
-    border = int(t.get("border_width", 0))
+    d = ctx.default_style
     conf: dict[str, Any] = {
         "displays": ["cyd_display"],
         "touchscreens": [{"touchscreen_id": "cyd_touch"}],
@@ -617,27 +619,31 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
         "page_wrap": bool(p["navigation"].get("wrap_around", False)),
         "theme": {
             "button": {
-                "bg_color": ctx.color("tile"),
-                "bg_opa": "COVER",
-                "radius": radius,
-                "border_width": border,
-                "border_color": ctx.color("border"),
+                "bg_color": ctx.hex(d["bg"]),
+                "bg_opa": opa(d["bg_opa"]),
+                "radius": d["radius"],
+                "border_width": d["border_width"],
+                "border_color": ctx.hex(d["border"]),
                 "shadow_width": 0,
                 "pad_all": ctx.tile_pad,
-                "text_color": ctx.color("text"),
-                "pressed": {"bg_color": ctx.color("tile_on")},
-                "checked": {"bg_color": ctx.color("tile_on"), "border_color": ctx.color("accent")},
+                "text_color": ctx.hex(d["text"]),
+                "pressed": {"bg_color": ctx.hex(d["bg_on"])},
+                "checked": {
+                    "bg_color": ctx.hex(d["bg_on"]),
+                    "bg_opa": opa(d["bg_opa_on"]),
+                    "border_color": ctx.hex(d["border_on"]),
+                },
                 "disabled": {"bg_opa": "50%"},
             },
         },
         "style_definitions": [
             {
                 "id": "cyd_tile",
-                "bg_color": ctx.color("tile"),
-                "bg_opa": "COVER",
-                "radius": radius,
-                "border_width": border,
-                "border_color": ctx.color("border"),
+                "bg_color": ctx.hex(d["bg"]),
+                "bg_opa": opa(d["bg_opa"]),
+                "radius": d["radius"],
+                "border_width": d["border_width"],
+                "border_color": ctx.hex(d["border"]),
                 "pad_all": ctx.tile_pad,
                 "shadow_width": 0,
             },
@@ -646,7 +652,7 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
                 "bg_opa": "TRANSP",
                 "border_width": 0,
                 "radius": 0,
-                "pad_all": ctx.tile_pad + border if border else ctx.tile_pad,
+                "pad_all": TILE_PAD,
                 "shadow_width": 0,
             },
             {
