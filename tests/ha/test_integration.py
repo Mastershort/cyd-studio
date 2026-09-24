@@ -26,20 +26,20 @@ GOLDEN = Path(__file__).parent.parent / "golden"
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations: Any) -> None:
-    """Allow loading custom_components/."""
+def auto_enable_custom_integrations(enable_custom_integrations: Any, hass: HomeAssistant) -> None:
+    """Allow loading custom_components/; treat HA's frontend as loaded (hass_frontend is not installed in tests)."""
+    hass.config.components.update({"frontend", "panel_custom"})
 
 
 @pytest.fixture
 async def setup_studio(hass: HomeAssistant) -> AsyncGenerator[MockConfigEntry]:
     """Set up the integration with the frontend parts mocked (hass_frontend is not installed in tests)."""
-    hass.config.components.update({"frontend", "panel_custom"})
     entry = MockConfigEntry(domain=DOMAIN, data={}, title="CYD Studio")
     entry.add_to_hass(hass)
     with (
         patch("custom_components.cyd_studio.panel_custom.async_register_panel", AsyncMock()) as register,
         patch("custom_components.cyd_studio._async_register_static_paths", AsyncMock()),
-        patch("custom_components.cyd_studio.frontend.async_remove_panel"),
+        patch("custom_components.cyd_studio.ha_frontend.async_remove_panel"),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -156,7 +156,7 @@ async def test_unload_keeps_projects(hass: HomeAssistant, setup_studio: MockConf
             "pages": [],
         }
     )
-    with patch("custom_components.cyd_studio.frontend.async_remove_panel") as remove:
+    with patch("custom_components.cyd_studio.ha_frontend.async_remove_panel") as remove:
         assert await hass.config_entries.async_unload(setup_studio.entry_id)
         assert remove.called
     assert DOMAIN not in hass.data

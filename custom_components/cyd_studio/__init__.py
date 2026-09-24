@@ -6,7 +6,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from homeassistant.components import frontend, panel_custom
+# Aliased: the package has a frontend/ sub directory (the built panel) that would shadow the name
+from homeassistant.components import frontend as ha_frontend
+from homeassistant.components import panel_custom
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
@@ -100,7 +102,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Remove the panel. Projects stay in storage."""
     runtime: StudioRuntime | None = hass.data.pop(DOMAIN, None)
     if runtime and runtime.panel_registered:
-        frontend.async_remove_panel(hass, PANEL_URL_PATH)
+        ha_frontend.async_remove_panel(hass, PANEL_URL_PATH)
     return True
 
 
