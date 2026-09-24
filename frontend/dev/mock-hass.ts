@@ -54,8 +54,11 @@ const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
     projects.set(p.id, p);
     return p;
   },
+  // golden projects: no ESPHome device in HA yet; projects created in the dev panel: found, actions blocked
   "cyd_studio/esphome/devices": () => Object.fromEntries([...projects.values()].map((p) => [p.id,
-    { found: true, entry_id: "e1", title: p.name, loaded: true, actions_allowed: allowed.has(p.id) }])),
+    goldens.some((g) => g.project.id === p.id)
+      ? { found: false, entry_id: null, title: null, loaded: false, actions_allowed: false }
+      : { found: true, entry_id: "e1", title: p.name, loaded: true, actions_allowed: allowed.has(p.id) }])),
   "cyd_studio/esphome/allow_actions": (m) => {
     allowed.add(m.project_id as string);
     return { found: true, entry_id: "e1", title: "Display", loaded: true, actions_allowed: true };

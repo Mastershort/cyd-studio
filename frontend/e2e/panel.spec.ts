@@ -4,6 +4,10 @@ import { expect, test } from "@playwright/test";
 test("create a project and add a widget", async ({ page }) => {
   await page.goto("/dev/index.html");
   await expect(page.getByText("CYD Studio").first()).toBeVisible();
+  // golden projects are not in HA yet -> connection guide with key copy button
+  await expect(page.getByText("so verbindest du es").first()).toBeVisible();
+  await page.getByText("so verbindest du es").first().click();
+  await expect(page.getByRole("button", { name: "Schlüssel kopieren" }).first()).toBeVisible();
   await page.getByRole("button", { name: "+ Neues Projekt" }).first().click();
   await page.getByRole("button", { name: "Weiter" }).click();
   await page.getByRole("button", { name: "Weiter" }).click();

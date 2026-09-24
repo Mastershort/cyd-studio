@@ -155,6 +155,17 @@ const de = {
   allow_actions: "Jetzt erlauben",
   allow_actions_confirm: "Für das ESPHome-Gerät „{device}“ die Option „Dem Gerät erlauben, Home-Assistant-Aktionen auszuführen“ einschalten?",
   actions_allowed_done: "Erlaubt – das Display kann jetzt schalten.",
+  how_to_connect: "so verbindest du es",
+  what_to_do: "was tun?",
+  connect_step_flash: "Code in ESPHome einfügen und aufs Display installieren (einmal per USB).",
+  connect_step_discovered: "Home Assistant meldet das Display unter „Geräte & Dienste“ als „Entdeckt“ → „Hinzufügen“.",
+  connect_step_key: "Nach dem Verschlüsselungsschlüssel gefragt? Diesen hier einfügen:",
+  connect_step_manual: "Nichts entdeckt? „Integration hinzufügen“ → ESPHome → IP-Adresse des Displays (steht in den ESPHome-Logs oder im Router).",
+  offline_step_power: "Hat das Display Strom und WLAN? In den ESPHome-Logs sieht man, ob es verbunden ist.",
+  offline_step_key: "Passt der Schlüssel nicht (Gerät „nicht verfügbar“)? Beim ESPHome-Gerät ⋮ → „Neu konfigurieren“ und diesen Schlüssel eintragen:",
+  open_integrations: "Geräte & Dienste öffnen",
+  copy_key: "Schlüssel kopieren",
+  key_copied: "Kopiert!",
 };
 
 type Key = keyof typeof de;
@@ -312,6 +323,17 @@ const en: Record<Key, string> = {
   allow_actions: "Allow now",
   allow_actions_confirm: "Enable \"Allow the device to perform Home Assistant actions\" for the ESPHome device \"{device}\"?",
   actions_allowed_done: "Allowed – the display can switch things now.",
+  how_to_connect: "how to connect it",
+  what_to_do: "what to do?",
+  connect_step_flash: "Paste the code into ESPHome and install it on the display (USB the first time).",
+  connect_step_discovered: "Home Assistant lists the display as \"Discovered\" under \"Devices & services\" → \"Add\".",
+  connect_step_key: "Asked for the encryption key? Paste this one:",
+  connect_step_manual: "Nothing discovered? \"Add integration\" → ESPHome → IP address of the display (see the ESPHome logs or your router).",
+  offline_step_power: "Does the display have power and WiFi? The ESPHome logs show whether it is connected.",
+  offline_step_key: "Wrong key (device \"unavailable\")? On the ESPHome device ⋮ → \"Reconfigure\" and enter this key:",
+  open_integrations: "Open devices & services",
+  copy_key: "Copy key",
+  key_copied: "Copied!",
 };
 
 let current: Record<Key, string> = de;
