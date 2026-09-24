@@ -13,6 +13,7 @@ frontend/node_modules/
 .esphome/
 tests/esphome/.esphome/
 tests/esphome/*.yaml
+tests/esphome/.gitignore
 !tests/esphome/secrets.yaml
 
 # Reference repository (cloned for study, never shipped)

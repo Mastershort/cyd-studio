@@ -123,6 +123,7 @@ class Context:
         self.notification_labels: list[tuple[str, str]] = []  # (title label id, text label id)
         self.state_replays: dict[str, str] = {}  # widget id -> C++ that re-applies its on/off state
         self.state_sources: dict[str, list[str]] = {}  # widget id -> sources its state depends on
+        self.light_rows: dict[str, list[str]] = {}  # light overlay row -> ids shown/hidden together
         self.label_styles: dict[tuple[str, str, str | None], str] = {}
         self.default_style = resolve_tile_style(theme, project.get("tile_style") or {})
         self.page_actions: list[Any] = []

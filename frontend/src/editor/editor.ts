@@ -12,7 +12,10 @@ import {
 } from "../model";
 import { iconChar } from "../preview/icons";
 import { ICON_FAMILY } from "../preview/fonts";
-import { VALUE_ATTRIBUTES, isOn, sampleState, tileValuePercent, type HitRegion, type StateResolver } from "../preview/renderer";
+import {
+  LIGHT_SLIDERS, VALUE_ATTRIBUTES, isOn, lightCaps, sampleState, tileValuePercent, type HitRegion, type LightOverlay,
+  type StateResolver,
+} from "../preview/renderer";
 import { WIDGET_DND_TYPE, type CydScreen } from "../preview/screen";
 import "../preview/screen";
 import "./pickers";
@@ -73,7 +76,7 @@ export class CydEditor extends LitElement {
   declare _realActions: boolean;
   declare _sim: Record<string, string>;
   declare _simAttr: Record<string, Record<string, unknown>>;
-  declare _overlay: { entity: string; title: string; kind: number; value: number } | null;
+  declare _overlay: { entity: string; title: string; kind: number; value: number; light?: LightOverlay } | null;
   declare _images: Record<string, HTMLImageElement>;
   declare _message: { title: string; text: string } | null;
   declare _saveState: "saved" | "saving" | "dirty" | "error";
@@ -354,7 +357,11 @@ export class CydEditor extends LitElement {
     }
     if (this._overlay) {
       if (hit.kind === "overlay-close") this._overlay = null;
-      else if (hit.kind === "overlay-slider") this.setOverlayValue(((point.x - hit.rect.x) * 100) / hit.rect.w);
+      else if (hit.kind === "overlay-slider") {
+        const frac = Math.max(0, Math.min(1, (point.x - hit.rect.x) / hit.rect.w));
+        if (hit.id === "ct" || hit.id === "hue") this.setLightValue(hit.id, frac);
+        else this.setOverlayValue(frac * 100);
+      }
       return;
     }
     if (long) {
@@ -367,6 +374,15 @@ export class CydEditor extends LitElement {
           entity: w.entity!, kind: spec[1], title: String(w.props.label || ent?.attributes.friendly_name || w.entity),
           value: on ? tileValuePercent(w.entity, ent) ?? 0 : 0,
         };
+        const caps = lightCaps(ent);
+        if (spec[1] === 1 && (w.props.color_controls ?? true) && (caps.hasCt || caps.hasHs)) {
+          const hs = ent?.attributes.hs_color;
+          const kelvin = Number(ent?.attributes.color_temp_kelvin);
+          this._overlay.light = {
+            ...caps, ct: Number.isFinite(kelvin) && kelvin > 0 ? kelvin : 4000,
+            hue: Array.isArray(hs) ? Number(hs[0]) || 0 : 0,
+          };
+        }
         return;
       }
     }
@@ -413,6 +429,23 @@ export class CydEditor extends LitElement {
       };
       const [domain, service, key] = calls[ov.kind];
       void this.hass.callService(domain, service, { entity_id: ov.entity, [key]: value });
+    }
+  }
+
+  /** Color temperature / hue slider of the light overlay (like the device: light.turn_on on release). */
+  private setLightValue(row: "ct" | "hue", frac: number) {
+    const ov = this._overlay;
+    if (!ov?.light) return;
+    const [lo, hi] = LIGHT_SLIDERS[row];
+    const value = Math.round(lo + frac * (hi - lo));
+    this._overlay = { ...ov, light: { ...ov.light, [row]: value } };
+    const prev = this._simAttr[ov.entity] ?? {};
+    const attrs = row === "ct" ? { color_temp_kelvin: value, color_mode: "color_temp" } : { hs_color: [value, 100], color_mode: "hs" };
+    this._simAttr = { ...this._simAttr, [ov.entity]: { ...prev, ...attrs } };
+    this._sim = { ...this._sim, [ov.entity]: "on" };
+    if (this._realActions && this.info?.preview_real_actions) {
+      const data = row === "ct" ? { color_temp_kelvin: value } : { hs_color: [value, 100] };
+      void this.hass.callService("light", "turn_on", { entity_id: ov.entity, ...data });
     }
   }
 
@@ -536,7 +569,7 @@ export class CydEditor extends LitElement {
           ${board && themed ? html`<cyd-screen .project=${p} .board=${board} .theme=${themed} .pageId=${this._pageId}
             .state=${this.stateResolver()} .mode=${this._mode} .selected=${this._selected} .scale=${this.fitScale()}
             .night=${this._night} .now=${this._now}
-            .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value } : null}
+            .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value, light: this._overlay.light } : null}
             .images=${this._images}
             .message=${this._message}
             @select=${(e: CustomEvent<{ ids: string[] }>) => (this._selected = e.detail.ids)}

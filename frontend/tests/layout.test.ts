@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { headerElements, messageLayout, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
+import { headerElements, lightOverlayLayout, messageLayout, overlayLayout, pageLayout, tabElements, widgetElements } from "../src/layout";
 import { resolveTileStyle } from "../src/style";
 import type { Project, Theme } from "../src/types";
 
@@ -49,7 +49,8 @@ describe("layout parity with generator/layout.py", () => {
 
   it("overlay layout", () => {
     for (const c of cases.overlays) {
-      const lay = (c.input.kind === "message" ? messageLayout : overlayLayout)(c.input.w, c.input.h);
+      const fn = c.input.kind === "message" ? messageLayout : c.input.kind === "light" ? lightOverlayLayout : overlayLayout;
+      const lay = fn(c.input.w, c.input.h);
       expect({ panel: list(lay.panel), elements: lay.elements }).toEqual(c.expected);
     }
   });

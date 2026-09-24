@@ -14,8 +14,10 @@ from .context import ON_STATES, Context, cpp_str
 from .emit import Block, Comment, Lambda, Raw, Secret, dump
 from .layout import (
     HEADER_PAD_X,
+    LIGHT_ROWS,
     TILE_PAD,
     header_elements,
+    light_overlay_layout,
     message_layout,
     nav_pages,
     overlay_layout,
@@ -25,7 +27,7 @@ from .layout import (
 from .logic import apply_logic
 from .memory import MemoryEstimate, estimate
 from .model import Issue, normalize, safe_id, validate
-from .theme import resolve_theme
+from .theme import hex_color, resolve_theme
 from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import opa, page_show, widget_id
@@ -501,6 +503,8 @@ def _helper_globals(ctx: Context) -> list[Any]:
         )
         out.append({"id": "cyd_ov_entity", "type": "std::string", "restore_value": False})
         out.append({"id": "cyd_ov_kind", "type": "int", "restore_value": False, "initial_value": "0"})
+    if "light_overlay" in ctx.helpers:
+        out.append({"id": "cyd_li_sat", "type": "float", "restore_value": False, "initial_value": "100.0f"})
     if "time_parse" in ctx.helpers:
         parse_time = "\n".join(
             [
@@ -660,6 +664,195 @@ def _overlay_widget(ctx: Context, width: int, height: int) -> dict[str, Any]:
     }
 
 
+# Light overlay rows: slider range, value format and the light.turn_on data it sends on release
+LIGHT_SLIDERS: dict[str, tuple[int, int, str]] = {
+    "brightness": (0, 100, "%d %%"),
+    "ct": (2000, 6500, "%d K"),
+    "hue": (0, 359, "%d°"),
+}
+CT_STOPS = ("#ff9329", "#ffd6aa", "#cbe1ff")  # warm white -> cold white
+HUE_STOPS = ("#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff", "#ff0000")
+
+
+def _light_gradients() -> list[dict[str, Any]]:
+    def stops(colors: tuple[str, ...]) -> list[dict[str, Any]]:
+        last = len(colors) - 1
+        return [{"color": Raw(hex_color(c)), "position": f"{i * 100 // last}%"} for i, c in enumerate(colors)]
+
+    return [
+        {"id": "cyd_grad_ct", "direction": "HOR", "stops": stops(CT_STOPS)},
+        {"id": "cyd_grad_hue", "direction": "HOR", "stops": stops(HUE_STOPS)},
+    ]
+
+
+def _value_text(fmt: str, v: str) -> str:
+    return f'char buf[12];\nsnprintf(buf, sizeof(buf), "{fmt}", (int) lroundf({v}));\nreturn std::string(buf);'
+
+
+def _light_script(rows: dict[str, list[str]]) -> dict[str, Any]:
+    """Fill and show the light overlay; rows the lamp does not support are hidden."""
+
+    def toggle(role: str, flag: str) -> list[str]:
+        ids = rows.get(role, [])
+        if not ids:
+            return []
+        objs = ", ".join(f"id({i})" for i in ids)
+        return [
+            f"for (lv_obj_t *o : {{{objs}}}) {{",
+            f"  if ({flag}) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);",
+            "  else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);",
+            "}",
+        ]
+
+    code = [
+        "id(cyd_ov_entity) = entity;",
+        'const bool has_ct = modes.find("color_temp") != std::string::npos;',
+        'const bool has_hs = modes.find("hs") != std::string::npos || modes.find("rgb") != std::string::npos ||',
+        '                    modes.find("xy") != std::string::npos;',
+        '// hs_color arrives as text, e.g. "(30.0, 100.0)"',
+        "float hue = 0.0f, sat = 100.0f;",
+        'const size_t p = hs.find_first_of("0123456789");',
+        'if (p != std::string::npos) sscanf(hs.c_str() + p, "%f, %f", &hue, &sat);',
+        "id(cyd_li_sat) = sat < 10.0f ? 100.0f : sat;",
+        "const float k = std::isnan(ct) ? 4000.0f : ct;",
+        "lv_label_set_text(id(cyd_li_title), title.c_str());",
+        "char buf[12];",
+    ]
+    for role, v in (("brightness", "value"), ("ct", "k"), ("hue", "hue")):
+        fmt = LIGHT_SLIDERS[role][2]
+        code += [
+            f"lv_slider_set_value(id(cyd_li_{role}), (int32_t) lroundf({v}), LV_ANIM_OFF);",
+            f'snprintf(buf, sizeof(buf), "{fmt}", (int) lroundf({v}));',
+            f"lv_label_set_text(id(cyd_li_{role}_value), buf);",
+        ]
+    code += toggle("ct", "has_ct") + toggle("hue", "has_hs")
+    return {
+        "id": "cyd_light_open",
+        "mode": "restart",
+        "parameters": {
+            "entity": "string",
+            "title": "string",
+            "value": "float",
+            "modes": "string",
+            "ct": "float",
+            "hs": "string",
+        },
+        "then": [{"lambda": Lambda("\n".join(code))}, {"lvgl.widget.show": "cyd_light"}],
+    }
+
+
+def _light_send(role: str) -> dict[str, Any]:
+    entity = Lambda("return id(cyd_ov_entity);")
+    if role == "hue":
+        return {
+            "homeassistant.action": {
+                "action": "light.turn_on",
+                "data": {"entity_id": entity},
+                "data_template": {"hs_color": "{{ [h | float, s | float] }}"},
+                "variables": {
+                    "h": Lambda("return to_string((int) lroundf(x));"),
+                    "s": Lambda("return to_string((int) lroundf(id(cyd_li_sat)));"),
+                },
+            }
+        }
+    key = "brightness_pct" if role == "brightness" else "color_temp_kelvin"
+    return {
+        "homeassistant.action": {
+            "action": "light.turn_on",
+            "data": {"entity_id": entity, key: Lambda("return to_string((int) lroundf(x));")},
+        }
+    }
+
+
+def _light_widget(ctx: Context, width: int, height: int) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """Light overlay (hidden) in the top layer: brightness, color temperature and color."""
+    lay = light_overlay_layout(width, height, ctx.font_sizes, ctx.icon_sizes)
+    panel = lay["panel"]
+    hide = [{"lvgl.widget.hide": "cyd_light"}]
+    icons = dict(LIGHT_ROWS)
+    rows: dict[str, list[str]] = {}
+    children: list[Any] = []
+    for el in lay["elements"]:
+        role = el["role"]
+        if role == "title":
+            children.append(ctx.label(el, "cyd_li_title", ""))
+        elif role == "close":
+            close = ctx.label(el, "cyd_li_close", "mdi:close")
+            if close:
+                close["label"]["on_short_click"] = hide
+                children.append(close)
+        elif role.endswith("_icon"):
+            row = role[: -len("_icon")]
+            icon = ctx.label(el, f"cyd_li_{role}", icons[row])
+            if icon:
+                rows.setdefault(row, []).append(f"cyd_li_{role}")
+                children.append(icon)
+        elif role.endswith("_value"):
+            ctx.fonts.text_font(el["size"], "0123456789 %K°")
+            rows.setdefault(role[: -len("_value")], []).append(f"cyd_li_{role}")
+            children.append(ctx.label(el, f"cyd_li_{role}", ""))
+        elif el["kind"] == "slider":
+            ctx.objects += 1
+            lo, hi, fmt = LIGHT_SLIDERS[role]
+            rows.setdefault(role, []).append(f"cyd_li_{role}")
+            slider: dict[str, Any] = {
+                "id": f"cyd_li_{role}",
+                "align": el["align"],
+                "x": el["x"],
+                "y": el["y"],
+                "width": el["width"],
+                "height": el["height"],
+                "min_value": lo,
+                "max_value": hi,
+                "value": lo,
+                "bg_color": ctx.color("border"),
+                "bg_opa": "COVER",
+                "indicator": {"bg_color": ctx.color("accent"), "bg_opa": "COVER"},
+                "knob": {"bg_color": ctx.color("text"), "bg_opa": "COVER", "pad_all": 4},
+                "on_value": [
+                    {"lvgl.label.update": {"id": f"cyd_li_{role}_value", "text": Lambda(_value_text(fmt, "x"))}}
+                ],
+                "on_release": [_light_send(role)],
+            }
+            if role != "brightness":  # the gradient is the track, the indicator stays transparent
+                slider["bg_grad"] = f"cyd_grad_{role}"
+                slider["indicator"] = {"bg_opa": "TRANSP"}
+            children.append({"slider": slider})
+    ctx.objects += 2
+    widget = {
+        "obj": {
+            "id": "cyd_light",
+            "x": 0,
+            "y": 0,
+            "width": width,
+            "height": height,
+            "bg_color": Raw("0x000000"),
+            "bg_opa": "60%",
+            "border_width": 0,
+            "radius": 0,
+            "pad_all": 0,
+            "hidden": True,
+            "scrollable": False,
+            "on_short_click": hide,
+            "widgets": [
+                {
+                    "obj": {
+                        "id": "cyd_li_panel",
+                        "x": panel.x,
+                        "y": panel.y,
+                        "width": panel.w,
+                        "height": panel.h,
+                        "styles": "cyd_tile",
+                        "scrollable": False,
+                        "widgets": [c for c in children if c],
+                    }
+                }
+            ],
+        }
+    }
+    return widget, rows
+
+
 def _device_actions(ctx: Context, pages: list[dict[str, Any]], brightness_day: int) -> list[Any]:
     """Actions Home Assistant can call on the display (esphome.<device>_<action>)."""
     s = ctx.project["settings"]
@@ -766,6 +959,8 @@ def _scripts(ctx: Context, pages: list[dict[str, Any]]) -> list[Any]:
         scripts.append(_message_script(ctx, day))
     if "overlay" in ctx.helpers:
         scripts.append(_overlay_script())
+    if "light_overlay" in ctx.helpers:
+        scripts.append(_light_script(ctx.light_rows))
     if ctx.time_updates:
         scripts.append({"id": "cyd_update_time", "mode": "restart", "then": ctx.time_updates})
     scripts.append(
@@ -921,6 +1116,8 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
         )
     if idle:
         conf["on_idle"] = idle
+    if "light_overlay" in ctx.helpers:
+        conf["gradients"] = _light_gradients()
     if top_layer:
         conf["top_layer"] = {"widgets": top_layer}
     conf["pages"] = lvgl_pages
@@ -1117,6 +1314,9 @@ def _top_layer(ctx: Context, pages: list[dict[str, Any]], width: int, height: in
         )
     if "overlay" in ctx.helpers:
         widgets.append(_overlay_widget(ctx, width, height))
+    if "light_overlay" in ctx.helpers:
+        light, ctx.light_rows = _light_widget(ctx, width, height)
+        widgets.append(light)
     if p["settings"].get("device_actions", True):
         widgets.append(_message_widget(ctx, width, height))
     ctx.page_actions = actions

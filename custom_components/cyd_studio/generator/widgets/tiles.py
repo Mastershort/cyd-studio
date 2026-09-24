@@ -18,6 +18,12 @@ VALUE_ATTRIBUTES: dict[str, tuple[str, int]] = {
 }
 
 
+def light_caps_expr(modes: str) -> str:
+    """C++ condition: the supported_color_modes text contains a color temperature or color mode."""
+    finds = [f'{modes}.find("{m}") != std::string::npos' for m in ("color_temp", "hs", "rgb", "xy")]
+    return "(" + " || ".join(finds) + ")"
+
+
 def _register_state_texts(ctx: Context, size: int, *texts: str) -> None:
     s = ctx.strings
     ctx.fonts.text_font(
@@ -124,17 +130,38 @@ def toggle_tile(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect
     if slider and attr_id:
         ctx.helpers.add("overlay")
         ctx.fonts.text_font(ctx.font_sizes.get("m", 16), label_text)
-        extra["on_long_press"] = [
-            {
+        value = Lambda(f"return id(cyd_percent)(id({src_id}).state, id({attr_id}).state, {kind});")
+        plain = {
+            "script.execute": {
+                "id": "cyd_overlay_open",
+                "entity": ctx.ent(entity),
+                "title": label_text,
+                "kind": kind,
+                "value": value,
+            }
+        }
+        extra["on_long_press"] = [plain]
+        if domain == "light" and props.get("color_controls", True):
+            # lamps with color temperature or color get the light overlay, all others the plain slider
+            ctx.helpers.add("light_overlay")
+            modes = ctx.source("text", entity, "supported_color_modes")
+            ct = ctx.source("number", entity, "color_temp_kelvin")
+            hs = ctx.source("text", entity, "hs_color")
+            light = {
                 "script.execute": {
-                    "id": "cyd_overlay_open",
+                    "id": "cyd_light_open",
                     "entity": ctx.ent(entity),
                     "title": label_text,
-                    "kind": kind,
-                    "value": Lambda(f"return id(cyd_percent)(id({src_id}).state, id({attr_id}).state, {kind});"),
+                    "value": value,
+                    "modes": Lambda(f"return id({modes.id}).state;"),
+                    "ct": Lambda(f"return id({ct.id}).state;"),
+                    "hs": Lambda(f"return id({hs.id}).state;"),
                 }
             }
-        ]
+            caps = light_caps_expr(f"id({modes.id}).state")
+            extra["on_long_press"] = [
+                {"if": {"condition": {"lambda": Lambda(f"return {caps};")}, "then": [light], "else": [plain]}}
+            ]
     return [box(ctx, "button", wid, rect, children, clickable=True, style=None, tile_style=style, **extra)]
 
 

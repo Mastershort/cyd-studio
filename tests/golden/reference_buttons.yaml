@@ -167,6 +167,10 @@ globals:
     type: int
     restore_value: false
     initial_value: "0"
+  - id: cyd_li_sat
+    type: float
+    restore_value: false
+    initial_value: 100.0f
 
 time:
   - platform: homeassistant
@@ -255,6 +259,12 @@ sensor:
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn1), id(w_lockscreen_btn1_icon), id(w_lockscreen_btn1_label), nullptr, nullptr, id(ha_light_desk_lamp).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
+    id: ha_light_desk_lamp_color_temp_kelvin_num
+    entity_id: "${ent_light_desk_lamp}"
+    attribute: color_temp_kelvin
+    on_value:
+      then: []
+  - platform: homeassistant
     id: ha_light_ceiling_light_brightness_num
     entity_id: "${ent_light_ceiling_light}"
     attribute: brightness
@@ -263,6 +273,12 @@ sensor:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn2), id(w_lockscreen_btn2_icon), id(w_lockscreen_btn2_label), nullptr, nullptr, id(ha_light_ceiling_light).state, x, 1, nullptr, nullptr, c);
+  - platform: homeassistant
+    id: ha_light_ceiling_light_color_temp_kelvin_num
+    entity_id: "${ent_light_ceiling_light}"
+    attribute: color_temp_kelvin
+    on_value:
+      then: []
   - platform: homeassistant
     id: ha_light_globe_lamp_brightness_num
     entity_id: "${ent_light_globe_lamp}"
@@ -273,6 +289,12 @@ sensor:
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn3), id(w_lockscreen_btn3_icon), id(w_lockscreen_btn3_label), nullptr, nullptr, id(ha_light_globe_lamp).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
+    id: ha_light_globe_lamp_color_temp_kelvin_num
+    entity_id: "${ent_light_globe_lamp}"
+    attribute: color_temp_kelvin
+    on_value:
+      then: []
+  - platform: homeassistant
     id: ha_light_ambient_light_brightness_num
     entity_id: "${ent_light_ambient_light}"
     attribute: brightness
@@ -281,6 +303,12 @@ sensor:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn4), id(w_lockscreen_btn4_icon), id(w_lockscreen_btn4_label), nullptr, nullptr, id(ha_light_ambient_light).state, x, 1, nullptr, nullptr, c);
+  - platform: homeassistant
+    id: ha_light_ambient_light_color_temp_kelvin_num
+    entity_id: "${ent_light_ambient_light}"
+    attribute: color_temp_kelvin
+    on_value:
+      then: []
 
 text_sensor:
   - platform: homeassistant
@@ -292,6 +320,18 @@ text_sensor:
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn1), id(w_lockscreen_btn1_icon), id(w_lockscreen_btn1_label), nullptr, nullptr, x, id(ha_light_desk_lamp_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
+    id: ha_light_desk_lamp_supported_color_modes
+    entity_id: "${ent_light_desk_lamp}"
+    attribute: supported_color_modes
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_desk_lamp_hs_color
+    entity_id: "${ent_light_desk_lamp}"
+    attribute: hs_color
+    on_value:
+      then: []
+  - platform: homeassistant
     id: ha_light_ceiling_light
     entity_id: "${ent_light_ceiling_light}"
     on_value:
@@ -299,6 +339,18 @@ text_sensor:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn2), id(w_lockscreen_btn2_icon), id(w_lockscreen_btn2_label), nullptr, nullptr, x, id(ha_light_ceiling_light_brightness_num).state, 1, nullptr, nullptr, c);
+  - platform: homeassistant
+    id: ha_light_ceiling_light_supported_color_modes
+    entity_id: "${ent_light_ceiling_light}"
+    attribute: supported_color_modes
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_ceiling_light_hs_color
+    entity_id: "${ent_light_ceiling_light}"
+    attribute: hs_color
+    on_value:
+      then: []
   - platform: homeassistant
     id: ha_light_globe_lamp
     entity_id: "${ent_light_globe_lamp}"
@@ -308,6 +360,18 @@ text_sensor:
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn3), id(w_lockscreen_btn3_icon), id(w_lockscreen_btn3_label), nullptr, nullptr, x, id(ha_light_globe_lamp_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
+    id: ha_light_globe_lamp_supported_color_modes
+    entity_id: "${ent_light_globe_lamp}"
+    attribute: supported_color_modes
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_globe_lamp_hs_color
+    entity_id: "${ent_light_globe_lamp}"
+    attribute: hs_color
+    on_value:
+      then: []
+  - platform: homeassistant
     id: ha_light_ambient_light
     entity_id: "${ent_light_ambient_light}"
     on_value:
@@ -315,6 +379,18 @@ text_sensor:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xA3E635, 0x8B98A5, 0xE6EDF3, 0xE6EDF3, 0x8B98A5, 0x8B98A5, 0x22D3EE, 0x1B2430};
             id(cyd_tile_state)(id(w_lockscreen_btn4), id(w_lockscreen_btn4_icon), id(w_lockscreen_btn4_label), nullptr, nullptr, x, id(ha_light_ambient_light_brightness_num).state, 1, nullptr, nullptr, c);
+  - platform: homeassistant
+    id: ha_light_ambient_light_supported_color_modes
+    entity_id: "${ent_light_ambient_light}"
+    attribute: supported_color_modes
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_ambient_light_hs_color
+    entity_id: "${ent_light_ambient_light}"
+    attribute: hs_color
+    on_value:
+      then: []
 
 button:
   - platform: restart
@@ -351,7 +427,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F009F\U000F0156\U000F066F\U000F0769\U000F095F\U000F1051"
+      - "\U000F009F\U000F00DF\U000F0156\U000F03D8\U000F050F\U000F066F\U000F0769\U000F095F\U000F1051"
 
 script:
   - id: cyd_show_message
@@ -407,6 +483,47 @@ script:
             snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(value));
             return std::string(buf);
       - lvgl.widget.show: cyd_overlay
+  - id: cyd_light_open
+    mode: restart
+    parameters:
+      entity: string
+      title: string
+      value: float
+      modes: string
+      ct: float
+      hs: string
+    then:
+      - lambda: !lambda |-
+          id(cyd_ov_entity) = entity;
+          const bool has_ct = modes.find("color_temp") != std::string::npos;
+          const bool has_hs = modes.find("hs") != std::string::npos || modes.find("rgb") != std::string::npos ||
+                              modes.find("xy") != std::string::npos;
+          // hs_color arrives as text, e.g. "(30.0, 100.0)"
+          float hue = 0.0f, sat = 100.0f;
+          const size_t p = hs.find_first_of("0123456789");
+          if (p != std::string::npos) sscanf(hs.c_str() + p, "%f, %f", &hue, &sat);
+          id(cyd_li_sat) = sat < 10.0f ? 100.0f : sat;
+          const float k = std::isnan(ct) ? 4000.0f : ct;
+          lv_label_set_text(id(cyd_li_title), title.c_str());
+          char buf[12];
+          lv_slider_set_value(id(cyd_li_brightness), (int32_t) lroundf(value), LV_ANIM_OFF);
+          snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(value));
+          lv_label_set_text(id(cyd_li_brightness_value), buf);
+          lv_slider_set_value(id(cyd_li_ct), (int32_t) lroundf(k), LV_ANIM_OFF);
+          snprintf(buf, sizeof(buf), "%d K", (int) lroundf(k));
+          lv_label_set_text(id(cyd_li_ct_value), buf);
+          lv_slider_set_value(id(cyd_li_hue), (int32_t) lroundf(hue), LV_ANIM_OFF);
+          snprintf(buf, sizeof(buf), "%d°", (int) lroundf(hue));
+          lv_label_set_text(id(cyd_li_hue_value), buf);
+          for (lv_obj_t *o : {id(cyd_li_ct_icon), id(cyd_li_ct), id(cyd_li_ct_value)}) {
+            if (has_ct) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+            else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
+          }
+          for (lv_obj_t *o : {id(cyd_li_hue_icon), id(cyd_li_hue), id(cyd_li_hue_value)}) {
+            if (has_hs) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+            else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
+          }
+      - lvgl.widget.show: cyd_light
   - id: cyd_update_time
     mode: restart
     then:
@@ -517,11 +634,42 @@ lvgl:
       text_color: 0xE6EDF3
       text_align: CENTER
     - id: cyd_text_7
+      text_font: font_14
+      text_color: 0xE6EDF3
+      text_align: RIGHT
+    - id: cyd_text_8
       text_font: icons_20
       text_color: 0x22D3EE
-    - id: cyd_text_8
+    - id: cyd_text_9
       text_font: font_14
       text_color: 0x8B98A5
+  gradients:
+    - id: cyd_grad_ct
+      direction: HOR
+      stops:
+        - color: 0xFF9329
+          position: "0%"
+        - color: 0xFFD6AA
+          position: "50%"
+        - color: 0xCBE1FF
+          position: "100%"
+    - id: cyd_grad_hue
+      direction: HOR
+      stops:
+        - color: 0xFF0000
+          position: "0%"
+        - color: 0xFFFF00
+          position: "16%"
+        - color: 0x00FF00
+          position: "33%"
+        - color: 0x00FFFF
+          position: "50%"
+        - color: 0x0000FF
+          position: "66%"
+        - color: 0xFF00FF
+          position: "83%"
+        - color: 0xFF0000
+          position: "100%"
   top_layer:
     widgets:
       - obj:
@@ -635,6 +783,194 @@ lvgl:
                                     percentage: !lambda |-
                                       return to_string((int) lroundf(x));
       - obj:
+          id: cyd_light
+          x: 0
+          y: 0
+          width: 320
+          height: 240
+          bg_color: 0x000000
+          bg_opa: "60%"
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          hidden: true
+          scrollable: false
+          on_short_click:
+            - lvgl.widget.hide: cyd_light
+          widgets:
+            - obj:
+                id: cyd_li_panel
+                x: 30
+                y: 35
+                width: 260
+                height: 170
+                styles: cyd_tile
+                scrollable: false
+                widgets:
+                  - label:
+                      id: cyd_li_title
+                      align: TOP_LEFT
+                      width: 222
+                      long_mode: DOT
+                      styles: cyd_text_5
+                      text: ""
+                  - label:
+                      id: cyd_li_close
+                      align: TOP_RIGHT
+                      styles: cyd_text_3
+                      text: "\U000F0156"
+                      on_short_click:
+                        - lvgl.widget.hide: cyd_light
+                  - label:
+                      id: cyd_li_brightness_icon
+                      align: TOP_LEFT
+                      y: 38
+                      styles: cyd_text_3
+                      text: "\U000F00DF"
+                  - slider:
+                      id: cyd_li_brightness
+                      align: TOP_LEFT
+                      x: 26
+                      y: 39
+                      width: 160
+                      height: 18
+                      min_value: 0
+                      max_value: 100
+                      value: 0
+                      bg_color: 0x1F2933
+                      bg_opa: COVER
+                      indicator:
+                        bg_color: 0x22D3EE
+                        bg_opa: COVER
+                      knob:
+                        bg_color: 0xE6EDF3
+                        bg_opa: COVER
+                        pad_all: 4
+                      on_value:
+                        - lvgl.label.update:
+                            id: cyd_li_brightness_value
+                            text: !lambda |-
+                              char buf[12];
+                              snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(x));
+                              return std::string(buf);
+                      on_release:
+                        - homeassistant.action:
+                            action: light.turn_on
+                            data:
+                              entity_id: !lambda |-
+                                return id(cyd_ov_entity);
+                              brightness_pct: !lambda |-
+                                return to_string((int) lroundf(x));
+                  - label:
+                      id: cyd_li_brightness_value
+                      align: TOP_RIGHT
+                      y: 39
+                      width: 56
+                      long_mode: DOT
+                      styles: cyd_text_7
+                      text: ""
+                  - label:
+                      id: cyd_li_ct_icon
+                      align: TOP_LEFT
+                      y: 82
+                      styles: cyd_text_3
+                      text: "\U000F050F"
+                  - slider:
+                      id: cyd_li_ct
+                      align: TOP_LEFT
+                      x: 26
+                      y: 83
+                      width: 160
+                      height: 18
+                      min_value: 2000
+                      max_value: 6500
+                      value: 2000
+                      bg_color: 0x1F2933
+                      bg_opa: COVER
+                      indicator:
+                        bg_opa: TRANSP
+                      knob:
+                        bg_color: 0xE6EDF3
+                        bg_opa: COVER
+                        pad_all: 4
+                      on_value:
+                        - lvgl.label.update:
+                            id: cyd_li_ct_value
+                            text: !lambda |-
+                              char buf[12];
+                              snprintf(buf, sizeof(buf), "%d K", (int) lroundf(x));
+                              return std::string(buf);
+                      on_release:
+                        - homeassistant.action:
+                            action: light.turn_on
+                            data:
+                              entity_id: !lambda |-
+                                return id(cyd_ov_entity);
+                              color_temp_kelvin: !lambda |-
+                                return to_string((int) lroundf(x));
+                      bg_grad: cyd_grad_ct
+                  - label:
+                      id: cyd_li_ct_value
+                      align: TOP_RIGHT
+                      y: 83
+                      width: 56
+                      long_mode: DOT
+                      styles: cyd_text_7
+                      text: ""
+                  - label:
+                      id: cyd_li_hue_icon
+                      align: TOP_LEFT
+                      y: 126
+                      styles: cyd_text_3
+                      text: "\U000F03D8"
+                  - slider:
+                      id: cyd_li_hue
+                      align: TOP_LEFT
+                      x: 26
+                      y: 127
+                      width: 160
+                      height: 18
+                      min_value: 0
+                      max_value: 359
+                      value: 0
+                      bg_color: 0x1F2933
+                      bg_opa: COVER
+                      indicator:
+                        bg_opa: TRANSP
+                      knob:
+                        bg_color: 0xE6EDF3
+                        bg_opa: COVER
+                        pad_all: 4
+                      on_value:
+                        - lvgl.label.update:
+                            id: cyd_li_hue_value
+                            text: !lambda |-
+                              char buf[12];
+                              snprintf(buf, sizeof(buf), "%d°", (int) lroundf(x));
+                              return std::string(buf);
+                      on_release:
+                        - homeassistant.action:
+                            action: light.turn_on
+                            data:
+                              entity_id: !lambda |-
+                                return id(cyd_ov_entity);
+                            data_template:
+                              hs_color: "{{ [h | float, s | float] }}"
+                            variables:
+                              h: !lambda |-
+                                return to_string((int) lroundf(x));
+                              s: !lambda |-
+                                return to_string((int) lroundf(id(cyd_li_sat)));
+                      bg_grad: cyd_grad_hue
+                  - label:
+                      id: cyd_li_hue_value
+                      align: TOP_RIGHT
+                      y: 127
+                      width: 56
+                      long_mode: DOT
+                      styles: cyd_text_7
+                      text: ""
+      - obj:
           id: cyd_msg
           x: 0
           y: 0
@@ -664,7 +1000,7 @@ lvgl:
                 widgets:
                   - label:
                       align: TOP_LEFT
-                      styles: cyd_text_7
+                      styles: cyd_text_8
                       text: "\U000F009F"
                   - label:
                       id: cyd_msg_title
@@ -681,7 +1017,7 @@ lvgl:
                       width: 248
                       height: 102
                       long_mode: WRAP
-                      styles: cyd_text_8
+                      styles: cyd_text_9
                       text: ""
   pages:
     - id: page_lockscreen
@@ -733,13 +1069,31 @@ lvgl:
                   data:
                     entity_id: "${ent_light_desk_lamp}"
             on_long_press:
-              - script.execute:
-                  id: cyd_overlay_open
-                  entity: "${ent_light_desk_lamp}"
-                  title: Desk
-                  kind: 1
-                  value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_desk_lamp).state, id(ha_light_desk_lamp_brightness_num).state, 1);
+              - if:
+                  condition:
+                    lambda: !lambda |-
+                      return (id(ha_light_desk_lamp_supported_color_modes).state.find("color_temp") != std::string::npos || id(ha_light_desk_lamp_supported_color_modes).state.find("hs") != std::string::npos || id(ha_light_desk_lamp_supported_color_modes).state.find("rgb") != std::string::npos || id(ha_light_desk_lamp_supported_color_modes).state.find("xy") != std::string::npos);
+                  then:
+                    - script.execute:
+                        id: cyd_light_open
+                        entity: "${ent_light_desk_lamp}"
+                        title: Desk
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_desk_lamp).state, id(ha_light_desk_lamp_brightness_num).state, 1);
+                        modes: !lambda |-
+                          return id(ha_light_desk_lamp_supported_color_modes).state;
+                        ct: !lambda |-
+                          return id(ha_light_desk_lamp_color_temp_kelvin_num).state;
+                        hs: !lambda |-
+                          return id(ha_light_desk_lamp_hs_color).state;
+                  else:
+                    - script.execute:
+                        id: cyd_overlay_open
+                        entity: "${ent_light_desk_lamp}"
+                        title: Desk
+                        kind: 1
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_desk_lamp).state, id(ha_light_desk_lamp_brightness_num).state, 1);
             widgets:
               - label:
                   id: w_lockscreen_btn1_icon
@@ -767,13 +1121,31 @@ lvgl:
                   data:
                     entity_id: "${ent_light_ceiling_light}"
             on_long_press:
-              - script.execute:
-                  id: cyd_overlay_open
-                  entity: "${ent_light_ceiling_light}"
-                  title: Ceiling
-                  kind: 1
-                  value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_ceiling_light).state, id(ha_light_ceiling_light_brightness_num).state, 1);
+              - if:
+                  condition:
+                    lambda: !lambda |-
+                      return (id(ha_light_ceiling_light_supported_color_modes).state.find("color_temp") != std::string::npos || id(ha_light_ceiling_light_supported_color_modes).state.find("hs") != std::string::npos || id(ha_light_ceiling_light_supported_color_modes).state.find("rgb") != std::string::npos || id(ha_light_ceiling_light_supported_color_modes).state.find("xy") != std::string::npos);
+                  then:
+                    - script.execute:
+                        id: cyd_light_open
+                        entity: "${ent_light_ceiling_light}"
+                        title: Ceiling
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_ceiling_light).state, id(ha_light_ceiling_light_brightness_num).state, 1);
+                        modes: !lambda |-
+                          return id(ha_light_ceiling_light_supported_color_modes).state;
+                        ct: !lambda |-
+                          return id(ha_light_ceiling_light_color_temp_kelvin_num).state;
+                        hs: !lambda |-
+                          return id(ha_light_ceiling_light_hs_color).state;
+                  else:
+                    - script.execute:
+                        id: cyd_overlay_open
+                        entity: "${ent_light_ceiling_light}"
+                        title: Ceiling
+                        kind: 1
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_ceiling_light).state, id(ha_light_ceiling_light_brightness_num).state, 1);
             widgets:
               - label:
                   id: w_lockscreen_btn2_icon
@@ -801,13 +1173,31 @@ lvgl:
                   data:
                     entity_id: "${ent_light_globe_lamp}"
             on_long_press:
-              - script.execute:
-                  id: cyd_overlay_open
-                  entity: "${ent_light_globe_lamp}"
-                  title: Globe
-                  kind: 1
-                  value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_globe_lamp).state, id(ha_light_globe_lamp_brightness_num).state, 1);
+              - if:
+                  condition:
+                    lambda: !lambda |-
+                      return (id(ha_light_globe_lamp_supported_color_modes).state.find("color_temp") != std::string::npos || id(ha_light_globe_lamp_supported_color_modes).state.find("hs") != std::string::npos || id(ha_light_globe_lamp_supported_color_modes).state.find("rgb") != std::string::npos || id(ha_light_globe_lamp_supported_color_modes).state.find("xy") != std::string::npos);
+                  then:
+                    - script.execute:
+                        id: cyd_light_open
+                        entity: "${ent_light_globe_lamp}"
+                        title: Globe
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_globe_lamp).state, id(ha_light_globe_lamp_brightness_num).state, 1);
+                        modes: !lambda |-
+                          return id(ha_light_globe_lamp_supported_color_modes).state;
+                        ct: !lambda |-
+                          return id(ha_light_globe_lamp_color_temp_kelvin_num).state;
+                        hs: !lambda |-
+                          return id(ha_light_globe_lamp_hs_color).state;
+                  else:
+                    - script.execute:
+                        id: cyd_overlay_open
+                        entity: "${ent_light_globe_lamp}"
+                        title: Globe
+                        kind: 1
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_globe_lamp).state, id(ha_light_globe_lamp_brightness_num).state, 1);
             widgets:
               - label:
                   id: w_lockscreen_btn3_icon
@@ -835,13 +1225,31 @@ lvgl:
                   data:
                     entity_id: "${ent_light_ambient_light}"
             on_long_press:
-              - script.execute:
-                  id: cyd_overlay_open
-                  entity: "${ent_light_ambient_light}"
-                  title: Ambient
-                  kind: 1
-                  value: !lambda |-
-                    return id(cyd_percent)(id(ha_light_ambient_light).state, id(ha_light_ambient_light_brightness_num).state, 1);
+              - if:
+                  condition:
+                    lambda: !lambda |-
+                      return (id(ha_light_ambient_light_supported_color_modes).state.find("color_temp") != std::string::npos || id(ha_light_ambient_light_supported_color_modes).state.find("hs") != std::string::npos || id(ha_light_ambient_light_supported_color_modes).state.find("rgb") != std::string::npos || id(ha_light_ambient_light_supported_color_modes).state.find("xy") != std::string::npos);
+                  then:
+                    - script.execute:
+                        id: cyd_light_open
+                        entity: "${ent_light_ambient_light}"
+                        title: Ambient
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_ambient_light).state, id(ha_light_ambient_light_brightness_num).state, 1);
+                        modes: !lambda |-
+                          return id(ha_light_ambient_light_supported_color_modes).state;
+                        ct: !lambda |-
+                          return id(ha_light_ambient_light_color_temp_kelvin_num).state;
+                        hs: !lambda |-
+                          return id(ha_light_ambient_light_hs_color).state;
+                  else:
+                    - script.execute:
+                        id: cyd_overlay_open
+                        entity: "${ent_light_ambient_light}"
+                        title: Ambient
+                        kind: 1
+                        value: !lambda |-
+                          return id(cyd_percent)(id(ha_light_ambient_light).state, id(ha_light_ambient_light_brightness_num).state, 1);
             widgets:
               - label:
                   id: w_lockscreen_btn4_icon
@@ -856,7 +1264,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_4
                   text: Ambient
-# cyd_studio_checksum: 0747bd9b7632ef52
+# cyd_studio_checksum: a567fc5d4c4e960c
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/51VTY/bNhD9LzzbgSxt3ayAHtoskLRAg6IfaItiIYykkcyaIgmSsnez8H/PDEXJ

@@ -551,3 +551,37 @@ export function messageLayout(width: number, height: number, fontSizes: Record<s
   ];
   return { panel, elements };
 }
+
+// ---------------------------------------------------------------------------
+// Light detail overlay (long press on a light that supports color temperature or color)
+// ---------------------------------------------------------------------------
+export const LIGHT_MAX_W = 260;
+export const LIGHT_MAX_H = 170;
+const LIGHT_VALUE_W = 56; // fits "6500 K"
+export const LIGHT_ROWS: [string, string][] = [["brightness", "mdi:brightness-6"], ["ct", "mdi:thermometer"], ["hue", "mdi:palette"]];
+
+export function lightOverlayLayout(width: number, height: number, fontSizes: Record<string, number> = {},
+  iconSizes: Record<string, number> = {}): { panel: Rect; elements: Element[] } {
+  const fs = { ...DEFAULT_FONT_SIZES, ...fontSizes };
+  const ics = { ...DEFAULT_ICON_SIZES, ...iconSizes };
+  const pw = Math.min(width - 2 * OVERLAY_MARGIN, LIGHT_MAX_W);
+  const ph = Math.min(height - 2 * OVERLAY_MARGIN, LIGHT_MAX_H);
+  const panel = { x: fdiv(width - pw, 2), y: fdiv(height - ph, 2), w: pw, h: ph };
+  const cw = pw - 2 * TILE_PAD;
+  const ch = ph - 2 * TILE_PAD;
+  const head = Math.max(lineHeight(fs.m), ics.s);
+  const rowH = Math.max(fdiv(ch - head - ELEMENT_GAP, LIGHT_ROWS.length), SLIDER_H);
+  const sliderX = ics.s + ELEMENT_GAP;
+  const sliderW = Math.max(cw - sliderX - LIGHT_VALUE_W - ELEMENT_GAP, 1);
+  const elements: Element[] = [
+    el("text", "title", "TOP_LEFT", 0, 0, fs.m, "text", Math.max(cw - ics.s - ELEMENT_GAP, 1)),
+    el("icon", "close", "TOP_RIGHT", 0, 0, ics.s, "text_muted"),
+  ];
+  LIGHT_ROWS.forEach(([role], i) => {
+    const y = head + ELEMENT_GAP + i * rowH;
+    elements.push(el("icon", `${role}_icon`, "TOP_LEFT", 0, y + fdiv(rowH - ics.s, 2), ics.s, "text_muted"));
+    elements.push({ ...el("slider", role, "TOP_LEFT", sliderX, y + fdiv(rowH - SLIDER_H, 2), 0, "accent", sliderW), height: SLIDER_H });
+    elements.push(el("text", `${role}_value`, "TOP_RIGHT", 0, y + fdiv(rowH - lineHeight(fs.s), 2), fs.s, "text", LIGHT_VALUE_W, "right"));
+  });
+  return { panel, elements };
+}

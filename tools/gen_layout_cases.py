@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "custom_components" / "cyd_studio"))
 
 from generator.layout import (  # noqa: E402
     header_elements,
+    light_overlay_layout,
     message_layout,
     overlay_layout,
     page_layout,
@@ -140,6 +141,13 @@ def main() -> None:
         lay = overlay_layout(w, h)
         overlays.append(
             {"input": {"w": w, "h": h}, "expected": {"panel": lay["panel"].as_list(), "elements": lay["elements"]}}
+        )
+        light = light_overlay_layout(w, h)
+        overlays.append(
+            {
+                "input": {"w": w, "h": h, "kind": "light"},
+                "expected": {"panel": light["panel"].as_list(), "elements": light["elements"]},
+            }
         )
         msg = message_layout(w, h)
         overlays.append(

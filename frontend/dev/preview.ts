@@ -60,6 +60,15 @@ async function main() {
     });
     canvas.style.width = `${resolved.width * 2}px`;
     root.append(canvas);
+    // light overlay: brightness, color temperature and color
+    const light = document.createElement("canvas");
+    light.dataset.snapshot = "reference_home_like--light";
+    renderScreen(light, {
+      project, board: resolved, theme, pageId: project.pages[0].id, state: sampleState(project), now: FIXED_NOW,
+      overlay: { title: "Wohnzimmer", value: 80, light: { ct: 3000, hue: 200, hasCt: true, hasHs: true } },
+    });
+    light.style.width = `${resolved.width * 2}px`;
+    root.append(light);
   }
   // Message from Home Assistant (show_message) on top of the "more" project
   const more = goldens.find((g) => g.name === "more");

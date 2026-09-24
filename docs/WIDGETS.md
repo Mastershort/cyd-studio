@@ -14,7 +14,7 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 
 | Typ | Entität | Gerät | Zustände |
 |---|---|---|---|
-| `toggle_tile` | light, switch, input_boolean, fan, cover | `button`, `checked` bei an/offen, `disabled` bei nicht verfügbar; Tippen → `homeassistant.toggle`; **lange drücken → Regler** (Licht: Helligkeit, Rollladen: Position, Lüfter: Stufe) | Icon grün/grau; Zustandstext An/Aus/…, bei Licht/Rollladen/Lüfter wahlweise der Wert in % |
+| `toggle_tile` | light, switch, input_boolean, fan, cover | `button`, `checked` bei an/offen, `disabled` bei nicht verfügbar; Tippen → `homeassistant.toggle`; **lange drücken → Regler** (Licht: Helligkeit – bei Lampen mit Farbtemperatur/Farbe laut `supported_color_modes` zusätzlich Regler für Farbtemperatur 2000–6500 K und Farbton, abschaltbar mit `color_controls`; Rollladen: Position, Lüfter: Stufe) | Icon grün/grau; Zustandstext An/Aus/…, bei Licht/Rollladen/Lüfter wahlweise der Wert in % |
 | `sensor_value` | sensor, input_number, number | `obj` mit Wert (Nachkommastellen, Einheit); optional Tippen → Seite | `--` bei unbekannt/nicht verfügbar (NaN) |
 | `binary_indicator` | binary_sensor u. a. | `obj`, Icon rot (Warnung) bzw. Akzent wenn an, grün wenn aus | eigene Texte für an/aus |
 | `clock` | – | Uhrzeit (HH:mm, HH:mm:ss, h:mm a) + Datum (DE/EN), Zeit von HA | `--:--` bis zur Zeitsynchronisierung |

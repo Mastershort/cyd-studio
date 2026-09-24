@@ -2,7 +2,7 @@
 // Uses the same layout functions as the generator (src/layout.ts == generator/layout.py)
 // and mirrors the LVGL styles written by generator/generate.py.
 import {
-  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight, messageLayout, overlayLayout,
+  ASCENT_PER_MILLE, HEADER_PAD_X, ICON_ASCENT_PER_MILLE, TILE_PAD, alignChild, headerElements, lineHeight, messageLayout, overlayLayout, lightOverlayLayout, LIGHT_ROWS,
   navPages, pageLayout, tabElements, widgetElements, type Element, type Rect,
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
@@ -33,7 +33,29 @@ export interface RenderInput {
   /** message sent by Home Assistant (show_message) */
   message?: { title: string; text: string } | null;
   /** value overlay opened by a long press (same layout as the device) */
-  overlay?: { title: string; value: number } | null;
+  overlay?: { title: string; value: number; light?: LightOverlay } | null;
+}
+
+/** Light overlay state (mirrors the device script cyd_light_open). */
+export interface LightOverlay {
+  ct: number;
+  hue: number;
+  hasCt: boolean;
+  hasHs: boolean;
+}
+
+/** Slider range per light overlay row (generate.LIGHT_SLIDERS). */
+export const LIGHT_SLIDERS: Record<string, [number, number, string]> = {
+  brightness: [0, 100, "%"], ct: [2000, 6500, "K"], hue: [0, 359, "°"],
+};
+const CT_STOPS = ["#ff9329", "#ffd6aa", "#cbe1ff"];
+const HUE_STOPS = ["#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff", "#ff0000"];
+
+/** Same test as tiles.light_caps_expr on the supported_color_modes text. */
+export function lightCaps(entity: HassEntity | undefined): { hasCt: boolean; hasHs: boolean } {
+  const raw = entity?.attributes.supported_color_modes;
+  const modes = Array.isArray(raw) ? raw.join(",") : String(raw ?? "");
+  return { hasCt: modes.includes("color_temp"), hasHs: ["hs", "rgb", "xy"].some((m) => modes.includes(m)) };
 }
 
 export interface HitRegion {
@@ -700,6 +722,7 @@ export function sampleState(project: Project): StateResolver {
       if (domain === "binary_sensor") state = "off";
       const attributes: Record<string, unknown> = {};
       if (domain === "light" && state === "on") attributes.brightness = 204;
+      if (domain === "light") Object.assign(attributes, { supported_color_modes: ["color_temp", "hs"], color_temp_kelvin: 3000, hs_color: [30, 80] });
       if (domain === "cover") attributes.current_position = state === "open" ? 60 : 0;
       if (domain === "fan" && state === "on") attributes.percentage = 50;
       if (domain === "climate") { state = "heat"; attributes.temperature = 21.5; attributes.current_temperature = 20.8; }
@@ -741,7 +764,11 @@ export function tileValuePercent(entityId: string | null | undefined, entity: Ha
   return Math.round(spec[1] === 1 ? (raw * 100) / 255 : raw);
 }
 
-function renderOverlay(p: Painter, input: RenderInput, ov: { title: string; value: number }, hits: HitRegion[]): void {
+function renderOverlay(p: Painter, input: RenderInput, ov: { title: string; value: number; light?: LightOverlay }, hits: HitRegion[]): void {
+  if (ov.light) {
+    renderLightOverlay(p, input, ov.title, ov.value, ov.light, hits);
+    return;
+  }
   const { board, theme } = input;
   const ctx = p.ctx;
   ctx.fillStyle = "rgba(0,0,0,0.6)";
@@ -770,6 +797,63 @@ function renderOverlay(p: Painter, input: RenderInput, ov: { title: string; valu
       const knob = h + 8;
       p.box({ x: pos.x + filled - Math.floor(knob / 2), y: pos.y - 4, w: knob, h: knob }, p.color("text"), null, knob, 0);
       hits.push({ kind: "overlay-slider", id: "slider", rect: track });
+    }
+  }
+}
+
+function renderLightOverlay(p: Painter, input: RenderInput, title: string, brightness: number, light: LightOverlay,
+  hits: HitRegion[]): void {
+  const { board, theme } = input;
+  const ctx = p.ctx;
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(0, 0, board.width, board.height);
+  hits.push({ kind: "overlay-close", id: "backdrop", rect: { x: 0, y: 0, w: board.width, h: board.height } });
+  const { panel, elements } = lightOverlayLayout(board.width, board.height, theme.font_sizes, theme.icon_sizes);
+  p.box(panel, p.color("tile"), p.color("border"), theme.radius ?? 8, theme.border_width ?? 0);
+  hits.push({ kind: "overlay-panel", id: "panel", rect: panel });
+  const content = inset(panel, TILE_PAD);
+  const icons = Object.fromEntries(LIGHT_ROWS);
+  const values: Record<string, number> = { brightness, ct: light.ct, hue: light.hue };
+  const shown = (row: string) => (row === "ct" ? light.hasCt : row === "hue" ? light.hasHs : true);
+  for (const el of elements) {
+    const row = el.role.replace(/_(icon|value)$/, "");
+    if (el.role === "title") p.element(content, el, title, p.color(el.color));
+    else if (el.role === "close") {
+      const r = p.element(content, el, "mdi:close", p.color(el.color));
+      if (r) hits.push({ kind: "overlay-close", id: "close", rect: r });
+    } else if (!shown(row)) continue;
+    else if (el.role.endsWith("_icon")) p.element(content, el, icons[row], p.color(el.color));
+    else if (el.role.endsWith("_value")) {
+      const [lo, hi, unit] = LIGHT_SLIDERS[row];
+      const v = Math.round(Math.max(lo, Math.min(hi, values[row])));
+      p.element(content, el, row === "hue" ? `${v}${unit}` : `${v} ${unit}`, p.color(el.color));
+    } else if (el.kind === "slider") {
+      const [lo, hi] = LIGHT_SLIDERS[row];
+      const w = el.width ?? 100;
+      const h = el.height ?? 18;
+      const pos = alignChild(content, w, h, el.align, el.x, el.y);
+      const track = { x: pos.x, y: pos.y, w, h };
+      const r = Math.floor(h / 2);
+      const frac = Math.max(0, Math.min(1, (values[row] - lo) / (hi - lo)));
+      const filled = Math.round(w * frac);
+      if (row === "brightness") {
+        p.box(track, p.color("border"), null, r, 0);
+        if (filled > 0) p.box({ ...track, w: Math.max(filled, h) }, p.color("accent"), null, r, 0);
+      } else {
+        const stops = row === "ct" ? CT_STOPS : HUE_STOPS;
+        const grad = ctx.createLinearGradient(track.x, 0, track.x + w, 0);
+        stops.forEach((c, i) => grad.addColorStop(Math.floor((i * 100) / (stops.length - 1)) / 100, c));
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(track.x, track.y, w, h, r);
+        ctx.clip();
+        ctx.fillStyle = grad;
+        ctx.fillRect(track.x, track.y, w, h);
+        ctx.restore();
+      }
+      const knob = h + 8;
+      p.box({ x: pos.x + filled - Math.floor(knob / 2), y: pos.y - 4, w: knob, h: knob }, p.color("text"), null, knob, 0);
+      hits.push({ kind: "overlay-slider", id: row, rect: track });
     }
   }
 }

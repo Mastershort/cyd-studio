@@ -100,6 +100,17 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
 - Link „ESPHome öffnen“: `/hassio/ingress/5c53de3b_esphome` (offizielles Add-on). Bei anderen
   Installationen führt er ins Leere – dann ESPHome wie gewohnt öffnen.
 
+## Licht-Popup (ab 0.9)
+
+- Ob eine Lampe Farbtemperatur oder Farbe kann, entscheidet das Gerät zur Laufzeit am Attribut
+  `supported_color_modes` (als Text gespiegelt, z. B. `['color_temp', 'hs']`): `color_temp` →
+  Farbtemperatur-Regler, `hs`/`rgb*`/`xy` → Farbton-Regler. Lampen ohne diese Modi bekommen das
+  bisherige Helligkeits-Popup. Pro Licht-Kachel kommen damit drei Attribut-Spiegel dazu
+  (`supported_color_modes`, `color_temp_kelvin`, `hs_color`); mit `color_controls: false` entfallen sie.
+- Farbtemperatur fest 2000–6500 K (HA begrenzt auf den Bereich der Lampe), Farbton 0–359° über
+  `light.turn_on` mit `data_template: hs_color`; die Sättigung bleibt wie sie war (unter 10 % → 100 %).
+- Die Verläufe der Regler sind LVGL-`gradients` (horizontal); das Vorschau-Canvas nutzt dieselben Stopps.
+
 ## Gemeinsame Gerätelogik (ab 0.2)
 
 - LVGL-Widget-IDs sind in ESPHome-Lambdas `lv_obj_t *` (nicht zusammengesetzte Widgets,

@@ -5,7 +5,7 @@ import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { cellAt, pageLayout, widgetRect, type Rect } from "../layout";
 import type { ResolvedBoard } from "../model";
 import type { Project, Theme } from "../types";
-import { renderScreen, type HitRegion, type StateResolver } from "./renderer";
+import { renderScreen, type HitRegion, type LightOverlay, type StateResolver } from "./renderer";
 
 export const WIDGET_DND_TYPE = "application/x-cyd-widget";
 
@@ -48,7 +48,7 @@ export class CydScreen extends LitElement {
   declare scale: number;
   declare night: boolean;
   declare now: Date;
-  declare overlay: { title: string; value: number } | null;
+  declare overlay: { title: string; value: number; light?: LightOverlay } | null;
   declare images: Record<string, CanvasImageSource>;
   declare message: { title: string; text: string } | null;
   declare _drag: DragState | null;

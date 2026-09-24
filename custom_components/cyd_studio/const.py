@@ -7,7 +7,7 @@ from typing import Final
 from .generator import ESPHOME_MIN_VERSION, GENERATOR_VERSION
 
 DOMAIN: Final = "cyd_studio"
-VERSION: Final = "0.8.0"
+VERSION: Final = "0.9.0"
 
 __all__ = ["ESPHOME_MIN_VERSION", "GENERATOR_VERSION"]
 

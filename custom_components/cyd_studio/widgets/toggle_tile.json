@@ -60,6 +60,13 @@
       ],
       "label": "Lange drücken (Licht, Rollladen, Lüfter)",
       "label_en": "Long press (light, cover, fan)"
+    },
+    {
+      "key": "color_controls",
+      "type": "bool",
+      "default": true,
+      "label": "Farbe und Farbtemperatur im Popup (Licht)",
+      "label_en": "Color and color temperature in the popup (light)"
     }
   ]
 }

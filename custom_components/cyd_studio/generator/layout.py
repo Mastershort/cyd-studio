@@ -574,3 +574,56 @@ def message_layout(
         },
     ]
     return {"panel": panel, "elements": elements}
+
+
+# ---------------------------------------------------------------------------
+# Light detail overlay (long press on a light that supports color temperature or color)
+# ---------------------------------------------------------------------------
+LIGHT_MAX_W = 260
+LIGHT_MAX_H = 170
+LIGHT_VALUE_W = 56  # fits "6500 K"
+LIGHT_ROWS = (("brightness", "mdi:brightness-6"), ("ct", "mdi:thermometer"), ("hue", "mdi:palette"))
+
+
+def light_overlay_layout(
+    width: int, height: int, font_sizes: dict[str, int] | None = None, icon_sizes: dict[str, int] | None = None
+) -> dict[str, Any]:
+    """Panel and elements of the light overlay: title, close, and three rows (icon, slider, value)."""
+    fs = {**DEFAULT_FONT_SIZES, **(font_sizes or {})}
+    ics = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
+    pw = min(width - 2 * OVERLAY_MARGIN, LIGHT_MAX_W)
+    ph = min(height - 2 * OVERLAY_MARGIN, LIGHT_MAX_H)
+    panel = Rect((width - pw) // 2, (height - ph) // 2, pw, ph)
+    cw = pw - 2 * TILE_PAD
+    ch = ph - 2 * TILE_PAD
+    head = max(line_height(fs["m"]), ics["s"])
+    row_h = max((ch - head - ELEMENT_GAP) // len(LIGHT_ROWS), SLIDER_H)
+    slider_x = ics["s"] + ELEMENT_GAP
+    slider_w = max(cw - slider_x - LIGHT_VALUE_W - ELEMENT_GAP, 1)
+    elements = [
+        _el("text", "title", "TOP_LEFT", 0, 0, fs["m"], "text", max(cw - ics["s"] - ELEMENT_GAP, 1)),
+        _el("icon", "close", "TOP_RIGHT", 0, 0, ics["s"], "text_muted"),
+    ]
+    for i, (role, _icon) in enumerate(LIGHT_ROWS):
+        y = head + ELEMENT_GAP + i * row_h
+        elements.append(_el("icon", f"{role}_icon", "TOP_LEFT", 0, y + (row_h - ics["s"]) // 2, ics["s"], "text_muted"))
+        elements.append(
+            {
+                **_el("slider", role, "TOP_LEFT", slider_x, y + (row_h - SLIDER_H) // 2, 0, "accent", slider_w),
+                "height": SLIDER_H,
+            }
+        )
+        elements.append(
+            _el(
+                "text",
+                f"{role}_value",
+                "TOP_RIGHT",
+                0,
+                y + (row_h - line_height(fs["s"])) // 2,
+                fs["s"],
+                "text",
+                LIGHT_VALUE_W,
+                "right",
+            )
+        )
+    return {"panel": panel, "elements": elements}

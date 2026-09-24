@@ -9,6 +9,7 @@ from pathlib import Path
 from generator.layout import (
     Rect,
     header_elements,
+    light_overlay_layout,
     message_layout,
     overlay_layout,
     page_layout,
@@ -66,7 +67,8 @@ def test_grid_cells_do_not_overlap_and_fill_width() -> None:
 
 def test_overlays() -> None:
     for case in CASES["overlays"]:
-        fn = message_layout if case["input"].get("kind") == "message" else overlay_layout
+        kind = case["input"].get("kind")
+        fn = message_layout if kind == "message" else light_overlay_layout if kind == "light" else overlay_layout
         lay = fn(case["input"]["w"], case["input"]["h"])
         assert {"panel": lay["panel"].as_list(), "elements": lay["elements"]} == case["expected"]
 
