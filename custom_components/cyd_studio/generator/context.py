@@ -262,7 +262,7 @@ class Context:
                 return None
             font_id, value = found
         else:
-            font_id, value = self.fonts.text_font(el["size"], text), text
+            font_id, value = self.fonts.text_font(el["size"], text, bool(el.get("bold"))), text
             if el.get("width") and el.get("wrap"):
                 conf["width"] = el["width"]
                 conf["height"] = el["height"]

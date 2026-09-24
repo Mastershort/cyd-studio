@@ -451,22 +451,13 @@
           "type": "object"
         },
         "tap": {
-          "type": [
-            "object",
-            "null"
-          ]
+          "$ref": "#/$defs/trigger"
         },
         "long_press": {
-          "type": [
-            "object",
-            "null"
-          ]
+          "$ref": "#/$defs/trigger"
         },
         "double_tap": {
-          "type": [
-            "object",
-            "null"
-          ]
+          "$ref": "#/$defs/trigger"
         },
         "visible_if": {
           "type": "array",
@@ -527,9 +518,11 @@
         },
         "text_size": {
           "enum": [
+            "xs",
             "s",
             "m",
-            "l"
+            "l",
+            "xl"
           ]
         },
         "bg": {
@@ -599,6 +592,31 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100
+        },
+        "value_size": {
+          "enum": [
+            "auto",
+            "xs",
+            "s",
+            "m",
+            "l",
+            "xl"
+          ]
+        },
+        "icon_size": {
+          "enum": [
+            "auto",
+            "none",
+            "s",
+            "m",
+            "l"
+          ]
+        },
+        "text_weight": {
+          "enum": [
+            "normal",
+            "bold"
+          ]
         }
       }
     },
@@ -626,6 +644,66 @@
         },
         "value": {
           "type": "string"
+        }
+      }
+    },
+    "action_step": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "toggle",
+            "service",
+            "page",
+            "back",
+            "home",
+            "popup",
+            "delay"
+          ]
+        },
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "service": {
+          "type": "string"
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "data": {
+          "type": "object"
+        },
+        "page": {
+          "type": "string"
+        },
+        "ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        }
+      }
+    },
+    "trigger": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Action builder: null = built-in behavior, [] = nothing",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action_step"
+          }
         }
       }
     }

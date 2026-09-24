@@ -102,6 +102,14 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
   (die Seitenleisten-Adresse; `/hassio/ingress/<Kennung>` liefert in aktuellen HA-Versionen 404).
   Ohne Supervisor wird der Link ausgeblendet.
 
+## Schrift & Icons pro Widget (ab 0.10)
+
+- Fette Schrift ist Montserrat 700 (`gfonts://Montserrat@700`). Eine fette Schrift einer Größe enthält
+  dieselben Zeichen wie die normale dieser Größe – dynamische Texte (Werte, Zustände) sind so in
+  beiden Stärken vollständig. Kostet Flash (je Größe etwa so viel wie die normale Schrift).
+- `icon_size: none` blendet das Icon aus, der Text rückt nach links; `s`/`m`/`l` ersetzt die
+  automatische Wahl (das Layout nutzt dann diese Größe überall, wo es sonst S oder M wählen würde).
+
 ## Licht-Popup (ab 0.9)
 
 - Ob eine Lampe Farbtemperatur oder Farbe kann, entscheidet das Gerät zur Laufzeit am Attribut

@@ -271,7 +271,7 @@ sensor:
       then:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xFFFFFF, 0xC7C7CC, 0x000000, 0xFFFFFF, 0x6E6E73, 0xC7C7CC, 0xFFCC00, 0x4A4A56};
-            id(cyd_tile_state)(id(w_home_l2), id(w_home_l2_icon), id(w_home_l2_label), id(w_home_l2_state), id(w_home_l2_circle), id(ha_light_stehlampe).state, x, 1, nullptr, nullptr, c);
+            id(cyd_tile_state)(id(w_home_l2), nullptr, id(w_home_l2_label), id(w_home_l2_state), nullptr, id(ha_light_stehlampe).state, x, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_stehlampe_color_temp_kelvin_num
     entity_id: "${ent_light_stehlampe}"
@@ -328,7 +328,7 @@ text_sensor:
       then:
         - lambda: !lambda |-
             static const uint32_t c[] = {0xFFFFFF, 0xC7C7CC, 0x000000, 0xFFFFFF, 0x6E6E73, 0xC7C7CC, 0xFFCC00, 0x4A4A56};
-            id(cyd_tile_state)(id(w_home_l2), id(w_home_l2_icon), id(w_home_l2_label), id(w_home_l2_state), id(w_home_l2_circle), x, id(ha_light_stehlampe_brightness_num).state, 1, nullptr, nullptr, c);
+            id(cyd_tile_state)(id(w_home_l2), nullptr, id(w_home_l2_label), id(w_home_l2_state), nullptr, x, id(ha_light_stehlampe_brightness_num).state, 1, nullptr, nullptr, c);
   - platform: homeassistant
     id: ha_light_stehlampe_supported_color_modes
     entity_id: "${ent_light_stehlampe}"
@@ -388,8 +388,20 @@ font:
     bpp: 4
     glyphs:
       - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@700"
+    id: font_16_b
+    size: 16
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
   - file: "gfonts://Montserrat@500"
     id: font_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@700"
+    id: font_20_b
     size: 20
     bpp: 4
     glyphs:
@@ -405,13 +417,13 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F009F\U000F00DF\U000F0156\U000F03D8\U000F050F"
+      - "\U000F009F\U000F00DF\U000F0156\U000F03D8\U000F050F\U000F0FCE"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
     bpp: 4
     glyphs:
-      - "\U000F050F\U000F0769\U000F081A\U000F08DD\U000F0FCE\U000F1A6B"
+      - "\U000F050F\U000F0769\U000F081A\U000F1A6B"
 
 script:
   - id: cyd_show_message
@@ -602,32 +614,39 @@ lvgl:
       text_font: font_12
       text_color: 0xC7C7CC
     - id: cyd_text_4
-      text_font: font_16
+      text_font: font_16_b
       text_color: 0xFFFFFF
     - id: cyd_text_5
       text_font: icons_28
       text_color: 0xFFCC00
     - id: cyd_text_6
-      text_font: font_20
+      text_font: font_20_b
       text_color: 0xFFFFFF
     - id: cyd_text_7
-      text_font: icons_28
+      text_font: icons_20
       text_color: 0xFFFFFF
     - id: cyd_text_8
+      text_font: font_20
+      text_color: 0xFFFFFF
+      text_align: CENTER
+    - id: cyd_text_9
+      text_font: font_16
+      text_color: 0xFFFFFF
+    - id: cyd_text_10
       text_font: icons_20
       text_color: 0xC7C7CC
-    - id: cyd_text_9
+    - id: cyd_text_11
       text_font: font_28
       text_color: 0xFFFFFF
       text_align: CENTER
-    - id: cyd_text_10
+    - id: cyd_text_12
       text_font: font_14
       text_color: 0xFFFFFF
       text_align: RIGHT
-    - id: cyd_text_11
+    - id: cyd_text_13
       text_font: icons_20
       text_color: 0xFFCC00
-    - id: cyd_text_12
+    - id: cyd_text_14
       text_font: font_14
       text_color: 0xC7C7CC
   on_idle:
@@ -720,12 +739,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 202
                       long_mode: DOT
-                      styles: cyd_text_4
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_ov_close
                       align: TOP_RIGHT
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_overlay
@@ -735,7 +754,7 @@ lvgl:
                       y: -9
                       width: 228
                       long_mode: DOT
-                      styles: cyd_text_9
+                      styles: cyd_text_11
                       text: ""
                   - slider:
                       id: cyd_ov_slider
@@ -830,12 +849,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 222
                       long_mode: DOT
-                      styles: cyd_text_4
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_li_close
                       align: TOP_RIGHT
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_light
@@ -843,7 +862,7 @@ lvgl:
                       id: cyd_li_brightness_icon
                       align: TOP_LEFT
                       y: 38
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F00DF"
                   - slider:
                       id: cyd_li_brightness
@@ -885,13 +904,13 @@ lvgl:
                       y: 39
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_12
                       text: ""
                   - label:
                       id: cyd_li_ct_icon
                       align: TOP_LEFT
                       y: 82
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F050F"
                   - slider:
                       id: cyd_li_ct
@@ -933,13 +952,13 @@ lvgl:
                       y: 83
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_12
                       text: ""
                   - label:
                       id: cyd_li_hue_icon
                       align: TOP_LEFT
                       y: 126
-                      styles: cyd_text_8
+                      styles: cyd_text_10
                       text: "\U000F03D8"
                   - slider:
                       id: cyd_li_hue
@@ -986,7 +1005,7 @@ lvgl:
                       y: 127
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_12
                       text: ""
       - obj:
           id: cyd_msg
@@ -1018,7 +1037,7 @@ lvgl:
                 widgets:
                   - label:
                       align: TOP_LEFT
-                      styles: cyd_text_11
+                      styles: cyd_text_13
                       text: "\U000F009F"
                   - label:
                       id: cyd_msg_title
@@ -1026,7 +1045,7 @@ lvgl:
                       x: 26
                       width: 222
                       long_mode: DOT
-                      styles: cyd_text_4
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_msg_text
@@ -1035,7 +1054,7 @@ lvgl:
                       width: 248
                       height: 102
                       long_mode: WRAP
-                      styles: cyd_text_12
+                      styles: cyd_text_14
                       text: ""
   pages:
     - id: page_home
@@ -1161,24 +1180,6 @@ lvgl:
                         value: !lambda |-
                           return id(cyd_percent)(id(ha_light_stehlampe).state, id(ha_light_stehlampe_brightness_num).state, 1);
             widgets:
-              - obj:
-                  id: w_home_l2_circle
-                  align: TOP_LEFT
-                  width: 38
-                  height: 38
-                  radius: 38
-                  bg_color: 0x4A4A56
-                  bg_opa: COVER
-                  border_width: 0
-                  pad_all: 0
-                  scrollable: false
-                  clickable: false
-                  widgets:
-                    - label:
-                        id: w_home_l2_icon
-                        align: CENTER
-                        styles: cyd_text_1
-                        text: "\U000F08DD"
               - label:
                   id: w_home_l2_label
                   align: BOTTOM_LEFT
@@ -1324,15 +1325,16 @@ lvgl:
                     entity_id: "${ent_scene_film}"
             widgets:
               - label:
-                  align: LEFT_MID
+                  align: CENTER
+                  y: -13
                   styles: cyd_text_7
                   text: "\U000F0FCE"
               - label:
-                  align: LEFT_MID
-                  x: 34
-                  width: 102
+                  align: CENTER
+                  y: 11
+                  width: 136
                   long_mode: DOT
-                  styles: cyd_text_6
+                  styles: cyd_text_8
                   text: Filmabend
         - obj:
             id: w_home_b1
@@ -1378,25 +1380,26 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_3
                   text: "–"
-# cyd_studio_checksum: 6d0aa7fb3578d4b7
+# cyd_studio_checksum: 18553b0fccd33c6a
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/4VWy47jNhD8F+ZqG7L8yKyuCYLcAmQXCJBgILSolkQMRQokZa934H/KB+SU/Fi6
-#   qYflmXHik0yym1XVpW69igLkS+1sb0qRvQrVQo0iE7AtUrkr93iojuK6EoUFRwcE+m6XrtP9LvVJ
-#   +uTEuJOfwCkwQWSm13olSjwpibmBlpPJS7n24aKxpPO1tgVovquyNqDjJzRQ8G5Wgfa4Eg2quqFk
-#   u+NKnFVZY/Ai++P5yjtQvokJrl+EpE/LkFcBWtWGMGisAt0eLh0j6ohlHlTQSORuh1zMMZ+S2soX
-#   cX2+0sW1U1EgaTUl3tMCdCKjyzooS2Xq+OzsmTZ3dJwPi9rqEs2NeosBOEfflRAYukiT9LhOPpGg
-#   LPIo1+eg9PoLekZi4KRqCMoaDmxsi3k3VIif6YBv7DlX0ho/KRFXNBSob0uMgGKMNTHmrJjfKHaA
-#   ogCXd9ar4R4qaQi2ZR0cmHnVa1Vy9NlBl8PomJiDoFun0IQRqNBgSi+h4+MMdygFS5jbEzrHiUan
-#   MHSKaEuVeVuBGKUb2SmTLxUY2Gi42D6wvlyTWbbfbGO+qbZFF291eLNjlGSyzpAkqBYpS+6nM0vT
-#   UKgKFybChtiUKF8YTSOy7YhPb/kSZzsf35obCYlKkx3WerRSLATt/RhzXGdvBVvXmj2oo6Zk3JX4
-#   KrJkJejehE35BoQP2GhouxFIOgFJHwCptLVuzRELFJ/nJNfZFa8i4FcSQn1jXO1/YdxGjOkHGCXX
-#   deOs1vYen3wkFJ9Ft/YNRFdNCH+NKZbopHKSn4a6cYY8Jvlut5ffHz7F9OiRDUEFJfE5nYNS9XRl
-#   mvwvnd0HdDwab90mYFRvUffwiE5o0LVk2hDtN7H5QgnQQeh5sTeKQf795w93/IqaySTwtK8q7qd1
-#   bjtqE7vD6g31mWatwftFnQa01IN1/4GZtrHDyamHeHTcmzlMosENYYuCciNwdcw/bFRKRzNMogyv
-#   yUIL/0iL1p4Urm2HZiHFT5SOHqlpvCd/wIPEo7irbhV/y+pWGmJzJrfeHVjaVy9lYRp50VMzM+9l
-#   Se8KXigD7pJPde9jFRdci0dcS3rLFix/ht6Hf/5yEyxLCDPxez//57hfqoqkeezx4V8+aJNKGsT7
-#   Ba0RqjKlkhDi7TO1dKT2fH0muLbruzg46SbZYAuRD4kZqENFItCp/AXn4hZxABr0Pi+BrZMkd4tm
-#   nLGHecIPvvK31mzqfphP8a2OAXlrSxxG9tJJlaMZQyMwzZIktnrqIGGeSt72LrrUDjVuyAUNzVO6
-#   fUNfBcHSVnLMdgkr4zC6OI5HqOgV5La+I+yuLvL4kfD+GyPOBE8ji9vENMa8dEgWgNPwjTG9NaJU
-#   PA7n1Mdk9SbflQdIpQZNc1rS/F01ydJ7JGtR7jAqxV8U1DHaxSCPf+fxyNW5Xv8FTZQaOJ4JAAA=
+# cyd_studio_project: H4sIAAAAAAAC/4VWS47jNhC9C7O1G2r5kx5tEwTZBcgMECBBQyiRJZloihRIyh5Pw3fKAbJKLpYq
+#   6mO5u514JZOsz3v1WMVXUYF8abzrrRLFq9AtNCgKAY9VLjdqi7t6Ly4rUTnwdEBg6Db5Ot9u8pDl
+#   T16MO+URvAYbRWF7Y1ZC4VFLLC207Eye1TrEs0FF5xvjKjAcq3YuoucvtFDxblGDCbgSB9TNgZxt
+#   9itx0qrBGETxx/OFd0C9sYm+X5jkT0uTVwFGN5ZyMFhHih7PHWfUEcoy6miQwF0P+eRjPiWNky/i
+#   8nyhwI3XiSDpDDne0gJ0oqBgHSilbZO+vTvR5oaO82HROKPQXqG3GIF99J2CyKmLPMv36+wTEcok
+#   j3R9jtqsv2DgTCwcdQNRO8uGB9di2Q0V4m86EA7uVGrpbJiYSCsGKjTXJc6AbKyzyeakGd9IdoSq
+#   Al92LughDpU0RtcyDx7svBqMVmx98tCVMCom+aDUnddo45ioMGBVkNDxcU53KAVTWLojes+ORqVw
+#   6mTRKl0EV4MYqRvRaVsuGRjQGDi7PjK/XJOZtt/cwX7TbYs+RfV4lWOiZJLO4CTqFslLGaYzS9GQ
+#   qY5nBsKCeFAoXzibgygex/zMIwfxrgvp1lxBSNSG5LA2o5RSIWjvx+TjMmsruqYxrEGTOCXhrsRX
+#   UWQrQXEzFuWbJELEg4G2GxPJp0TyO4nUxjm/ZotFFp9nJ5dZFYNVGfS3hUQifo3TUjv9P413jARi
+#   1H9heUxY8g+wSK7/g3fGuFsc8h6hfBb9OhwgqW9C8mtysUQhtZf8NdQ3YUpOvtts5fe7T8k9BuT8
+#   qfBUJHbnQemeQubZ/8LZfAAnoA3OP0RMLC/0Ee/BiQf0LYk7JplOaL6QA/QQe17sreYk//7zhxt8
+#   VcNgMnja1jX33aZ0HbWTzW71BvoMszEQwsfFW4kjmB6nEptFNQdMZdp/L83H1C/l1JECeu70bCbR
+#   4gMhSLRzW/FNymLYqLVpOchE3XDpFoyFe4y17qhx7Tq0C8J+Inf0adUHFO1wJ3EvbjRQp9+0NqIO
+#   S03UBuLI1Y3B8ibc0MSwyqqnVmnf05TfyKTSFvy5nNTSp9ovsFf3sCu6wwvUP0Mf4j9/+SktRxkW
+#   4vd+/s92v9Q1UXX/Zgz/yoGrXNKY3y5gjalqq7SEmKLP0PIR2vPlmdJ1Xd+lsUyR5AFbSHiIzEj9
+#   LwGBTpcvOBe7SuPVYgilApZSlt0s2nGC7+b3w6CzcG38tumH6Zd6QTIoW6dweBAslVV7mmA0YPMi
+#   y9Igob4T55kXXO+Tat1Q4wOp4MD3osgf6M0RHW1l+2KTMTMek6rT8IWaLi4PjQ3l7puqTE+Q9y+Y
+#   NHECDURuLtOQDNIjSQCOwwtmukVCaW6xs+t9tnrj78LjqdYDpyUtGX61TbT0ge4xku84MsXvFeoz
+#   7eKZkP7Ow5erc7n8Cw2KoVr8CQAA

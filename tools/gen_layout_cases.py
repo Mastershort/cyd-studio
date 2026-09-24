@@ -72,6 +72,9 @@ PROPS = [
     {"icon": "", "_count": 3, "icon_circle": True},
     {"icon": "mdi:account", "_count": 5, "label": "Gast-WLAN"},
     {"icon": "mdi:timer", "_count": 6, "text_size": "l", "label": ""},
+    {"icon": "mdi:lightbulb", "icon_size": "none", "text_size": "xl", "text_weight": "bold"},
+    {"icon": "mdi:thermometer", "icon_size": "l", "value_size": "s", "text_weight": "bold", "icon_circle": True},
+    {"icon": "mdi:sofa", "icon_size": "s", "value_size": "xl", "text_size": "xs"},
 ]
 SIZES = [(30, 30), (60, 48), (147, 52), (147, 112), (304, 48), (100, 160), (200, 200)]
 
@@ -165,6 +168,8 @@ def main() -> None:
         {"preset": "solid"},
         {"preset": "glass", "bg": "#123456", "bg_opa": 40, "radius": 20},
         {"preset": "outline", "icon_on": "warning", "text_size": "l", "circle": True},
+        {"preset": "flat", "text_size": "xl", "icon_size": "none", "text_weight": "bold", "value_size": "m"},
+        {"text_size": "huge", "icon_size": "x", "text_weight": "black", "value_size": "?"},
         {"preset": "nope", "border_width": 3, "text_on": "#ABCDEF"},
     ]
     for theme in load_themes().values():

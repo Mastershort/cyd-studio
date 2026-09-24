@@ -117,3 +117,19 @@ def page_show(ctx: Context, target: str, animation: str = "NONE") -> dict[str, A
     if animation == "NONE" or ctx.project["navigation"].get("transition") == "none":
         return {"lvgl.page.show": ctx.page_ids[target]}
     return {"lvgl.page.show": {"id": ctx.page_ids[target], "animation": animation, "time": "200ms"}}
+
+
+def ha_action(ctx: Context, service: str, target: str | None, data: dict[str, Any] | None) -> dict[str, Any]:
+    """``homeassistant.action`` call; data values must be strings for ESPHome."""
+    out: dict[str, Any] = {}
+    if target:
+        out["entity_id"] = ctx.ent(target)
+    for key in sorted((data or {}).keys()):
+        value = (data or {})[key]
+        if isinstance(value, bool):
+            value = "true" if value else "false"
+        out[str(key)] = str(value)
+    call: dict[str, Any] = {"action": service}
+    if out:
+        call["data"] = out
+    return {"homeassistant.action": call}

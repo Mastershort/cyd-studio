@@ -15,7 +15,9 @@ PRESETS_FILE = Path(__file__).parent.parent / "styles" / "tile_presets.json"
 COLOR_KEYS = ("bg", "bg_on", "border", "border_on", "text", "text_on", "sub", "sub_on",
               "icon", "icon_on", "circle_bg", "circle_bg_on")  # fmt: skip
 NUMBER_KEYS = ("bg_opa", "bg_opa_on", "border_width", "radius")
-TEXT_SIZES = ("s", "m", "l")
+TEXT_SIZES = ("xs", "s", "m", "l", "xl")
+ICON_SIZES = ("auto", "none", "s", "m", "l")
+WEIGHTS = ("normal", "bold")
 
 
 @lru_cache(maxsize=1)
@@ -57,9 +59,22 @@ def resolve_tile_style(
     out["circle"] = bool(merged.get("circle", False))
     size = str(merged.get("text_size", "s"))
     out["text_size"] = size if size in TEXT_SIZES else "s"
+    value_size = str(merged.get("value_size", "auto"))
+    out["value_size"] = value_size if value_size in TEXT_SIZES else "auto"
+    icon_size = str(merged.get("icon_size", "auto"))
+    out["icon_size"] = icon_size if icon_size in ICON_SIZES else "auto"
+    weight = str(merged.get("text_weight", "normal"))
+    out["text_weight"] = weight if weight in WEIGHTS else "normal"
     return out
 
 
 def layout_props(props: dict[str, Any], style: dict[str, Any]) -> dict[str, Any]:
-    """Props the layout needs from the resolved style (icon circle, text size)."""
-    return {**props, "icon_circle": style["circle"], "text_size": style["text_size"]}
+    """Props the layout needs from the resolved style (icon circle and size, text size and weight)."""
+    return {
+        **props,
+        "icon_circle": style["circle"],
+        "text_size": style["text_size"],
+        "value_size": style["value_size"],
+        "icon_size": style["icon_size"],
+        "text_weight": style["text_weight"],
+    }

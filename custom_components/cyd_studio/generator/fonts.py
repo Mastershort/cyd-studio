@@ -12,6 +12,7 @@ MDI_FONT_URL = (
     f"v{MDI_VERSION}/fonts/materialdesignicons-webfont.ttf"
 )
 TEXT_FONT = "gfonts://Montserrat@500"
+BOLD_FONT = "gfonts://Montserrat@700"
 CODEPOINTS_FILE = Path(__file__).parent.parent / "data" / "mdi_codepoints.json"
 COVERAGE_FILE = Path(__file__).parent.parent / "data" / "montserrat_coverage.json"
 
@@ -46,11 +47,16 @@ class FontCollector:
 
     def __init__(self) -> None:
         self.text: dict[int, set[str]] = {}
+        self.bold: set[int] = set()  # sizes that also need the bold font
         self.icons: dict[int, set[str]] = {}
         self.missing: set[str] = set()
 
-    def text_font(self, size: int, text: str = "") -> str:
-        """Register text of a given size; returns the font id."""
+    def text_font(self, size: int, text: str = "", bold: bool = False) -> str:
+        """Register text of a given size; returns the font id.
+
+        A bold font of a size carries every glyph registered for that size, so glyphs added
+        for dynamic texts (values, states) are always present in both weights.
+        """
         glyphs = self.text.setdefault(size, set())
         coverage = text_coverage()
         for ch in text:
@@ -60,6 +66,9 @@ class FontCollector:
                 glyphs.add(ch)
             else:
                 self.missing.add(ch)
+        if bold:
+            self.bold.add(size)
+            return f"font_{size}_b"
         return f"font_{size}"
 
     def icon_font(self, size: int, icon: str) -> tuple[str, str] | None:
@@ -84,6 +93,16 @@ class FontCollector:
                     "glyphs": [BASE_GLYPHS + extra],
                 }
             )
+            if size in self.bold:
+                fonts.append(
+                    {
+                        "file": BOLD_FONT,
+                        "id": f"font_{size}_b",
+                        "size": size,
+                        "bpp": 4,
+                        "glyphs": [BASE_GLYPHS + extra],
+                    }
+                )
         for size in sorted(self.icons):
             fonts.append(
                 {
@@ -101,7 +120,7 @@ class FontCollector:
         total = 0
         for size, extra in self.text.items():
             count = len(BASE_GLYPHS) + len(extra)
-            total += count * (size * size * 4 // 8 * 6 // 10 + 16)
+            total += count * (size * size * 4 // 8 * 6 // 10 + 16) * (2 if size in self.bold else 1)
         for size, glyphs in self.icons.items():
             total += len(glyphs) * (size * size * 4 // 8 + 16)
         return total

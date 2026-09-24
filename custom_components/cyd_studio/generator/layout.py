@@ -206,7 +206,33 @@ def widget_elements(
     font_sizes: dict[str, int] | None = None,
     icon_sizes: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
-    """Inner elements of a widget of size ``w`` x ``h`` (outer box, incl. padding)."""
+    """Inner elements of a widget of size ``w`` x ``h`` (outer box, incl. padding).
+
+    Style options: ``icon_size`` none hides the icon, s/m/l fixes its size (instead of the
+    automatic choice); ``text_weight`` bold makes the primary texts (color "text") bold.
+    """
+    icon_size = props.get("icon_size", "auto")
+    if icon_size == "none":
+        props = {**props, "icon": ""}
+    elif icon_size in ("s", "m", "l"):
+        base = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
+        icon_sizes = {**base, "s": base[icon_size], "m": base[icon_size]}
+    els = _widget_elements(wtype, w, h, props, font_sizes, icon_sizes)
+    if props.get("text_weight") == "bold":
+        for el in els:
+            if el["kind"] == "text" and el["color"] == "text":
+                el["bold"] = True
+    return els
+
+
+def _widget_elements(
+    wtype: str,
+    w: int,
+    h: int,
+    props: dict[str, Any],
+    font_sizes: dict[str, int] | None = None,
+    icon_sizes: dict[str, int] | None = None,
+) -> list[dict[str, Any]]:
     fs = {**DEFAULT_FONT_SIZES, **(font_sizes or {})}
     ics = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
     cw = max(w - 2 * TILE_PAD, 1)
@@ -226,7 +252,10 @@ def widget_elements(
         return el
 
     if wtype in ("toggle_tile", "binary_indicator", "sensor_value", "person_presence", "notification_area"):
-        main_size = fs["l"] if wtype == "sensor_value" else fs.get(str(props.get("text_size", "s")), fs["s"])
+        value_size = fs.get(str(props.get("value_size", "auto")))  # None = automatic
+        main_size = (
+            (value_size or fs["l"]) if wtype == "sensor_value" else fs.get(str(props.get("text_size", "s")), fs["s"])
+        )
         if wtype in ("person_presence", "notification_area"):
             wtype = "binary_indicator"  # same arrangement
         sub_size = fs["xs"]
@@ -234,7 +263,7 @@ def widget_elements(
         has_icon = bool(props.get("icon"))
         if tall:
             if wtype == "sensor_value":
-                big = fs["xl"] if ch >= ib(ics["s"]) + line_height(fs["xl"]) else fs["l"]
+                big = value_size or (fs["xl"] if ch >= ib(ics["s"]) + line_height(fs["xl"]) else fs["l"])
                 label_w = cw - (ib(ics["s"]) + ELEMENT_GAP if has_icon else 0)
                 els.append(_el("text", "label", "TOP_LEFT", 0, 0, sub_size, "text_muted", label_w))
                 if has_icon:

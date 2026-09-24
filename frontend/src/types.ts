@@ -30,6 +30,10 @@ export interface Widget {
   visible_if?: { entity?: string | null; op: string; value?: string }[];
   /** first matching rule recolors the widget (bg, border, text, icon) */
   style_rules?: { entity?: string | null; op: string; value?: string; bg?: string; border?: string; text?: string; icon?: string }[];
+  /** action builder (src/actions.ts): null/missing = built-in behavior, empty list = nothing */
+  tap?: { actions: import("./actions").ActionStep[] } | null;
+  long_press?: { actions: import("./actions").ActionStep[] } | null;
+  double_tap?: { actions: import("./actions").ActionStep[] } | null;
 }
 
 export interface Background {

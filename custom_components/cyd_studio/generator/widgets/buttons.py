@@ -6,7 +6,7 @@ from typing import Any
 
 from ..context import Context
 from ..layout import Rect
-from .common import box, elements, fallback_label, page_show, widget_id
+from .common import box, elements, fallback_label, ha_action, page_show, widget_id
 
 
 def _button(
@@ -31,20 +31,9 @@ def scene_button(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rec
     action = widget.get("action") or {}
     service = action.get("service", "")
     target = action.get("target")
-    data: dict[str, Any] = {}
-    if target:
-        data["entity_id"] = ctx.ent(target)
-    for key in sorted((action.get("data") or {}).keys()):
-        value = action["data"][key]
-        # homeassistant.action only accepts strings as data values
-        if isinstance(value, bool):
-            value = "true" if value else "false"
-        data[key] = str(value)
-    call: dict[str, Any] = {"action": service}
-    if data:
-        call["data"] = data
     text = props.get("label") or fallback_label(target) or service
-    return _button(ctx, wid, widget, rect, text, props.get("icon", ""), [{"homeassistant.action": call}])
+    call = ha_action(ctx, service, target, action.get("data"))
+    return _button(ctx, wid, widget, rect, text, props.get("icon", ""), [call])
 
 
 def page_button(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:

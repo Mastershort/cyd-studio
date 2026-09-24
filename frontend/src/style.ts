@@ -23,6 +23,9 @@ export interface TileStyle {
   radius: number;
   circle: boolean;
   text_size: string;
+  value_size: string;
+  icon_size: string;
+  text_weight: string;
 }
 
 type PresetData = { presets: Record<string, Record<string, unknown>>; role_defaults: Record<string, string> };
@@ -31,7 +34,9 @@ export const PRESETS = presetsData as unknown as PresetData;
 const COLOR_KEYS = ["bg", "bg_on", "border", "border_on", "text", "text_on", "sub", "sub_on",
   "icon", "icon_on", "circle_bg", "circle_bg_on"] as const;
 const NUMBER_KEYS = ["bg_opa", "bg_opa_on", "border_width", "radius"] as const;
-const TEXT_SIZES = ["s", "m", "l"];
+export const TEXT_SIZES = ["xs", "s", "m", "l", "xl"];
+export const ICON_SIZES = ["auto", "none", "s", "m", "l"];
+const WEIGHTS = ["normal", "bold"];
 
 function color(value: unknown, colors: Record<string, string>, roleDefaults: Record<string, string>): string {
   const text = String(value);
@@ -59,10 +64,19 @@ export function resolveTileStyle(theme: Theme, style: Record<string, unknown> | 
   out.circle = Boolean(merged.circle ?? false);
   const size = String(merged.text_size ?? "s");
   out.text_size = TEXT_SIZES.includes(size) ? size : "s";
+  const valueSize = String(merged.value_size ?? "auto");
+  out.value_size = TEXT_SIZES.includes(valueSize) ? valueSize : "auto";
+  const iconSize = String(merged.icon_size ?? "auto");
+  out.icon_size = ICON_SIZES.includes(iconSize) ? iconSize : "auto";
+  const weight = String(merged.text_weight ?? "normal");
+  out.text_weight = WEIGHTS.includes(weight) ? weight : "normal";
   return out as unknown as TileStyle;
 }
 
-/** Props the layout needs from the resolved style (icon circle, text size). */
+/** Props the layout needs from the resolved style (icon circle and size, text size and weight). */
 export function layoutProps(props: Record<string, unknown>, style: TileStyle): Record<string, unknown> {
-  return { ...props, icon_circle: style.circle, text_size: style.text_size };
+  return {
+    ...props, icon_circle: style.circle, text_size: style.text_size, value_size: style.value_size,
+    icon_size: style.icon_size, text_weight: style.text_weight,
+  };
 }

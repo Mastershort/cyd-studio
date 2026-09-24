@@ -246,6 +246,8 @@ export class CydScreen extends LitElement {
     return order.find((h) => x >= h.rect.x && x < h.rect.x + h.rect.w && y >= h.rect.y && y < h.rect.y + h.rect.h) ?? null;
   }
 
+  private lastTap: { id: string; kind: string; t: number } | null = null;
+
   private onCanvasDown(ev: PointerEvent) {
     if (this.mode !== "preview") return;
     const pt = this.toScreen(ev);
@@ -268,7 +270,12 @@ export class CydScreen extends LitElement {
     }
     const hit = this.hitAt(pt.x, pt.y);
     if (hit && start.hit && hit.id === start.hit.id && hit.kind === start.hit.kind) {
-      this.emit("preview-tap", { hit, long: Date.now() - start.t > 500, point: pt });
+      const now = Date.now();
+      const long = now - start.t > 500;
+      const last = this.lastTap;
+      const double = !long && !!last && last.id === hit.id && last.kind === hit.kind && now - last.t < 350;
+      this.lastTap = long || double ? null : { id: hit.id, kind: hit.kind, t: now };
+      this.emit("preview-tap", { hit, long, double, point: pt });
     }
   }
 

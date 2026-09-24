@@ -247,7 +247,7 @@ class Painter {
       ctx.fillText(glyph, pos.x, pos.y + Math.round((size * ICON_ASCENT_PER_MILLE) / 1000));
       return { x: pos.x, y: pos.y, w, h: size };
     }
-    ctx.font = textFont(el.size);
+    ctx.font = textFont(el.size, Boolean(el.bold));
     const lh = lineHeight(el.size);
     if (el.wrap && el.width) {
       // LVGL long_mode WRAP: break at spaces, clip at the element height

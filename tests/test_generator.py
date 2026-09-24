@@ -172,3 +172,19 @@ def test_templates_generate(studio_data: dict[str, Any]) -> None:
         }
         result = generate(project, studio_data)
         assert result.ok, (path.name, [i.message_en for i in result.issues])
+
+
+def test_action_builder(studio_data: dict[str, Any]) -> None:
+    """logic.json: own steps replace the built-in events; a double tap turns the tap into a single click."""
+    result = generate(golden("logic"), studio_data)
+    invalid = [i for i in result.issues if i.code == "action_step_invalid"]
+    assert len(invalid) == 1 and invalid[0].widget == "a"  # page "gibtsnicht"
+    doc = load(result.yaml)
+    home = next(p for p in doc["lvgl"]["pages"] if p["id"] == "page_home")
+    tiles = {next(iter(w.values()))["id"]: next(iter(w.values())) for w in home["widgets"]}
+    light = tiles["w_home_l"]
+    assert "on_single_click" in light and "on_short_click" not in light
+    assert light["on_double_click"][0]["homeassistant.action"]["action"] == "scene.turn_on"
+    sensor = tiles["w_home_t"]
+    assert [next(iter(a)) for a in sensor["on_short_click"]] == ["homeassistant.action", "delay", "lvgl.page.show"]
+    assert "clickable" not in sensor

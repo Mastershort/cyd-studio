@@ -7,6 +7,7 @@ import { navPages, pageGrid } from "../layout";
 import { PRESETS, resolveTileStyle } from "../style";
 import { fitImageFile, loadProjectImages } from "../images";
 import { OPS } from "../logic";
+import { STEP_TYPES, triggerSteps, type ActionStep, type Trigger } from "../actions";
 import {
   defaultProps, findFreeSpot, newWidgetId, normalize, overlapsAny, pageIdFrom, resolveBoard, rootOf, slugify,
 } from "../model";
@@ -24,6 +25,16 @@ import "../views/device-status";
 import type { Background, Board, Hass, HassEntity, Issue, Page, Project, PropDef, StudioInfo, Theme, Widget, WidgetDef } from "../types";
 
 const UNDO_LIMIT = 100;
+/** "brightness_pct=50, color_name=red" -> {brightness_pct: "50", color_name: "red"} */
+function parseData(text: string): Record<string, string> | undefined {
+  const out: Record<string, string> = {};
+  for (const part of text.split(",")) {
+    const [k, ...rest] = part.split("=");
+    if (k.trim() && rest.length) out[k.trim()] = rest.join("=").trim();
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 const ACTION_SERVICES: Record<string, string> = {
   scene: "scene.turn_on", script: "script.turn_on", button: "button.press", input_button: "input_button.press",
   automation: "automation.trigger",
@@ -355,9 +366,14 @@ export class CydEditor extends LitElement {
     };
   }
 
-  private onPreviewTap(ev: CustomEvent<{ hit: HitRegion; long: boolean; point: { x: number; y: number } }>) {
+  private tapTimer = 0;
+
+  private onPreviewTap(ev: CustomEvent<{ hit: HitRegion; long: boolean; double?: boolean; point: { x: number; y: number } }>) {
     const { hit, long, point } = ev.detail;
-    const project = this._project!;
+    if (!this._message && !this._overlay && hit.kind === "widget") {
+      const w = this.page?.widgets.find((x) => x.id === hit.id);
+      if (w && this.runTrigger(w, ev.detail)) return;
+    }
     if (this._message) {
       if (hit.kind === "overlay-close") this._message = null;
       return;
@@ -373,26 +389,95 @@ export class CydEditor extends LitElement {
     }
     if (long) {
       const w = this.page?.widgets.find((x) => x.id === hit.id);
-      const spec = w?.entity ? VALUE_ATTRIBUTES[w.entity.split(".")[0]] : undefined;
-      if (w && hit.kind === "widget" && w.type === "toggle_tile" && spec && (w.props.long_press ?? "slider") === "slider") {
-        const ent = this.stateResolver()(w.entity!);
-        const on = spec[1] === 2 || ent?.state === "on";
-        this._overlay = {
-          entity: w.entity!, kind: spec[1], title: String(w.props.label || ent?.attributes.friendly_name || w.entity),
-          value: on ? tileValuePercent(w.entity, ent) ?? 0 : 0,
-        };
-        const caps = lightCaps(ent);
-        if (spec[1] === 1 && (w.props.color_controls ?? true) && (caps.hasCt || caps.hasHs)) {
-          const hs = ent?.attributes.hs_color;
-          const kelvin = Number(ent?.attributes.color_temp_kelvin);
-          this._overlay.light = {
-            ...caps, ct: Number.isFinite(kelvin) && kelvin > 0 ? kelvin : 4000,
-            hue: Array.isArray(hs) ? Number(hs[0]) || 0 : 0,
-          };
-        }
-        return;
+      if (w && hit.kind === "widget" && this.openPopup(w)) return;
+    }
+    this.builtinTap(hit);
+  }
+
+  /**
+   * Action builder in the preview. Returns true when the event was handled (configured steps,
+   * or a tap held back to see whether a second tap follows).
+   */
+  private runTrigger(w: Widget, d: { long: boolean; double?: boolean }): boolean {
+    const hasDouble = triggerSteps(w, "double_tap") !== null;
+    if (d.double && hasDouble) {
+      window.clearTimeout(this.tapTimer);
+      this.runSteps(w, triggerSteps(w, "double_tap")!);
+      return true;
+    }
+    const trigger: Trigger = d.long ? "long_press" : "tap";
+    const steps = triggerSteps(w, trigger);
+    if (trigger === "tap" && hasDouble) {
+      // like the device (on_single_click): wait whether a second tap follows
+      window.clearTimeout(this.tapTimer);
+      this.tapTimer = window.setTimeout(() => {
+        if (steps !== null) this.runSteps(w, steps);
+        else this.builtinTap({ kind: "widget", id: w.id, rect: { x: 0, y: 0, w: 0, h: 0 } });
+      }, 350);
+      return true;
+    }
+    if (steps === null) return false;
+    this.runSteps(w, steps);
+    return true;
+  }
+
+  private async runSteps(w: Widget, steps: ActionStep[]) {
+    const project = this._project!;
+    const real = this._realActions && this.info?.preview_real_actions;
+    const home = project.navigation?.home_page || project.pages[0].id;
+    for (const s of steps) {
+      if (s.type === "toggle") {
+        const entity = s.entity || w.entity;
+        if (!entity) continue;
+        const cur = this.stateResolver()(entity)?.state;
+        const domain = entity.split(".")[0];
+        const next = isOn(cur) ? (domain === "cover" ? "closed" : "off") : (domain === "cover" ? "open" : "on");
+        this._sim = { ...this._sim, [entity]: next };
+        if (real) void this.hass.callService("homeassistant", "toggle", { entity_id: entity });
+      } else if (s.type === "service" && s.service && real) {
+        const [domain, service] = s.service.split(".");
+        void this.hass.callService(domain, service, { ...(s.data ?? {}), ...(s.target ? { entity_id: s.target } : {}) });
+      } else if (s.type === "page" && s.page && project.pages.some((p) => p.id === s.page)) {
+        this._pageId = s.page;
+      } else if (s.type === "back") {
+        this._pageId = this.page?.parent || home;
+      } else if (s.type === "home") {
+        this._pageId = home;
+      } else if (s.type === "popup") {
+        this.openPopup(w);
+      } else if (s.type === "delay" && s.ms) {
+        await new Promise((r) => window.setTimeout(r, Math.min(s.ms!, 60000)));
       }
     }
+  }
+
+  /** The widget's own popup (long press slider / light popup); false if it has none. */
+  private openPopup(w: Widget): boolean {
+    const spec = w.entity ? VALUE_ATTRIBUTES[w.entity.split(".")[0]] : undefined;
+    if (w.type === "toggle_tile" && spec && (w.props.long_press ?? "slider") === "slider") {
+      const ent = this.stateResolver()(w.entity!);
+      const on = spec[1] === 2 || ent?.state === "on";
+      this._overlay = {
+        entity: w.entity!, kind: spec[1], title: String(w.props.label || ent?.attributes.friendly_name || w.entity),
+        value: on ? tileValuePercent(w.entity, ent) ?? 0 : 0,
+      };
+      const caps = lightCaps(ent);
+      if (spec[1] === 1 && (w.props.color_controls ?? true) && (caps.hasCt || caps.hasHs)) {
+        const hs = ent?.attributes.hs_color;
+        const kelvin = Number(ent?.attributes.color_temp_kelvin);
+        this._overlay.light = {
+          ...caps, ct: Number.isFinite(kelvin) && kelvin > 0 ? kelvin : 4000,
+          hue: Array.isArray(hs) ? Number(hs[0]) || 0 : 0,
+        };
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /** Built-in tap behavior of widgets, tabs and the back button. */
+  private builtinTap(hit: HitRegion) {
+    const project = this._project!;
     if (hit.kind === "tab" || hit.kind === "back") {
       this._pageId = hit.id;
       return;
@@ -518,6 +603,13 @@ export class CydEditor extends LitElement {
     .danger { color: var(--error-color, #ef4444); }
     .crow { display: flex; gap: 4px; align-items: center; }
     .muted { font-size: 12px; color: var(--secondary-text-color); }
+    h4 { margin: 12px 0 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--secondary-text-color); }
+    .trigger { border: 1px solid var(--divider-color); border-radius: 8px; padding: 6px; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; }
+    .trigger > .crow b { flex: 1; font-size: 13px; }
+    .step { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 6px; background: var(--secondary-background-color, rgba(127,127,127,.08)); }
+    .step select, .step input[type=text], .step input[type=number], .trigger select { padding: 5px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font: inherit; min-width: 0; }
+    .step .crow select { flex: 1; }
+    .stepno { width: 18px; height: 18px; border-radius: 9px; background: var(--primary-color); color: var(--text-primary-color, #fff); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
     .cond, .rule { border: 1px solid var(--divider-color); border-radius: 8px; padding: 6px; margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
     .rule .cond { border: 0; padding: 0; margin: 0; }
     .cond select, .cond input[type=text] { padding: 5px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font: inherit; min-width: 0; flex: 1; }
@@ -744,6 +836,7 @@ export class CydEditor extends LitElement {
         ${this.text(t("action_service"), w.action?.service, (v) => set((x) => { x.action = { ...(x.action ?? { service: "" }), service: v.trim() }; }))}` : nothing}
       ${def?.props.filter((d) => !d.min_count || Number(w.props.count ?? 4) >= d.min_count).map(prop)}
       ${this.renderAppearance(w)}
+      ${this.renderActions(w)}
       ${this.renderConditions(w)}
       ${this.renderRules(w)}
       <h3>${t("position")}</h3>
@@ -799,6 +892,71 @@ export class CydEditor extends LitElement {
             : html`<button @click=${choose}>${t("bg_choose")}</button>`}
         </div>
       </div>`;
+  }
+
+  /** Action builder: per trigger built-in / nothing / own steps. */
+  private renderActions(w: Widget) {
+    const p = this._project!;
+    const services = Object.entries((this.hass as unknown as { services?: Record<string, Record<string, unknown>> })?.services ?? {})
+      .flatMap(([d, list]) => Object.keys(list).map((s) => `${d}.${s}`)).sort();
+    const pages: [string, string][] = p.pages.map((pg) => [pg.id, pg.name]);
+    const trigger = (tr: Trigger) => {
+      const steps = triggerSteps(w, tr);
+      const setSteps = (next: ActionStep[] | null) => this.editWidget(w.id, (x) => {
+        if (next === null) delete x[tr];
+        else x[tr] = { actions: next };
+      });
+      const mode = steps === null ? "default" : steps.length ? "custom" : "none";
+      const upd = (i: number, patchStep: Partial<ActionStep>) => setSteps(steps!.map((s, j) => (j === i ? { ...s, ...patchStep } : s)));
+      const move = (i: number, d: number) => {
+        const next = [...steps!];
+        const [x] = next.splice(i, 1);
+        next.splice(Math.max(0, Math.min(next.length, i + d)), 0, x);
+        setSteps(next);
+      };
+      const stepRow = (s: ActionStep, i: number) => html`<div class="step">
+        <div class="crow">
+          <span class="stepno">${i + 1}</span>
+          <select @change=${(e: Event) => upd(i, { type: (e.target as HTMLSelectElement).value as ActionStep["type"] })}>
+            ${STEP_TYPES.map((st) => html`<option value=${st} ?selected=${s.type === st}>${t(`step_${st}` as "step_toggle")}</option>`)}</select>
+          <button class="small" title="↑" ?disabled=${i === 0} @click=${() => move(i, -1)}>↑</button>
+          <button class="small" title="↓" ?disabled=${i === steps!.length - 1} @click=${() => move(i, 1)}>↓</button>
+          <button class="small danger" @click=${() => setSteps(steps!.filter((_, j) => j !== i))}>✕</button>
+        </div>
+        ${s.type === "toggle" ? html`<cyd-entity-picker .hass=${this.hass} .value=${s.entity ?? null} .domains=${[]}
+            @value-changed=${(e: CustomEvent<{ value: string }>) => upd(i, { entity: e.detail.value })}></cyd-entity-picker>
+          ${!s.entity ? html`<span class="muted">${t("this_entity")}</span>` : nothing}` : nothing}
+        ${s.type === "service" ? html`
+          <input type="text" list="cyd-services" placeholder="light.turn_on" .value=${s.service ?? ""}
+            @change=${(e: Event) => upd(i, { service: (e.target as HTMLInputElement).value.trim() })} />
+          <cyd-entity-picker .hass=${this.hass} .value=${s.target ?? null} .domains=${[]}
+            @value-changed=${(e: CustomEvent<{ value: string }>) => upd(i, { target: e.detail.value })}></cyd-entity-picker>
+          <input type="text" placeholder=${t("step_data_hint")} .value=${s.data ? Object.entries(s.data).map(([k, v]) => `${k}=${String(v)}`).join(", ") : ""}
+            @change=${(e: Event) => upd(i, { data: parseData((e.target as HTMLInputElement).value) })} />` : nothing}
+        ${s.type === "page" ? html`<select @change=${(e: Event) => upd(i, { page: (e.target as HTMLSelectElement).value })}>
+            <option value="">– ${t("none")} –</option>
+            ${pages.map(([id, name]) => html`<option value=${id} ?selected=${s.page === id}>${name}</option>`)}</select>` : nothing}
+        ${s.type === "delay" ? html`<input type="number" min="0" max="60000" step="100" .value=${String(s.ms ?? 500)}
+            @change=${(e: Event) => upd(i, { ms: Number((e.target as HTMLInputElement).value) || 0 })} /> ms` : nothing}
+      </div>`;
+      return html`<div class="trigger">
+        <div class="crow"><b>${t(`trigger_${tr}` as "trigger_tap")}</b>
+          <select @change=${(e: Event) => {
+            const v = (e.target as HTMLSelectElement).value;
+            setSteps(v === "default" ? null : v === "none" ? [] : [{ type: w.entity ? "toggle" : "page" }]);
+          }}>
+            <option value="default" ?selected=${mode === "default"}>${t("trigger_default")}</option>
+            <option value="none" ?selected=${mode === "none"}>${t("trigger_none")}</option>
+            <option value="custom" ?selected=${mode === "custom"}>${t("trigger_custom")}</option>
+          </select></div>
+        ${steps?.map(stepRow)}
+        ${mode === "custom" ? html`<button class="small" @click=${() => setSteps([...steps!, { type: "delay", ms: 500 }])}>+ ${t("add_step")}</button>` : nothing}
+      </div>`;
+    };
+    return html`<h3>${t("actions")}</h3>
+      <div class="muted">${t("actions_hint")}</div>
+      <datalist id="cyd-services">${services.map((s) => html`<option value=${s}></option>`)}</datalist>
+      ${trigger("tap")}${trigger("long_press")}${trigger("double_tap")}`;
   }
 
   private opOptions(): [string, string][] {
@@ -885,10 +1043,16 @@ export class CydEditor extends LitElement {
       <div class="row2">${color("text", t("color_text"))}${color("icon_on", t("color_icon"))}</div>
       ${w.type === "toggle_tile" ? html`<div class="row2">${color("text_on", t("color_text_on"))}${color("icon", t("color_icon_off"))}</div>` : nothing}
       ${isTile ? html`${range("bg_opa", t("opacity"), 100)}${range("radius", t("corners"), 40)}${range("border_width", t("border_width"), 4)}` : nothing}
+      <h4>${t("icon_and_font")}</h4>
       <div class="row2">
+        ${this.select(t("icon_size"), resolved.icon_size, [["auto", t("auto")], ["none", t("icon_hidden")], ["s", "S"], ["m", "M"], ["l", "L"]], (v) => set("icon_size", v === "auto" ? null : v))}
         ${this.check(t("icon_circle"), resolved.circle, (v) => set("circle", v))}
-        ${this.select(t("text_size"), resolved.text_size, [["s", "S"], ["m", "M"], ["l", "L"]], (v) => set("text_size", v))}
       </div>
+      <div class="row2">
+        ${this.select(t("text_size"), resolved.text_size, [["xs", "XS"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"]], (v) => set("text_size", v))}
+        ${this.select(t("text_weight"), resolved.text_weight, [["normal", t("weight_normal")], ["bold", t("weight_bold")]], (v) => set("text_weight", v === "normal" ? null : v))}
+      </div>
+      ${w.type === "sensor_value" ? this.select(t("value_size"), resolved.value_size, [["auto", t("auto")], ["xs", "XS"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"]], (v) => set("value_size", v === "auto" ? null : v)) : nothing}
       <div class="row2">
         <button @click=${() => this.editPage((pg) => { for (const x of pg.widgets) if (x.id !== w.id) x.style = { ...(w.style ?? {}) }; })}>${t("style_to_page")}</button>
         <button @click=${() => this.mutate((pp) => {

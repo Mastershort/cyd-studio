@@ -96,6 +96,26 @@ Kachel mit einer Zeile aufruft. Beschriftungen teilen sich LVGL-Styles (`cyd_tex
 Globale Elemente (im `top_layer`): Kopfzeile mit Seitentitel (+ Zurück-Pfeil auf Unterseiten),
 Uhr, Text; Tab-Leiste mit Icon/Beschriftung je Hauptseite.
 
+## Aktionen-Baukasten (ab 0.10)
+
+Jedes Widget kann für `tap`, `long_press` und `double_tap` eigene Schritte bekommen:
+`{"actions": [...]}`. Fehlt der Schlüssel (oder `null`), bleibt das eingebaute Verhalten
+(z. B. Umschalten, Regler-Popup); eine leere Liste schaltet den Auslöser ab.
+
+| Schritt | Wirkung auf dem Gerät |
+|---|---|
+| `{"type": "toggle", "entity": …}` | `homeassistant.toggle` (ohne Entität: die des Widgets) |
+| `{"type": "service", "service": "light.turn_on", "target": …, "data": {…}}` | `homeassistant.action` (Daten als Text) |
+| `{"type": "page", "page": "<id>"}`, `back`, `home` | Seitenwechsel (zurück = Eltern-Seite, sonst Startseite) |
+| `{"type": "popup"}` | das eigene Popup des Widgets (Regler/Licht-Popup bei Schalter-Kacheln) |
+| `{"type": "delay", "ms": 500}` | Pause (max. 60 s) |
+
+LVGL-Ereignisse: Tippen `on_short_click`, lange drücken `on_long_press`, doppelt tippen
+`on_double_click`. Ist Doppeltippen belegt, wird Tippen zu `on_single_click` – es wartet also kurz,
+ob ein zweites Tippen folgt, und löst nicht doppelt aus. Ungültige Schritte (fehlende Entität,
+falscher Dienst, gelöschte Seite) werden übersprungen und im Editor gewarnt. Die Vorschau führt die
+Schritte ebenfalls aus (HA-Aktionen nur mit „Aktionen wirklich ausführen“).
+
 ## Aussehen (ab 0.3)
 
 Jedes Widget hat ein optionales `style`-Objekt, das Projekt ein `tile_style`. Reihenfolge:
@@ -111,7 +131,10 @@ Theme-Standard (`default_tile_style`) < Projekt-Stil < Widget-Stil. Die Vorlagen
 | `text`, `text_on`, `sub`, `sub_on` | Farbe von Name und Zustand/Beschriftung aus/an |
 | `icon`, `icon_on` | Icon-Farbe aus/an |
 | `circle`, `circle_bg`, `circle_bg_on` | Icon im runden Hintergrund und dessen Farben |
-| `text_size` | `s`, `m`, `l` für den Namen |
+| `text_size` | `xs`, `s`, `m`, `l`, `xl` für den Namen (ab 0.10: auch `xs`/`xl`) |
+| `value_size` | Sensor-Wert: `auto` oder `xs` … `xl` (ab 0.10) |
+| `icon_size` | `auto`, `none` (Icon ausblenden), `s`, `m`, `l` (ab 0.10) |
+| `text_weight` | `normal` oder `bold` – fett sind die Haupttexte (Farbrolle „text“), ab 0.10 |
 
 `resolve_tile_style()` (Python) und `resolveTileStyle()` (TypeScript) liefern für alle Themes und
 Beispiel-Überschreibungen identische Werte (`styles` in `tests/layout_cases.json`). Auf dem Gerät

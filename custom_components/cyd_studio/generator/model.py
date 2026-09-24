@@ -133,6 +133,45 @@ def safe_id(text: str) -> str:
     return s or "x"
 
 
+# Action builder (generator/actions.py): triggers and step types
+TRIGGERS = ("tap", "long_press", "double_tap")
+STEP_TYPES = ("toggle", "service", "page", "back", "home", "popup", "delay")
+
+
+STEP_PROBLEMS = {
+    "entity": ("Aktion ohne gültige Entität", "action without a valid entity"),
+    "service": (
+        "Aktion ohne gültigen Dienst (z. B. light.turn_on)",
+        "action without a valid service (e.g. light.turn_on)",
+    ),
+    "page": ("Aktion zeigt auf eine Seite, die es nicht gibt", "action points to a page that does not exist"),
+}
+
+
+def trigger_steps(widget: dict[str, Any], trigger: str) -> list[dict[str, Any]] | None:
+    """Configured steps of a trigger, or None for the built-in behavior."""
+    conf = widget.get(trigger)
+    if not isinstance(conf, dict) or not isinstance(conf.get("actions"), list):
+        return None
+    return [s for s in conf["actions"] if isinstance(s, dict) and s.get("type") in STEP_TYPES]
+
+
+def step_problem(project: dict[str, Any], widget: dict[str, Any], step: dict[str, Any]) -> str | None:
+    """Why a step cannot be generated (None = fine). Keys match the model warnings."""
+    kind = step.get("type")
+    if kind == "toggle":
+        entity = step.get("entity") or widget.get("entity")
+        return None if entity and ENTITY_ID_RE.match(str(entity)) else "entity"
+    if kind == "service":
+        if not ACTION_RE.match(str(step.get("service") or "")):
+            return "service"
+        target = step.get("target")
+        return "entity" if target and not ENTITY_ID_RE.match(str(target)) else None
+    if kind == "page":
+        return None if any(p["id"] == step.get("page") for p in project["pages"]) else "page"
+    return None
+
+
 CONDITION_OPS = ("eq", "ne", "on", "off", "gt", "lt")
 
 
@@ -355,6 +394,13 @@ def validate(
                         "und wird ignoriert.",
                         f"\"{label}\": a condition/rule is incomplete (entity, comparison, number) and is ignored.",
                         pid, wid)  # fmt: skip
+            for trigger in TRIGGERS:
+                for step in trigger_steps(widget, trigger) or []:
+                    problem = step_problem(project, widget, step)
+                    if problem:
+                        de, en = STEP_PROBLEMS[problem]
+                        add("warning", "action_step_invalid", f"„{label}“: {de} – dieser Schritt wird übersprungen.",
+                            f"\"{label}\": {en} – this step is skipped.", pid, wid)  # fmt: skip
             for pdef in wdef.get("props", []):
                 value = widget.get("props", {}).get(pdef["key"])
                 if pdef.get("type") == "entity" and value and not ENTITY_ID_RE.match(str(value)):

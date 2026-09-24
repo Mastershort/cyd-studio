@@ -21,7 +21,9 @@ substitutions:
   ent_binary_sensor_nacht: binary_sensor.nacht
   ent_light_flur: light.flur
   ent_person_anna: person.anna
+  ent_scene_abend: scene.abend
   ent_script_gute_nacht: script.gute_nacht
+  ent_script_klingel: script.klingel
   ent_sensor_lux: sensor.lux
   ent_sensor_temp: sensor.temp
 
@@ -59,6 +61,12 @@ api:
                 return page == "Regeln" || page == "home";
             then:
               - lvgl.page.show: page_home
+        - if:
+            condition:
+              lambda: !lambda |-
+                return page == "Detail" || page == "detail";
+            then:
+              - lvgl.page.show: page_detail
     - action: show_message
       variables:
         title: string
@@ -429,7 +437,7 @@ font:
     size: 20
     bpp: 4
     glyphs:
-      - "\U000F009F\U000F00DF\U000F0156\U000F03D8\U000F050F"
+      - "\U000F009F\U000F00DF\U000F0141\U000F0156\U000F03D8\U000F050F"
   - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
     id: icons_28
     size: 28
@@ -549,11 +557,19 @@ script:
     then:
       - lambda: !lambda |-
           id(cyd_page) = page;
+      - if:
+          condition:
+            lambda: !lambda |-
+              return page == 1;
+          then:
+            - lvgl.widget.show: cyd_back
+          else:
+            - lvgl.widget.hide: cyd_back
       - lvgl.label.update:
           id: cyd_title
           text: !lambda |-
-            static const char *const names[] = {"Regeln"};
-            if (page < 0 || page >= 1) return std::string("");
+            static const char *const names[] = {"Regeln", "Detail"};
+            if (page < 0 || page >= 2) return std::string("");
             return std::string(names[page]);
 
 lvgl:
@@ -640,22 +656,22 @@ lvgl:
       text_color: 0xE6EDF3
       text_align: CENTER
     - id: cyd_text_8
+      text_font: icons_20
+      text_color: 0x22D3EE
+    - id: cyd_text_9
       text_font: font_16
       text_color: 0xE6EDF3
-    - id: cyd_text_9
+    - id: cyd_text_10
       text_font: icons_20
       text_color: 0x8B98A5
-    - id: cyd_text_10
+    - id: cyd_text_11
       text_font: font_28
       text_color: 0xE6EDF3
       text_align: CENTER
-    - id: cyd_text_11
+    - id: cyd_text_12
       text_font: font_14
       text_color: 0xE6EDF3
       text_align: RIGHT
-    - id: cyd_text_12
-      text_font: icons_20
-      text_color: 0x22D3EE
     - id: cyd_text_13
       text_font: font_14
       text_color: 0x8B98A5
@@ -710,8 +726,25 @@ lvgl:
           clickable: false
           widgets:
             - label:
+                id: cyd_back
+                align: LEFT_MID
+                styles: cyd_text_8
+                text: "\U000F0141"
+                hidden: true
+                on_short_click:
+                  - if:
+                      condition:
+                        lambda: !lambda |-
+                          return id(cyd_page) == 1;
+                      then:
+                        - lvgl.page.show:
+                            id: page_home
+                            animation: MOVE_RIGHT
+                            time: 200ms
+            - label:
                 id: cyd_title
                 align: LEFT_MID
+                x: 26
                 styles: cyd_text_5
                 text: Regeln
             - label:
@@ -749,12 +782,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 202
                       long_mode: DOT
-                      styles: cyd_text_8
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_ov_close
                       align: TOP_RIGHT
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_overlay
@@ -764,7 +797,7 @@ lvgl:
                       y: -9
                       width: 228
                       long_mode: DOT
-                      styles: cyd_text_10
+                      styles: cyd_text_11
                       text: ""
                   - slider:
                       id: cyd_ov_slider
@@ -859,12 +892,12 @@ lvgl:
                       align: TOP_LEFT
                       width: 222
                       long_mode: DOT
-                      styles: cyd_text_8
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_li_close
                       align: TOP_RIGHT
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F0156"
                       on_short_click:
                         - lvgl.widget.hide: cyd_light
@@ -872,7 +905,7 @@ lvgl:
                       id: cyd_li_brightness_icon
                       align: TOP_LEFT
                       y: 38
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F00DF"
                   - slider:
                       id: cyd_li_brightness
@@ -914,13 +947,13 @@ lvgl:
                       y: 39
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: ""
                   - label:
                       id: cyd_li_ct_icon
                       align: TOP_LEFT
                       y: 82
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F050F"
                   - slider:
                       id: cyd_li_ct
@@ -962,13 +995,13 @@ lvgl:
                       y: 83
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: ""
                   - label:
                       id: cyd_li_hue_icon
                       align: TOP_LEFT
                       y: 126
-                      styles: cyd_text_9
+                      styles: cyd_text_10
                       text: "\U000F03D8"
                   - slider:
                       id: cyd_li_hue
@@ -1015,7 +1048,7 @@ lvgl:
                       y: 127
                       width: 56
                       long_mode: DOT
-                      styles: cyd_text_11
+                      styles: cyd_text_12
                       text: ""
       - obj:
           id: cyd_msg
@@ -1047,7 +1080,7 @@ lvgl:
                 widgets:
                   - label:
                       align: TOP_LEFT
-                      styles: cyd_text_12
+                      styles: cyd_text_8
                       text: "\U000F009F"
                   - label:
                       id: cyd_msg_title
@@ -1055,7 +1088,7 @@ lvgl:
                       x: 26
                       width: 222
                       long_mode: DOT
-                      styles: cyd_text_8
+                      styles: cyd_text_9
                       text: ""
                   - label:
                       id: cyd_msg_text
@@ -1085,7 +1118,16 @@ lvgl:
             height: 60
             styles: cyd_tile
             scrollable: false
-            clickable: false
+            on_short_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_flur}"
+              - delay: 300ms
+              - lvgl.page.show:
+                  id: page_detail
+                  animation: MOVE_LEFT
+                  time: 200ms
             widgets:
               - label:
                   align: LEFT_MID
@@ -1113,11 +1155,6 @@ lvgl:
             width: 148
             height: 60
             scrollable: false
-            on_short_click:
-              - homeassistant.action:
-                  action: homeassistant.toggle
-                  data:
-                    entity_id: "${ent_light_flur}"
             on_long_press:
               - if:
                   condition:
@@ -1144,6 +1181,16 @@ lvgl:
                         kind: 1
                         value: !lambda |-
                           return id(cyd_percent)(id(ha_light_flur).state, id(ha_light_flur_brightness_num).state, 1);
+            on_double_click:
+              - homeassistant.action:
+                  action: scene.turn_on
+                  data:
+                    entity_id: "${ent_scene_abend}"
+            on_single_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: "${ent_light_flur}"
             widgets:
               - label:
                   id: w_home_l_icon
@@ -1174,7 +1221,16 @@ lvgl:
             height: 60
             styles: cyd_tile
             scrollable: false
-            clickable: false
+            on_long_press:
+              - homeassistant.action:
+                  action: script.turn_on
+                  data:
+                    entity_id: "${ent_script_klingel}"
+                    variables: x
+              - lvgl.page.show:
+                  id: page_home
+                  animation: MOVE_RIGHT
+                  time: 200ms
             widgets:
               - label:
                   id: w_home_a_icon
@@ -1238,25 +1294,64 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_7
                   text: "Niemand zu Hause"
-# cyd_studio_checksum: ae0deacc1ff74042
+    - id: page_detail
+      skip: true
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 1
+            root: 0
+      on_swipe_right:
+        - lvgl.page.show:
+            id: page_home
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_detail_b
+            x: 8
+            y: 36
+            width: 148
+            height: 60
+            styles: cyd_plain
+            scrollable: false
+            on_short_click:
+              - lvgl.page.show:
+                  id: page_home
+                  animation: MOVE_RIGHT
+                  time: 200ms
+            widgets:
+              - label:
+                  align: CENTER
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_7
+                  text: "Zurück"
+# cyd_studio_checksum: 981ecb1b75a33dd4
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
-# cyd_studio_project: H4sIAAAAAAAC/5VWS47jNhC9SoPZ2oYsuxuOtgGSrGYxmN1gQJSkkkw0RTIkZben4TvNGXKyVFEf
-#   y/1ZZDbjZrGK77366VWUFnwtCoHB7fJ1vt/lIcsPXqwGizyBV2CiKEyv9UrUeFIVSgMdklN1qdfa
-#   tqqi6622JWhRvIrG2oief6GBUiOFb0AHXIkjqvZIsXZPK3FWdYsxiOL7jytboH7jE32/cMkPS5dX
-#   AVq1hiBobCK9Hi+OATloUUYVNYrr6nbJpxjzrUrb6llcf1zp4darmp+trKbAezoAJwp6zEFdK9Om
-#   396eybij63xZtFbXaGbmHUbgEL2rITJykWf50zr7neQkGGIU6yu2qI3gv0+qhaisYa+j7VAybrrC
-#   v+lCONqzVJU1YVIhnWgoUd+O4kWzj7Em+ZwVcxtsEcoSvHQ2qOEZSmaMtmMJPJj5NGhVs/PZg5Pg
-#   bW+mXBFs6xWaOOIUGkwdKnB8ndEOWWD1pD2h9xxorBFGTh5drYpGaS6FUbeRnjJyKcEAWcPF9pHF
-#   5YS8F82Bx1sZJj2mmhk5qw4pggzTnWW1kKuKF2aMJli/idg5CnoUxXbExuXhvHWBc7JgEI/oO8I9
-#   0EgpIMs38kcPsefD3igG/u+vPzjbKS/S93qUqLQ+oRS/YbOnf2IW6HZgHRNPFYov8c50At2zEPlj
-#   qujJdXco6+Ywueql62yaXLcHqvW5+AcF5GAklai1VuJFFNlKkEAZPzKrpblvNo1ONBdi6U/ESvfL
-#   XpcLqf5k7490aRnsFrflnq/Pb5bKgL/IMVEGqtS5iSa9syASbdtq7nZ9xyP/gMd9zIb+G9K5oASf
-#   UDorU9vz2jo0S1JjiE957R8zyOBj4CMaCqwqiNa/z8I2Da9qGhEBPU9dTl7llYsbqjsjLQOK4KnI
-#   b5a2jzydWbTrTdShIRZs28/YInDBr804MCe+f1HYhy9T2KmSKjQoy54mC0M5qaBockvV3LccNUqw
-#   ZgPGzHrgP4vyTFPhLl1jnnT/clfgk8NjltR8k/HtMsQ7wucl4aB+cpzu1jRfFHY04B5+9g9/Qx9w
-#   wXKQ4H/RSwP5nt6Ad7/IcU77h06ddb1LW5BKqToSjAQ6YIy0fRJccEo+48yqTNvMYAiyBiaeZXeH
-#   ZlyYj/O2Hiop3Eatafth4aTpnxxkZ3mCv5Ww8bQ1aPrkRZal0U2zPs77PNjep7q0TcNiHj3SZNYk
-#   eL6hFR8tmbKnYpexnh5T2aZ9Bw11D4/qHWH3bSnTxn//wZDmfKAl1IfbYqJSR6oQOA0fDFOfiFpx
-#   RufQT9nqTbwrL4VGDZpKOtIl0IfAKAulnSYExY6jUvx5QN2Q9lAH3O8Ex0dS3T+L0TQvP87U9fof
-#   WNb+o1AJAAA=
+# cyd_studio_project: H4sIAAAAAAAC/51Wy27rNhD9lQt26wSy4wSpty3aru6i6KpFQIykkUyEIlWSsuMb+J/6AV21P9YZ
+#   ipLpR1rcZhOZwxnOnDOvd1FacLXYCPT9w+putX5Y+WL17MRilMgdOAUmiI0ZtF6IGneqQmmgQ1Kq
+#   DvWdtq2q6HqrbQlabN5FY21Ax19ooNRI5hvQHhdii6rdkq2Hp4XYq7rF4MXmt5cjS6C+0AluyFRW
+#   z7nKuwCtWkMuaGwCvR4OPTvUQ4syqKBRHBenSy7amG9V2lav4vhypIdbp2p+trKaDK/pAHqxocd6
+#   qGtl2vjt7J6ED3SdL4vW6hrNHHmHAdjE0NcQ2HOxKlZPd8W3BCe5IRJYP2OL2gj+vVMtBGUNa21t
+#   h5L9piv8TRf81u6lqqzxEwrxREOJ+nQUDpp1jDVRZ684tlEWoCzByd56NT5DZIZgO4bAgZlPvVY1
+#   K+8d9BKcHczEFbltnUITkp9Cg6l9BT1fZ29HFhg9aXfoHBtKOcKek0ZXq02jNKdCwi2Fp4zMIRhd
+#   1nCwQ2BwmZBr0HpweErDiMeUMylm1SFZkH66k2cLqapw4IjReOvuA3Y9Gd2KzTL5xunRO9t75iSL
+#   IGzRdeT3GEakgCS/kD46CAMfDkax43/98R2zHXmRbtAJotK66KX4Bps1/YkZoNOB7TnwmKH4Fs5E
+#   O9ADA7F6jBk9qT48l3XzPKnqXHUWTarLZ8p1ToqeY4OKYb+ARXOB3Dc6xpOqJNi2TXXUcfYXxSyq
+#   keiKkpS4NZWA0ud1yAU2H4y4y9El4oYKeiHexIZs0vsFm6rtQIUvb7jp0XHXYTMVGrwn2I20nBUB
+#   HHE8C4gdU4vs0VEvOnI71iwD2H1tTSt7h95f+jAFZvuhHw3eypZouxx0meXKD/zSrcRoma0lLss1
+#   X5/9K5UBd5ApUw1UsXVFnumdyGROELU7fQbp6gTpBzYb+jfmcxY+/Gv41Nlij4vjoIwh0FscVcaN
+#   U324TU6UvGrqp6hv8LOY8Y0tIkusVpXBG1Vtw63kukXBXpna7u9sjyYnIYX8IQ/rxwIKuA10Qo8M
+#   qwqCddcJvIzTppp6+leA0g6BxykHmCXp2MEydtoP2tMegTvUnUkTbor3RzL76fNkdsKbi0SWA40C
+#   dmWnvOKKU815M6DO5q25B2NmPPD3rJ/MHF12VT28nXWkSeGxiGheZOgyN3EV8D4P2KsvbKc7dbnP
+#   CjuaSJ++DJ9+gsFjFuUIwVeFFyfoeXijv+uM4xWn3H+PPGUa67pxtqVY5u54MfnSVvTB6Pt+0ppG
+#   39l68D+G3xXGZY5xAvbXwf39J29HNwfGVBAw7k9XmF/19RcGMjbNuOmR89WWmIs+eAyBOsLYa3ol
+#   X3F2sowbm6FGJGvgXOHhkx2atBQ+zhvp7OW0Tph2mGYTY8oKsrNM2SUijaPNiCbsalMUkSQiN8zs
+#   eDu4WMq2aTj/ttQet7QA0uv3tMYGS6LiicYjQ+YwVnrc6aChhiPj5CRBW8q41V4vxZFOT4vW4E/L
+#   F3UHpKKC3bgUT61F1IqLYDb9VCwu7B2Z+0aNmEo60pGsBAtVCg0Bsh0SUrwCUwOJCdcBt0hyxwVC
+#   3b2KJJqznZk6Hv8BRYWxKjQMAAA=

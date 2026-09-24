@@ -51,7 +51,9 @@
             "icon": "mdi:floor-lamp"
           },
           "style": {
-            "text_size": "m"
+            "text_size": "m",
+            "text_weight": "bold",
+            "icon_size": "none"
           }
         },
         {
@@ -90,7 +92,9 @@
             "preset": "glass",
             "bg": "#0a84ff",
             "bg_opa": 35,
-            "circle": true
+            "circle": true,
+            "value_size": "l",
+            "text_weight": "bold"
           }
         },
         {
@@ -113,7 +117,8 @@
             "bg": "#5e5ce6",
             "text": "#ffffff",
             "icon_on": "#ffffff",
-            "text_size": "l"
+            "text_size": "l",
+            "icon_size": "s"
           }
         },
         {

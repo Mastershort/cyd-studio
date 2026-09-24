@@ -51,7 +51,23 @@
               "text": "#38bdf8",
               "icon": "#38bdf8"
             }
-          ]
+          ],
+          "tap": {
+            "actions": [
+              {
+                "type": "toggle",
+                "entity": "light.flur"
+              },
+              {
+                "type": "delay",
+                "ms": 300
+              },
+              {
+                "type": "page",
+                "page": "detail"
+              }
+            ]
+          }
         },
         {
           "id": "l",
@@ -71,7 +87,23 @@
               "op": "on",
               "bg": "#1e1b4b"
             }
-          ]
+          ],
+          "double_tap": {
+            "actions": [
+              {
+                "type": "service",
+                "service": "scene.turn_on",
+                "target": "scene.abend"
+              }
+            ]
+          },
+          "long_press": {
+            "actions": [
+              {
+                "type": "popup"
+              }
+            ]
+          }
         },
         {
           "id": "a",
@@ -90,7 +122,26 @@
               "op": "on",
               "bg": "#450a0a"
             }
-          ]
+          ],
+          "long_press": {
+            "actions": [
+              {
+                "type": "service",
+                "service": "script.turn_on",
+                "target": "script.klingel",
+                "data": {
+                  "variables": "x"
+                }
+              },
+              {
+                "type": "home"
+              },
+              {
+                "type": "page",
+                "page": "gibtsnicht"
+              }
+            ]
+          }
         },
         {
           "id": "g",
@@ -138,6 +189,32 @@
               "value": "home"
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "name": "Detail",
+      "icon": "mdi:information",
+      "parent": "home",
+      "widgets": [
+        {
+          "id": "b",
+          "type": "label",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "props": {
+            "text": "Zurück"
+          },
+          "tap": {
+            "actions": [
+              {
+                "type": "back"
+              }
+            ]
+          }
         }
       ]
     }

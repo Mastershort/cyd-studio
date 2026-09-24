@@ -9,6 +9,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from .actions import apply_actions
 from .board import resolve_board
 from .context import ON_STATES, Context, cpp_str
 from .emit import Block, Comment, Lambda, Raw, Secret, dump
@@ -1158,6 +1159,7 @@ def _page(
             continue
         emitted = emitter(ctx, page, widget, layout["widgets"][widget["id"]])
         apply_logic(ctx, widget_id(page, widget), widget, emitted)
+        apply_actions(ctx, page, widget, emitted)
         widgets.extend(emitted)
     if widgets:
         conf["widgets"] = widgets

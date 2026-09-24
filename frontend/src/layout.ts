@@ -45,6 +45,8 @@ export interface Element {
   circle?: number;
   /** multi-line text (label long_mode WRAP, clipped at height) */
   wrap?: boolean;
+  /** primary text in bold (style text_weight bold) */
+  bold?: boolean;
   /** button_grid cells: font size of the text under the icon (0 = icon only) */
   label_size?: number;
 }
@@ -194,7 +196,26 @@ function el(kind: Element["kind"], role: string, align: string, x: number, y: nu
 
 type Props = Record<string, unknown>;
 
+/**
+ * Inner elements of a widget. Style options: icon_size none hides the icon, s/m/l fixes its size;
+ * text_weight bold makes the primary texts (color "text") bold. Mirrors layout.widget_elements.
+ */
 export function widgetElements(wtype: string, w: number, h: number, props: Props,
+  fontSizes: Record<string, number> = {}, iconSizes: Record<string, number> = {}): Element[] {
+  const iconSize = String(props.icon_size ?? "auto");
+  let p = props;
+  let ics = iconSizes;
+  if (iconSize === "none") p = { ...props, icon: "" };
+  else if (iconSize === "s" || iconSize === "m" || iconSize === "l") {
+    const base = { ...DEFAULT_ICON_SIZES, ...iconSizes };
+    ics = { ...base, s: base[iconSize], m: base[iconSize] };
+  }
+  const els = widgetElementsInner(wtype, w, h, p, fontSizes, ics);
+  if (props.text_weight === "bold") for (const e of els) if (e.kind === "text" && e.color === "text") e.bold = true;
+  return els;
+}
+
+function widgetElementsInner(wtype: string, w: number, h: number, props: Props,
   fontSizes: Record<string, number> = {}, iconSizes: Record<string, number> = {}): Element[] {
   const fs = { ...DEFAULT_FONT_SIZES, ...fontSizes };
   const ics = { ...DEFAULT_ICON_SIZES, ...iconSizes };
@@ -213,13 +234,14 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
   };
 
   if (wtype === "toggle_tile" || wtype === "binary_indicator" || wtype === "sensor_value" || wtype === "person_presence" || wtype === "notification_area") {
-    const mainSize = wtype === "sensor_value" ? fs.l : fs[String(props.text_size ?? "s")] ?? fs.s;
+    const valueSize: number | undefined = fs[String(props.value_size ?? "auto")]; // undefined = automatic
+    const mainSize = wtype === "sensor_value" ? valueSize ?? fs.l : fs[String(props.text_size ?? "s")] ?? fs.s;
     if (wtype === "person_presence" || wtype === "notification_area") wtype = "binary_indicator"; // same arrangement
     const subSize = fs.xs;
     const tall = ch >= ib(ics.m) + lineHeight(mainSize) + lineHeight(subSize);
     if (tall) {
       if (wtype === "sensor_value") {
-        const big = ch >= ib(ics.s) + lineHeight(fs.xl) ? fs.xl : fs.l;
+        const big = valueSize ?? (ch >= ib(ics.s) + lineHeight(fs.xl) ? fs.xl : fs.l);
         els.push(el("text", "label", "TOP_LEFT", 0, 0, subSize, "text_muted", cw - (hasIcon ? ib(ics.s) + ELEMENT_GAP : 0)));
         if (hasIcon) els.push(icon("icon", "TOP_RIGHT", 0, 0, ics.s, "accent"));
         els.push(el("text", "value", "BOTTOM_LEFT", 0, 0, big, "text", cw));
