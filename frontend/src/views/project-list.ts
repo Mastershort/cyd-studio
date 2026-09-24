@@ -4,6 +4,7 @@ import type { Api } from "../api";
 import { loc, t } from "../i18n";
 import { normalize, resolveBoard } from "../model";
 import { renderScreen, sampleState } from "../preview/renderer";
+import { loadProjectImages } from "../images";
 import "./device-status";
 import type { Board, DeviceStatus, Project, ProjectSummary, Theme } from "../types";
 
@@ -71,6 +72,7 @@ export class CydProjectList extends LitElement {
       project, board: resolveBoard(board, project.board_variant, project.orientation),
       theme: { ...theme, colors: { ...theme.colors, ...(project.theme_overrides ?? {}) } },
       pageId: project.navigation?.home_page ?? project.pages[0]?.id ?? "", state: sampleState(project), now: new Date(),
+      images: await loadProjectImages(this.api, project),
     });
     this._thumbs = { ...this._thumbs, [id]: canvas.toDataURL() };
   }

@@ -119,6 +119,7 @@ class Context:
         self.page_ids = {p["id"]: f"page_{safe_id(p['id'])}" for p in project["pages"]}
         self.entities: dict[str, str] = {}
         self.helpers: set[str] = set()
+        self.images: list[str] = []
         self.label_styles: dict[tuple[str, str, str | None], str] = {}
         self.default_style = resolve_tile_style(theme, project.get("tile_style") or {})
         self.page_actions: list[Any] = []
@@ -176,6 +177,12 @@ class Context:
     def warn(self, code: str, de: str, en: str, page: str | None = None, widget: str | None = None) -> None:
         """Add a generator warning."""
         self.issues.append(Issue("warning", code, de, en, page, widget))
+
+    def image(self, asset_id: str) -> str:
+        """Register a project image (background) and return its ESPHome id."""
+        if asset_id not in self.images:
+            self.images.append(asset_id)
+        return f"img_{asset_id}"
 
     # -- styles ------------------------------------------------------------
     def widget_style(self, widget: dict[str, Any]) -> dict[str, Any]:

@@ -5,6 +5,7 @@ import type { Api } from "../api";
 import { lang, loc, t } from "../i18n";
 import { navPages, pageGrid } from "../layout";
 import { PRESETS, resolveTileStyle } from "../style";
+import { fitImageFile, loadProjectImages } from "../images";
 import {
   defaultProps, findFreeSpot, newWidgetId, normalize, overlapsAny, pageIdFrom, resolveBoard, rootOf, slugify,
 } from "../model";
@@ -16,7 +17,7 @@ import "../preview/screen";
 import "./pickers";
 import "../export/export-dialog";
 import "../views/device-status";
-import type { Board, Hass, HassEntity, Issue, Page, Project, PropDef, StudioInfo, Theme, Widget, WidgetDef } from "../types";
+import type { Background, Board, Hass, HassEntity, Issue, Page, Project, PropDef, StudioInfo, Theme, Widget, WidgetDef } from "../types";
 
 const UNDO_LIMIT = 100;
 const ACTION_SERVICES: Record<string, string> = {
@@ -45,6 +46,7 @@ export class CydEditor extends LitElement {
     _sim: { state: true },
     _simAttr: { state: true },
     _overlay: { state: true },
+    _images: { state: true },
     _saveState: { state: true },
     _issues: { state: true },
     _showExport: { state: true },
@@ -70,6 +72,7 @@ export class CydEditor extends LitElement {
   declare _sim: Record<string, string>;
   declare _simAttr: Record<string, Record<string, unknown>>;
   declare _overlay: { entity: string; title: string; kind: number; value: number } | null;
+  declare _images: Record<string, HTMLImageElement>;
   declare _saveState: "saved" | "saving" | "dirty" | "error";
   declare _issues: Issue[];
   declare _showExport: boolean;
@@ -96,6 +99,7 @@ export class CydEditor extends LitElement {
     this._sim = {};
     this._simAttr = {};
     this._overlay = null;
+    this._images = {};
     this._saveState = "saved";
     this._issues = [];
     this._showExport = false;
@@ -127,6 +131,7 @@ export class CydEditor extends LitElement {
     this.undoStack = [];
     this.redoStack = [];
     this.scheduleValidate(0);
+    this._images = await loadProjectImages(this.api, project);
   }
 
   // -- model mutations --------------------------------------------------------
@@ -464,6 +469,7 @@ export class CydEditor extends LitElement {
     .zoom { display: flex; gap: 4px; align-items: center; }
     .danger { color: var(--error-color, #ef4444); }
     .crow { display: flex; gap: 4px; align-items: center; }
+    .muted { font-size: 12px; color: var(--secondary-text-color); }
     .field.color input[type=color] { width: 100%; height: 30px; padding: 0 2px; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
     input[type=range] { width: 100%; }
   `;
@@ -518,6 +524,7 @@ export class CydEditor extends LitElement {
             .state=${this.stateResolver()} .mode=${this._mode} .selected=${this._selected} .scale=${this.fitScale()}
             .night=${this._night} .now=${this._now}
             .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value } : null}
+            .images=${this._images}
             @select=${(e: CustomEvent<{ ids: string[] }>) => (this._selected = e.detail.ids)}
             @widget-change=${(e: CustomEvent<{ id: string; changes: Partial<Widget> }>) => this.editWidget(e.detail.id, (w) => Object.assign(w, e.detail.changes))}
             @widget-add=${(e: CustomEvent<{ type: string; x: number; y: number }>) => this.addWidget(e.detail.type, e.detail)}
@@ -679,6 +686,46 @@ export class CydEditor extends LitElement {
       </div>`;
   }
 
+  /** Background color / image chooser (image is fitted to the display size in the browser). */
+  private renderBackground(bg: Background | null, apply: (bg: Background | null) => void, hint: string) {
+    const board = this.resolved();
+    const choose = () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file || !board || !this._project) return;
+        if (!this._project.id) await this.flushSave();
+        try {
+          const data = await fitImageFile(file, board.width, board.height);
+          const { asset_id } = await this.api.uploadAsset(this._project.id, data, board.width, board.height);
+          const img = new Image();
+          img.src = data;
+          await img.decode();
+          this._images = { ...this._images, [asset_id]: img };
+          apply({ ...(bg ?? {}), image: asset_id });
+        } catch (err) {
+          alert(`${t("bg_upload_failed")}: ${String((err as { message?: string }).message ?? err)}`);
+        }
+      };
+      input.click();
+    };
+    const hasColor = Boolean(bg?.color);
+    return html`<div class="field"><span class="muted">${hint}</span></div>
+      <div class="row2">
+        <label class="field color"><span>${t("bg_color")}</span><span class="crow">
+          <input type="color" .value=${bg?.color ?? this.themed().colors.background}
+            @change=${(e: Event) => apply({ ...(bg ?? {}), color: (e.target as HTMLInputElement).value })} />
+          ${hasColor ? html`<button class="small" title=${t("reset")} @click=${() => apply(bg?.image ? { image: bg.image } : null)}>↺</button>` : nothing}</span></label>
+        <div class="field"><span>${t("bg_image")}</span>
+          ${bg?.image ? html`<span class="crow"><button class="small" @click=${choose}>${t("bg_change")}</button>
+            <button class="small danger" @click=${() => apply(hasColor ? { color: bg.color } : null)}>✕</button></span>`
+            : html`<button @click=${choose}>${t("bg_choose")}</button>`}
+        </div>
+      </div>`;
+  }
+
   /** Theme of the project with the user's color overrides. */
   private themed() {
     const p = this._project!;
@@ -765,6 +812,7 @@ export class CydEditor extends LitElement {
         pg.in_navigation = !pg.parent;
       }))}
       ${!page.parent ? this.check(t("in_navigation"), page.in_navigation ?? true, (v) => this.editPage((pg) => { pg.in_navigation = v; })) : nothing}
+      ${this.renderBackground(page.background ?? null, (bg) => this.editPage((pg) => { pg.background = bg; }), t("bg_page_hint"))}
       ${this.num(t("page_timeout"), page.timeout_s ?? null, (v) => this.editPage((pg) => { pg.timeout_s = v && v >= 5 ? v : null; }), 5)}
       <div class="row2">
         <button @click=${() => this.mutate((pp) => { pp.navigation = { ...pp.navigation, home_page: page.id }; })}
@@ -803,6 +851,8 @@ export class CydEditor extends LitElement {
       <label class="field"><span>${t("accent")}</span><input type="color" .value=${p.theme_overrides?.accent ?? this.themes[p.theme]?.colors.accent ?? "#22d3ee"}
         @change=${(e: Event) => set((pp) => { pp.theme_overrides = { ...pp.theme_overrides, accent: (e.target as HTMLInputElement).value }; })} /></label>
       ${this.select(t("language"), s.language ?? "de", [["de", "Deutsch"], ["en", "English"]], (v) => set((pp) => { pp.settings = { ...pp.settings, language: v as "de" | "en" }; }))}
+      <h3>${t("background")}</h3>
+      ${this.renderBackground(p.background ?? null, (bg) => set((pp) => { pp.background = bg; }), t("bg_project_hint"))}
       <h3>${t("header")}</h3>
       ${this.check(t("header_enabled"), p.global?.header?.enabled ?? true, (v) => set((pp) => {
         pp.global = { ...pp.global, header: { ...(pp.global?.header ?? {}), enabled: v } };

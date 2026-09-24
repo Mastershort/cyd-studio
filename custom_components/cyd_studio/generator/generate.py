@@ -20,7 +20,7 @@ from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import opa, page_show
 
-GENERATOR_VERSION = "0.3.0"
+GENERATOR_VERSION = "0.4.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -146,9 +146,21 @@ def generate_yaml(
                 f"The display cannot show these characters, they are left out: {chars}",
             )
         )
+    image_flash = len(ctx.images) * board["screen"]["width"] * board["screen"]["height"] * 2
     mem = estimate(
-        ctx.objects, len(project["pages"]), ctx.fonts.flash_estimate(), int(board.get("memory_budget", 100000))
+        ctx.objects,
+        len(project["pages"]),
+        ctx.fonts.flash_estimate() + image_flash,
+        int(board.get("memory_budget", 100000)),
     )
+    if len(ctx.images) > 2:
+        issues.append(Issue(
+            "warning", "images_flash",
+            f"{len(ctx.images)} Hintergrundbilder belegen ca. {image_flash // 1024} KB Flash – "
+            "bei zu vielen Bildern passt die Firmware nicht mehr aufs Board.",
+            f"{len(ctx.images)} background images use about {image_flash // 1024} KB of flash – "
+            "with too many images the firmware no longer fits the board.",
+        ))  # fmt: skip
     if mem.ratio > 1:
         issues.append(
             Issue(
@@ -389,6 +401,13 @@ def _document(ctx: Context) -> dict[Any, Any]:
         doc["text_sensor"] = text_sensors
     doc["button"] = [{"platform": "restart", "name": "Neustart" if de else "Restart", "entity_category": "diagnostic"}]
 
+    if ctx.images:
+        w, h = board["screen"]["width"], board["screen"]["height"]
+        doc["image"] = [
+            {"file": f"cyd_studio/{p['device_name']}/{asset}.png", "id": f"img_{asset}", "type": "RGB565",
+             "resize": f"{w}x{h}"}
+            for asset in ctx.images
+        ]  # fmt: skip
     doc["font"] = ctx.fonts.emit()
     doc["script"] = _scripts(ctx, pages)
     doc["lvgl"] = _lvgl(ctx, pages, lvgl_pages, top_layer)
@@ -612,6 +631,8 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
     p = ctx.project
     s = p["settings"]
     d = ctx.default_style
+    # with a project background image the header is transparent and the tab bar translucent
+    has_bg_image = bool(isinstance(p.get("background"), dict) and p["background"].get("image"))
     conf: dict[str, Any] = {
         "displays": ["cyd_display"],
         "touchscreens": [{"touchscreen_id": "cyd_touch"}],
@@ -658,7 +679,7 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
             {
                 "id": "cyd_bar",
                 "bg_color": ctx.color("header_bg"),
-                "bg_opa": "COVER",
+                "bg_opa": "TRANSP" if has_bg_image else "COVER",
                 "border_width": 0,
                 "radius": 0,
                 "pad_all": 0,
@@ -667,7 +688,7 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
             {
                 "id": "cyd_navbar",
                 "bg_color": ctx.color("nav_bg"),
-                "bg_opa": "COVER",
+                "bg_opa": "80%" if has_bg_image else "COVER",
                 "border_width": 0,
                 "radius": 0,
                 "pad_all": 0,
@@ -749,7 +770,11 @@ def _page(
     conf: dict[str, Any] = {"id": ctx.page_ids[page["id"]]}
     if page["id"] not in nav_ids:
         conf["skip"] = True
-    conf.update({"bg_color": ctx.color("background"), "bg_opa": "COVER", "pad_all": 0})
+    bg = page.get("background") or p.get("background") or {}
+    bg_color = ctx.hex(bg["color"]) if isinstance(bg, dict) and bg.get("color") else ctx.color("background")
+    conf.update({"bg_color": bg_color, "bg_opa": "COVER", "pad_all": 0})
+    if isinstance(bg, dict) and bg.get("image"):
+        conf["bg_image_src"] = ctx.image(bg["image"])
     root = root_of(p, page)
     root_index = nav_ids.index(root["id"]) if root["id"] in nav_ids else -1
     conf["on_load"] = [{"script.execute": {"id": "cyd_on_page", "page": index, "root": root_index}}]

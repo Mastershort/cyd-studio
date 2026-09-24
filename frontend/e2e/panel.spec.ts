@@ -26,5 +26,13 @@ test("create a project and add a widget", async ({ page }) => {
   await page.getByRole("button", { name: "Jetzt erlauben" }).first().click();
   await expect(page.getByText("Erlaubt – das Display kann jetzt schalten.")).toBeVisible();
   await page.getByRole("button", { name: "Code erzeugen" }).click();
-  await expect(page.locator("cyd-export-dialog pre")).toContainText("Dev-Modus");
+  await expect(page.locator("cyd-export-dialog pre").first()).toContainText("Dev-Modus");
+  // save to ESPHome: hand-edited file -> diff + confirm -> saved -> WiFi form
+  await page.getByRole("button", { name: "In ESPHome speichern" }).click();
+  await expect(page.getByText("von Hand geändert")).toBeVisible();
+  await page.getByRole("button", { name: "Trotzdem speichern" }).click();
+  await expect(page.getByText("Gespeichert: /config/esphome/cyd-dev.yaml")).toBeVisible();
+  await page.getByPlaceholder("WLAN-Name (SSID)").fill("MeinWLAN");
+  await page.getByRole("button", { name: "In secrets.yaml speichern" }).click();
+  await expect(page.getByText("WLAN-Daten gespeichert.")).toBeVisible();
 });

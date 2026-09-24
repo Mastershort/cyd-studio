@@ -21,6 +21,7 @@ const states: Record<string, HassEntity> = Object.fromEntries([
 
 const projects = new Map<string, Project>();
 const allowed = new Set<string>();
+const assets = new Map<string, string>();
 for (const g of goldens) projects.set(g.project.id, structuredClone(g.project));
 
 const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
@@ -63,6 +64,18 @@ const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
     allowed.add(m.project_id as string);
     return { found: true, entry_id: "e1", title: "Display", loaded: true, actions_allowed: true };
   },
+  "cyd_studio/assets/upload": (m) => {
+    const id = (assets.size + 1).toString(16).padStart(12, "0");
+    assets.set(id, m.data as string);
+    return { asset_id: id };
+  },
+  "cyd_studio/assets/get": (m) => ({ data_url: assets.get(m.asset_id as string) }),
+  "cyd_studio/esphome/status": () => ({ directory: "/config/esphome", directory_exists: true }),
+  // first save: hand-edited file -> conflict with diff; with overwrite: saved, secrets missing
+  "cyd_studio/esphome/save": (m) => m.overwrite
+    ? { status: "saved", path: "/config/esphome/cyd-dev.yaml", backup: "/config/esphome/cyd-dev.yaml.bak-1", secrets_missing: ["wifi_ssid", "wifi_password"], missing_images: [] }
+    : { status: "conflict", state: "modified", path: "/config/esphome/cyd-dev.yaml", diff: ["-  name: alt", "+  name: neu"].join("\n") },
+  "cyd_studio/esphome/secrets_set": () => ({ secrets_missing: [] }),
   "cyd_studio/generate/yaml": () => ({ ok: true, yaml: "# Dev-Modus: YAML erzeugt nur das echte Backend\n", issues: [], memory: null }),
 };
 

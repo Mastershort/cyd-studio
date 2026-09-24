@@ -1,5 +1,5 @@
 # ======================================================================
-# Erzeugt von CYD Studio (Generator 0.3.0) – ESPHome >= 2026.9.0
+# Erzeugt von CYD Studio (Generator 0.4.0) – ESPHome >= 2026.9.0
 # Projekt: Office · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
 # Stand: 2026-09-24
 #
@@ -907,7 +907,7 @@ lvgl:
                   long_mode: DOT
                   styles: cyd_text_3
                   text: "–"
-# cyd_studio_checksum: 609ebb462c16a577
+# cyd_studio_checksum: 03cdbc5ac893c718
 
 # Projektdaten für den Import in CYD Studio (nicht bearbeiten)
 # cyd_studio_project: H4sIAAAAAAAC/41VXY/bNhD8L3y2DrLsujkBeUgboEiApkX6kRbBgVhJK4kVRQokZedy8H/vLiXb

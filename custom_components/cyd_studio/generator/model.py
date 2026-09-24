@@ -176,6 +176,10 @@ def validate(
             "This navigation style is not available yet – the tab bar is used instead.",
         )
 
+    for bg in [project.get("background"), *(pg.get("background") for pg in project["pages"])]:
+        if isinstance(bg, dict) and bg.get("image") and not re.match(r"^[0-9a-f]{12}$", str(bg["image"])):
+            add("error", "background", "Ungültiges Hintergrundbild.", "Invalid background image.")
+
     pages = project["pages"]
     if not pages:
         add("error", "no_pages", "Das Projekt hat keine Seite.", "The project has no page.")

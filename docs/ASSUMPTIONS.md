@@ -81,6 +81,25 @@ getroffen wurden. **Bitte vor Phase 2 durchsehen.**
   Reparaturhinweis (Einstellungen → Reparaturen) und Hinweis mit Knopf im Panel. Gesetzt wird die
   Option nur nach Bestätigung.
 
+## Hintergrundbilder & „In ESPHome speichern“ (ab 0.4)
+
+- ESPHome 2026.9: `image:` mit `file` (relativ zum ESPHome-Ordner), `type: RGB565`, `resize: BxH`;
+  auf der LVGL-Seite `bg_image_src`. Geprüft mit `esphome config` und `compile` (Golden `styled`).
+- Das Panel schneidet das Bild im Browser auf die Display-Auflösung zu (cover, mittig). Das Backend
+  prüft es mit Pillow (Teil von HA) und speichert es als PNG unter
+  `.storage/cyd_studio_assets/<projekt>/<hash>.png` (in HA-Backups enthalten). Die Asset-ID ist ein
+  Inhalts-Hash, damit die Ausgabe deterministisch bleibt.
+- Beim Export (Kopieren/Speichern) werden die Bilder nach `<esphome>/cyd_studio/<gerätename>/`
+  kopiert. Ohne ESPHome-Ordner müssen sie von Hand dorthin – Hinweis im Export.
+- Flash: ca. B×H×2 Bytes pro Bild (320×240 → 150 KB); ab 3 Bildern warnt der Generator.
+- Mit Projekt-Hintergrundbild ist die Kopfzeile durchsichtig und die Tab-Leiste zu 80 % deckend.
+- Speichern: Zieldatei `<esphome>/<gerätename>.yaml`. Fremde Datei (ohne CYD-Studio-Prüfsumme) oder
+  von Hand geänderte Datei (Prüfsumme passt nicht) → Rückfrage, bei „geändert“ mit Diff; beim
+  Überschreiben bleibt `…yaml.bak-<zeit>`. `secrets.yaml`: nur `wifi_ssid`/`wifi_password` werden
+  ergänzt oder ersetzt, alles andere bleibt unverändert.
+- Link „ESPHome öffnen“: `/hassio/ingress/5c53de3b_esphome` (offizielles Add-on). Bei anderen
+  Installationen führt er ins Leere – dann ESPHome wie gewohnt öffnen.
+
 ## Gemeinsame Gerätelogik (ab 0.2)
 
 - LVGL-Widget-IDs sind in ESPHome-Lambdas `lv_obj_t *` (nicht zusammengesetzte Widgets,

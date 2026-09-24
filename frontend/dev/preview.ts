@@ -7,9 +7,23 @@ import { renderScreen, sampleState } from "../src/preview/renderer";
 import { boards, goldens, iconsUrl, themes } from "./data";
 
 const FIXED_NOW = new Date(2026, 8, 24, 10, 30, 15);
+// test images next to the golden files (tests/esphome/cyd_studio/<device>/<asset>.png)
+const imageFiles = import.meta.glob("../../tests/esphome/cyd_studio/*/*.png", { query: "?url", import: "default", eager: true });
+
+async function loadImages(): Promise<Record<string, HTMLImageElement>> {
+  const out: Record<string, HTMLImageElement> = {};
+  for (const [path, url] of Object.entries(imageFiles)) {
+    const img = new Image();
+    img.src = url as string;
+    await img.decode();
+    out[path.split("/").pop()!.replace(".png", "")] = img;
+  }
+  return out;
+}
 
 async function main() {
   await Promise.all([loadFonts(), loadIcons(iconsUrl)]);
+  const images = await loadImages();
   const root = document.getElementById("root")!;
   for (const { name, project: raw } of goldens) {
     const project = normalize(raw);
@@ -22,7 +36,7 @@ async function main() {
       canvas.dataset.snapshot = `${name}--${page.id}`;
       renderScreen(canvas, {
         project, board: resolved, theme: { ...theme, colors: { ...theme.colors, ...(project.theme_overrides ?? {}) } },
-        pageId: page.id, state: sampleState(project), now: FIXED_NOW,
+        pageId: page.id, state: sampleState(project), now: FIXED_NOW, images,
       });
       canvas.style.width = `${resolved.width * 2}px`;
       const caption = document.createElement("figcaption");

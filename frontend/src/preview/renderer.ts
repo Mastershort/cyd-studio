@@ -23,6 +23,8 @@ export interface RenderInput {
   now: Date;
   pressed?: string | null;
   night?: boolean;
+  /** decoded project images (backgrounds) by asset id */
+  images?: Record<string, CanvasImageSource>;
   /** value overlay opened by a long press (same layout as the device) */
   overlay?: { title: string; value: number } | null;
 }
@@ -178,8 +180,11 @@ export function renderScreen(canvas: HTMLCanvasElement, input: RenderInput): Hit
   const hits: HitRegion[] = [];
   const page = project.pages.find((pg) => pg.id === input.pageId) ?? project.pages[0];
   ctx.clearRect(0, 0, board.width, board.height);
-  ctx.fillStyle = p.color("background");
+  const bg = page?.background ?? project.background ?? null;
+  ctx.fillStyle = bg?.color || p.color("background");
   ctx.fillRect(0, 0, board.width, board.height);
+  const image = bg?.image ? input.images?.[bg.image] : undefined;
+  if (image) ctx.drawImage(image, 0, 0, board.width, board.height);
   if (!page) return hits;
 
   const layout = pageLayout(project, page, board.width, board.height);
@@ -332,7 +337,8 @@ function renderTopLayer(p: Painter, input: RenderInput, page: Page, hits: HitReg
   const ics = theme.icon_sizes;
   if (layout.header) {
     const h = layout.header;
-    p.box(h, p.color("header_bg"), null, 0, 0);
+    // with a project background image the header is transparent and the tab bar translucent (as on the device)
+    if (!project.background?.image) p.box(h, p.color("header_bg"), null, 0, 0);
     const content: Rect = { x: h.x + HEADER_PAD_X, y: h.y, w: h.w - 2 * HEADER_PAD_X, h: h.h };
     for (const el of headerElements(project, h, fs, ics)) {
       if (el.role === "back") {
@@ -350,7 +356,7 @@ function renderTopLayer(p: Painter, input: RenderInput, page: Page, hits: HitReg
     }
   }
   if (layout.tabbar) {
-    p.box(layout.tabbar, p.color("nav_bg"), null, 0, 0);
+    p.box(layout.tabbar, p.color("nav_bg"), null, 0, 0, project.background?.image ? 0.8 : 1);
     const nav = navPages(project);
     const root = rootOf(project, page);
     const showIcons = project.navigation?.show_icons ?? true;

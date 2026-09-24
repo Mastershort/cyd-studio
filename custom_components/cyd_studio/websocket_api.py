@@ -14,6 +14,7 @@ from homeassistant.components.websocket_api import ActiveConnection
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import Unauthorized
 
+from . import assets, esphome_files
 from .const import CONF_ESPHOME_PATH, CONF_REQUIRE_ADMIN, DOMAIN
 from .esphome_bridge import async_allow_actions, async_update_issues, device_status, find_device_entry
 from .generator import generate_yaml
@@ -66,6 +67,10 @@ def async_register(hass: HomeAssistant) -> None:
         ws_info,
         ws_esphome_devices,
         ws_esphome_allow_actions,
+        ws_assets_upload,
+        ws_assets_get,
+        ws_esphome_save,
+        ws_esphome_secrets_set,
     ):
         websocket_api.async_register_command(hass, handler)
 
@@ -293,6 +298,11 @@ async def ws_generate_yaml(
     if result.ok and msg["mark_exported"] and project.get("id"):
         _, checksum = split_generated(result.yaml)
         await runtime.store.async_mark_exported(project["id"], checksum or "")
+        esphome_dir = _esphome_dir(hass, runtime)
+        if assets.used_assets(project) and await hass.async_add_executor_job(os.path.isdir, esphome_dir):
+            await hass.async_add_executor_job(
+                assets.copy_assets_to_esphome, hass.config.config_dir, esphome_dir, project
+            )
     runtime.last_issues = payload["issues"]
     connection.send_result(msg["id"], payload)
 
@@ -347,3 +357,137 @@ async def ws_esphome_allow_actions(
     async_allow_actions(hass, entry)
     async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], device_status(hass, entry.data.get("device_name", "")))
+
+
+def _esphome_dir(hass: HomeAssistant, runtime: StudioRuntime) -> str:
+    return hass.config.path(runtime.options.get(CONF_ESPHOME_PATH, "esphome"))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "cyd_studio/assets/upload",
+        vol.Required("project_id"): str,
+        vol.Required("data"): str,
+        vol.Required("width"): vol.All(int, vol.Range(min=16, max=1024)),
+        vol.Required("height"): vol.All(int, vol.Range(min=16, max=1024)),
+    }
+)
+@websocket_api.async_response
+@_guarded
+async def ws_assets_upload(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Store an image (e.g. background) fitted to the display size; returns its asset id."""
+    if runtime.store.get(msg["project_id"]) is None:
+        connection.send_error(msg["id"], "not_found", "Project not found")
+        return
+    try:
+        asset_id = await hass.async_add_executor_job(
+            assets.store_image, hass.config.config_dir, msg["project_id"], msg["data"], msg["width"], msg["height"]
+        )
+    except (ValueError, OSError) as err:
+        connection.send_error(msg["id"], "invalid_image", str(err))
+        return
+    connection.send_result(msg["id"], {"asset_id": asset_id})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "cyd_studio/assets/get", vol.Required("project_id"): str, vol.Required("asset_id"): str}
+)
+@websocket_api.async_response
+@_guarded
+async def ws_assets_get(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Image as data URL for the preview."""
+    data = await hass.async_add_executor_job(
+        assets.read_image, hass.config.config_dir, msg["project_id"], msg["asset_id"]
+    )
+    if data is None:
+        connection.send_error(msg["id"], "not_found", "Image not found")
+        return
+    connection.send_result(msg["id"], {"data_url": data})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "cyd_studio/esphome/save",
+        vol.Required("project_id"): str,
+        vol.Optional("overwrite", default=False): bool,
+    }
+)
+@websocket_api.async_response
+@_guarded
+async def ws_esphome_save(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Write <device_name>.yaml (and images) into the ESPHome directory.
+
+    Returns ``{"status": "conflict", ...}`` instead of overwriting a foreign or hand-edited file
+    unless ``overwrite`` is set (a backup is kept in that case).
+    """
+    project = runtime.store.get(msg["project_id"])
+    if project is None:
+        connection.send_error(msg["id"], "not_found", "Project not found")
+        return
+    esphome_dir = _esphome_dir(hass, runtime)
+    if not await hass.async_add_executor_job(os.path.isdir, esphome_dir):
+        connection.send_error(msg["id"], "no_esphome_dir", f"ESPHome directory not found: {esphome_dir}")
+        return
+    data = runtime.data
+    known = set(hass.states.async_entity_ids())
+    result = await hass.async_add_executor_job(generate_yaml, project, data.boards, data.themes, data.widgets, known)
+    if not result.ok:
+        connection.send_result(msg["id"], {"status": "invalid", "issues": result.as_dict()["issues"]})
+        return
+    existing = await hass.async_add_executor_job(
+        esphome_files.inspect_existing, esphome_dir, project["device_name"], result.yaml
+    )
+    if existing["state"] in ("foreign", "modified") and not msg["overwrite"]:
+        connection.send_result(msg["id"], {"status": "conflict", **existing})
+        return
+    backup = await hass.async_add_executor_job(
+        esphome_files.write_config,
+        esphome_dir,
+        project["device_name"],
+        result.yaml,
+        existing["state"] in ("foreign", "modified"),
+    )
+    missing_images = await hass.async_add_executor_job(
+        assets.copy_assets_to_esphome, hass.config.config_dir, esphome_dir, project
+    )
+    _, checksum = split_generated(result.yaml)
+    await runtime.store.async_mark_exported(project["id"], checksum or "")
+    secrets = await hass.async_add_executor_job(esphome_files.missing_secrets, esphome_dir)
+    connection.send_result(
+        msg["id"],
+        {
+            "status": "saved",
+            "path": existing["path"],
+            "backup": backup,
+            "secrets_missing": secrets,
+            "missing_images": missing_images,
+        },
+    )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "cyd_studio/esphome/secrets_set",
+        vol.Required("wifi_ssid"): vol.All(str, vol.Length(min=1, max=64)),
+        vol.Required("wifi_password"): vol.All(str, vol.Length(max=128)),
+    }
+)
+@websocket_api.async_response
+@_guarded
+async def ws_esphome_secrets_set(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Write wifi_ssid / wifi_password into the ESPHome secrets.yaml (nothing else is changed)."""
+    esphome_dir = _esphome_dir(hass, runtime)
+    if not await hass.async_add_executor_job(os.path.isdir, esphome_dir):
+        connection.send_error(msg["id"], "no_esphome_dir", f"ESPHome directory not found: {esphome_dir}")
+        return
+    values = {"wifi_ssid": msg["wifi_ssid"], "wifi_password": msg["wifi_password"]}
+    await hass.async_add_executor_job(esphome_files.set_secrets, esphome_dir, values)
+    connection.send_result(msg["id"], {"secrets_missing": []})

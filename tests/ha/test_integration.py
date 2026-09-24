@@ -220,3 +220,75 @@ async def test_device_without_option_counts_as_allowed(hass: HomeAssistant, setu
     MockConfigEntry(domain="esphome", title="Alt", data={"device_name": "cyd-alt"}).add_to_hass(hass)
     assert device_status(hass, "cyd-alt")["actions_allowed"] is True
     assert device_status(hass, "unbekannt")["found"] is False
+
+
+async def test_assets_and_save_to_esphome(
+    hass: HomeAssistant, setup_studio: MockConfigEntry, hass_ws_client: Any, tmp_path: Path
+) -> None:
+    """Upload a background, save to ESPHome (new, hand-edited, foreign file) and set WiFi secrets."""
+    import base64
+    import io
+
+    from PIL import Image
+
+    hass.config.config_dir = str(tmp_path)
+    esphome_dir = tmp_path / "esphome"
+    esphome_dir.mkdir()
+    hass.data[DOMAIN].options["esphome_path"] = str(esphome_dir)
+    client = await hass_ws_client(hass)
+
+    async def call(type_: str, **data: Any) -> Any:
+        await client.send_json_auto_id({"type": f"cyd_studio/{type_}", **data})
+        msg = await client.receive_json()
+        assert msg["success"], msg
+        return msg["result"]
+
+    project = json.loads((GOLDEN / "multipage.json").read_text(encoding="utf-8"))
+    project["id"] = ""
+    saved = await call("projects/save", project=project)
+
+    # image: any size in, display size out, content addressed id
+    buf = io.BytesIO()
+    Image.new("RGB", (800, 600), (10, 120, 200)).save(buf, format="JPEG")
+    upload = await call(
+        "assets/upload", project_id=saved["id"], data=base64.b64encode(buf.getvalue()).decode(), width=320, height=240
+    )
+    asset_id = upload["asset_id"]
+    assert len(asset_id) == 12
+    got = await call("assets/get", project_id=saved["id"], asset_id=asset_id)
+    assert got["data_url"].startswith("data:image/png;base64,")
+    saved["background"] = {"image": asset_id}
+    saved = await call("projects/save", project=saved)
+
+    # first save: new file, image copied, secrets missing
+    result = await call("esphome/save", project_id=saved["id"])
+    assert result["status"] == "saved"
+    target = esphome_dir / "cyd-wohnzimmer.yaml"
+    assert target.is_file()
+    assert (esphome_dir / "cyd_studio" / "cyd-wohnzimmer" / f"{asset_id}.png").is_file()
+    assert result["secrets_missing"] == ["wifi_ssid", "wifi_password"]
+
+    # saving again over our own unchanged file: no conflict
+    assert (await call("esphome/save", project_id=saved["id"]))["status"] == "saved"
+
+    # hand edit -> conflict with diff, overwrite keeps a backup
+    target.write_text(
+        target.read_text(encoding="utf-8").replace("friendly_name:", "friendly_name: x #"), encoding="utf-8"
+    )
+    result = await call("esphome/save", project_id=saved["id"])
+    assert result["status"] == "conflict" and result["state"] == "modified" and result["diff"]
+    result = await call("esphome/save", project_id=saved["id"], overwrite=True)
+    assert result["status"] == "saved" and result["backup"]
+
+    # foreign file
+    target.write_text("esphome:\n  name: fremd\n", encoding="utf-8")
+    result = await call("esphome/save", project_id=saved["id"])
+    assert result["status"] == "conflict" and result["state"] == "foreign"
+
+    # secrets: only the two keys are written, other content stays
+    (esphome_dir / "secrets.yaml").write_text("other_key: keep\n", encoding="utf-8")
+    await call("esphome/secrets_set", wifi_ssid="Mein WLAN", wifi_password='p"w')
+    secrets = (esphome_dir / "secrets.yaml").read_text(encoding="utf-8")
+    assert "other_key: keep" in secrets
+    assert 'wifi_ssid: "Mein WLAN"' in secrets
+    assert 'wifi_password: "p\\"w"' in secrets

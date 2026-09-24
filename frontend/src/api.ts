@@ -1,6 +1,6 @@
 // WebSocket API of the backend (custom_components/cyd_studio/websocket_api.py)
 import type {
-  Board, DeviceStatus, GenerateResult, Hass, Project, ProjectSummary, StudioInfo, Template, Theme, WidgetDef,
+  Board, DeviceStatus, EsphomeSaveResult, GenerateResult, Hass, Project, ProjectSummary, StudioInfo, Template, Theme, WidgetDef,
 } from "./types";
 
 export class Api {
@@ -28,6 +28,15 @@ export class Api {
   importYaml = (yaml: string) => this.ws<Project>("projects/import", { yaml });
   devices = () => this.ws<Record<string, DeviceStatus>>("esphome/devices");
   allowActions = (projectId: string) => this.ws<DeviceStatus>("esphome/allow_actions", { project_id: projectId });
+  uploadAsset = (projectId: string, data: string, width: number, height: number) =>
+    this.ws<{ asset_id: string }>("assets/upload", { project_id: projectId, data, width, height });
+  getAsset = (projectId: string, assetId: string) =>
+    this.ws<{ data_url: string }>("assets/get", { project_id: projectId, asset_id: assetId });
+  esphomeStatus = () => this.ws<{ directory: string; directory_exists: boolean }>("esphome/status");
+  esphomeSave = (projectId: string, overwrite = false) =>
+    this.ws<EsphomeSaveResult>("esphome/save", { project_id: projectId, overwrite });
+  secretsSet = (ssid: string, password: string) =>
+    this.ws<{ secrets_missing: string[] }>("esphome/secrets_set", { wifi_ssid: ssid, wifi_password: password });
   generate = (project: Project, markExported = false) =>
     this.ws<GenerateResult>("generate/yaml", { project, mark_exported: markExported });
 }

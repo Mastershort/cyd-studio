@@ -28,6 +28,11 @@ export interface Widget {
   style?: Record<string, unknown>;
 }
 
+export interface Background {
+  color?: string | null;
+  image?: string | null;
+}
+
 export interface Page {
   id: string;
   name: string;
@@ -38,6 +43,7 @@ export interface Page {
   grid_override?: GridConfig | null;
   timeout_s?: number | null;
   show_header?: boolean;
+  background?: Background | null;
   widgets: Widget[];
 }
 
@@ -59,6 +65,8 @@ export interface Project {
   theme_overrides?: Record<string, string>;
   /** project wide tile style (applies to every widget, widgets can override) */
   tile_style?: Record<string, unknown>;
+  /** background of all pages (pages can override) */
+  background?: Background | null;
   settings?: {
     brightness_day?: number;
     brightness_night?: number;
@@ -188,6 +196,17 @@ export interface DeviceStatus {
   title: string | null;
   loaded: boolean;
   actions_allowed: boolean;
+}
+
+export interface EsphomeSaveResult {
+  status: "saved" | "conflict" | "invalid";
+  state?: "foreign" | "modified";
+  path?: string;
+  diff?: string;
+  backup?: string | null;
+  secrets_missing?: string[];
+  missing_images?: string[];
+  issues?: Issue[];
 }
 
 export interface StudioInfo {

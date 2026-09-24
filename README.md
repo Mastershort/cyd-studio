@@ -13,7 +13,11 @@ am Ende **fertigen ESPHome-Code** bekommst.
    Tab-Leiste und Wischen.
 3. Jede Kachel mit einer Entität verbinden (Suche mit Bereich und aktuellem Zustand).
 4. In der Vorschau tippen und wischen wie auf dem Gerät.
-5. **Code erzeugen** → kopieren oder herunterladen → in ESPHome einfügen → installieren.
+5. **Code erzeugen** → **In ESPHome speichern** (oder kopieren/herunterladen) → in ESPHome installieren.
+
+Gestaltung: Themes (dunkel, hell, Kontrast, OLED, Home/iOS-Stil), Kachel-Stile (Karte, Flach,
+Umriss, Glas, Kräftig), eigene Farben/Deckkraft/Ecken pro Kachel, Icons im Kreis, Textgrößen und
+Hintergrundbilder pro Projekt oder Seite.
 
 > Status: **Phase 1 (MVP)**. Der erzeugte Code wird mit ESPHome 2026.9 validiert und kompiliert.
 > Die Abnahme auf echter Hardware steht noch aus – siehe [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
