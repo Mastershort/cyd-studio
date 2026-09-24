@@ -45,9 +45,18 @@ export class CydProjectList extends LitElement {
     .info { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
     .name { font-size: 16px; font-weight: 500; }
     .meta { font-size: 12px; color: var(--secondary-text-color); }
-    .status { font-size: 12px; }
-    .status.changed { color: var(--warning-color, #f59e0b); }
-    .actions { display: flex; gap: 6px; padding: 0 12px 12px; flex-wrap: wrap; }
+    .badge { align-self: flex-start; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-top: 4px;
+      background: rgba(127,127,127,.15); color: var(--secondary-text-color); }
+    .badge.changed { background: color-mix(in srgb, var(--warning-color, #f59e0b) 18%, transparent); color: var(--warning-color, #f59e0b); }
+    .badge.ok { background: color-mix(in srgb, var(--success-color, #22c55e) 18%, transparent); color: var(--success-color, #22c55e); }
+    .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 12px 12px; margin-top: auto; }
+    .actions .open { grid-column: 1 / -1; }
+    button.quiet { border-color: transparent; background: transparent; font-size: 12px; padding: 6px 4px; white-space: nowrap; color: var(--secondary-text-color); }
+    button.quiet:hover { color: var(--primary-text-color); background: rgba(127,127,127,.12); }
+    button.quiet.danger:hover { color: var(--error-color, #ef4444); }
+    .card { transition: border-color .15s, transform .15s; }
+    .card:hover { border-color: var(--primary-color); }
+    .info { flex: 1; }
     .empty { padding: 48px; text-align: center; color: var(--secondary-text-color); border: 2px dashed var(--divider-color); border-radius: 12px; }
   `;
 
@@ -139,13 +148,13 @@ export class CydProjectList extends LitElement {
             <span class="meta">${t("pages_count", { n: s.page_count })} · ${t("widgets_count", { n: s.widget_count })}${s.updated ? ` · ${new Date(s.updated).toLocaleString()}` : ""}</span>
             <cyd-device-status compact .api=${this.api} .projectId=${s.id} .deviceName=${s.device_name}
               .status=${this._devices[s.id] ?? null}></cyd-device-status>
-            <span class="status ${s.changed_since_export ? "changed" : ""}">${!s.exported ? t("never_exported") : s.changed_since_export ? t("changed_since_export") : `✓ ${t("exported")}`}</span>
+            <span class="badge ${!s.exported ? "new" : s.changed_since_export ? "changed" : "ok"}">${!s.exported ? t("never_exported") : s.changed_since_export ? t("changed_since_export") : `✓ ${t("exported")}`}</span>
           </div>
           <div class="actions">
-            <button class="primary" @click=${() => this.open(s.id)}>${t("open")}</button>
-            <button @click=${() => this.duplicate(s.id)}>${t("duplicate")}</button>
-            <button @click=${() => this.exportFile(s.id)}>${t("export_file")}</button>
-            <button @click=${() => this.removeProject(s)}>${t("delete")}</button>
+            <button class="primary open" @click=${() => this.open(s.id)}>${t("open")}</button>
+            <button class="quiet" title=${t("duplicate")} @click=${() => this.duplicate(s.id)}>${t("duplicate")}</button>
+            <button class="quiet" title=${t("export_file")} @click=${() => this.exportFile(s.id)}>${t("export_file")}</button>
+            <button class="quiet danger" title=${t("delete")} @click=${() => this.removeProject(s)}>${t("delete")}</button>
           </div>
         </div>`)}</div>`}`;
   }

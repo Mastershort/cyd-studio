@@ -18,7 +18,7 @@ test("tap with own actions opens a page", async ({ page }) => {
   await tap.locator("select").first().selectOption("custom");
   await tap.locator(".step select").first().selectOption("page");
   await tap.locator(".step select").nth(1).selectOption({ label: "Seite 2" });
-  await page.getByRole("button", { name: "▶ Vorschau" }).click();
+  await page.getByRole("button", { name: "Vorschau", exact: false }).click();
   const canvas = page.locator("cyd-screen canvas").first();
   const box = (await canvas.boundingBox())!;
   const firstRow = page.locator(".page-row").first();

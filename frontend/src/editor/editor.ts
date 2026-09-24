@@ -25,6 +25,28 @@ import "../views/device-status";
 import type { Background, Board, Hass, HassEntity, Issue, Page, Project, PropDef, StudioInfo, Theme, Widget, WidgetDef } from "../types";
 
 const UNDO_LIMIT = 100;
+/** MDI glyph for buttons (same icon font as the preview). */
+function ico(icon: string) {
+  const c = iconChar(icon);
+  return c ? html`<span class="bi">${c}</span>` : nothing;
+}
+
+/** Readable text for select options of widget props (sizes in capitals, known words translated). */
+function optionLabel(value: string): string {
+  const key = `opt_${value}`;
+  const text = t(key as "opt_slider");
+  if (text !== key) return text;
+  return /^(xs|s|m|l|xl|xxl)$/.test(value) ? value.toUpperCase() : value;
+}
+
+/** Palette groups (widget types not listed land in "other"). */
+const PALETTE_GROUPS: [string, string[]][] = [
+  ["group_tiles", ["toggle_tile", "sensor_value", "binary_indicator", "person_presence", "multi_value"]],
+  ["group_controls", ["cover_control", "climate", "slider", "number_stepper", "select", "media_player", "scene_button", "button_grid"]],
+  ["group_display", ["clock", "weather", "gauge", "countdown", "notification_area", "qr_code", "label"]],
+  ["group_layout", ["page_button", "page_title", "divider", "spacer"]],
+];
+
 /** "brightness_pct=50, color_name=red" -> {brightness_pct: "50", color_name: "red"} */
 function parseData(text: string): Record<string, string> | undefined {
   const out: Record<string, string> = {};
@@ -55,6 +77,7 @@ export class CydEditor extends LitElement {
     _selected: { state: true },
     _mode: { state: true },
     _zoom: { state: true },
+    _paletteFilter: { state: true },
     _avail: { state: true },
     _sample: { state: true },
     _night: { state: true },
@@ -83,6 +106,7 @@ export class CydEditor extends LitElement {
   declare _selected: string[];
   declare _mode: "edit" | "preview";
   declare _zoom: number | "fit";
+  declare _paletteFilter: string;
   /** free space of the preview column (measured, so the HA sidebar and the height count) */
   declare _avail: { w: number; h: number } | null;
   private resizeObserver?: ResizeObserver;
@@ -114,6 +138,7 @@ export class CydEditor extends LitElement {
     this._selected = [];
     this._mode = "edit";
     this._zoom = "fit";
+    this._paletteFilter = "";
     this._avail = null;
     this._sample = false;
     this._night = false;
@@ -568,7 +593,37 @@ export class CydEditor extends LitElement {
     button.primary { background: var(--primary-color); color: var(--text-primary-color, #000); border-color: var(--primary-color); }
     button.on { border-color: var(--primary-color); color: var(--primary-color); }
     button:disabled { opacity: .4; cursor: default; }
-    button.small { padding: 2px 6px; font-size: 12px; }
+    button.small { padding: 3px 8px; font-size: 12px; }
+    button.ghost { background: transparent; }
+    button.icon { padding: 2px 6px; }
+    button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: border-color .15s, background .15s; }
+    .bi { font-family: "${unsafeCSS(ICON_FAMILY)}"; font-size: 1.15em; line-height: 1; }
+    .seg { display: inline-flex; border: 1px solid var(--divider-color); border-radius: 8px; overflow: hidden; }
+    .seg > button, .seg > label { border: 0; border-radius: 0; background: transparent; }
+    .seg > * + * { border-left: 1px solid var(--divider-color) !important; }
+    .seg > button.on { background: color-mix(in srgb, var(--primary-color) 18%, transparent); color: var(--primary-color); }
+    .tb-check { margin: 0 !important; padding: 0 8px; gap: 4px !important; }
+    .toolbar .status { display: inline-flex; align-items: center; gap: 4px; min-width: 70px; justify-content: flex-end; }
+    .toolbar .status.error { color: var(--error-color, #ef4444); }
+    .search { display: flex; align-items: center; gap: 6px; border: 1px solid var(--divider-color); border-radius: 8px; padding: 0 8px; margin-bottom: 6px; background: var(--card-background-color); }
+    .search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--primary-text-color); font: inherit; padding: 7px 0; outline: none; }
+    .pal-hint { margin-bottom: 4px; }
+    .pal-group { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--secondary-text-color); margin: 12px 0 4px; }
+    .pi-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none;
+      background: color-mix(in srgb, var(--primary-color) 14%, transparent); color: var(--primary-color); }
+    .pi-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .swatch { display: flex; align-items: center; gap: 6px; border: 1px solid var(--divider-color); border-radius: 8px; padding: 3px; background: var(--card-background-color); }
+    .swatch.own { border-color: var(--primary-color); }
+    .swatch input[type=color] { width: 26px !important; height: 26px !important; padding: 0 !important; border: 0 !important; border-radius: 6px; background: none; cursor: pointer; flex: none; }
+    .swatch code { flex: 1; font-size: 11px; color: var(--secondary-text-color); overflow: hidden; }
+    .btnrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .footer-btns { margin-top: 16px; }
+    .right h3 { border-top: 1px solid var(--divider-color); padding-top: 14px; margin-top: 18px; }
+    .right h3:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+    .field input, .field select { min-width: 0; width: 100%; box-sizing: border-box; }
+    input[type=checkbox] { accent-color: var(--primary-color); }
+    input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+    .col { scrollbar-width: thin; }
     .main { flex: 1; display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; min-height: 0; }
     .main.narrow { grid-template-columns: 1fr; grid-template-rows: auto auto auto; overflow: auto; }
     .col { overflow: auto; padding: 12px; min-height: 0; }
@@ -607,7 +662,7 @@ export class CydEditor extends LitElement {
     .trigger { border: 1px solid var(--divider-color); border-radius: 8px; padding: 6px; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; }
     .trigger > .crow b { flex: 1; font-size: 13px; }
     .step { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 6px; background: var(--secondary-background-color, rgba(127,127,127,.08)); }
-    .step select, .step input[type=text], .step input[type=number], .trigger select { padding: 5px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font: inherit; min-width: 0; }
+    .step select, .step input[type=text], .step input[type=number], .trigger select { font-size: 13px !important; padding: 5px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font: inherit; min-width: 0; }
     .step .crow select { flex: 1; }
     .stepno { width: 18px; height: 18px; border-radius: 9px; background: var(--primary-color); color: var(--text-primary-color, #fff); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
     .cond, .rule { border: 1px solid var(--divider-color); border-radius: 8px; padding: 6px; margin: 6px 0; display: flex; flex-direction: column; gap: 4px; }
@@ -657,25 +712,32 @@ export class CydEditor extends LitElement {
     const errors = this._issues.filter((i) => i.level === "error").length;
     return html`
       <div class="toolbar">
-        <button @click=${() => this.close()}>← ${t("projects")}</button>
+        <button class="ghost" @click=${() => this.close()}>${ico("mdi:arrow-left")}${t("projects")}</button>
         <span class="title">${p.name}</span>
-        <button ?disabled=${!this.undoStack.length} title="Strg+Z" @click=${() => this.undo()}>↶ ${t("undo")}</button>
-        <button ?disabled=${!this.redoStack.length} title="Strg+Y" @click=${() => this.redo()}>↷ ${t("redo")}</button>
-        <button class=${this._mode === "preview" ? "on" : ""} @click=${() => { this._mode = this._mode === "edit" ? "preview" : "edit"; this._selected = []; this._overlay = null; }}>
-          ${this._mode === "edit" ? "▶ " + t("preview_mode") : "✎ " + t("edit_mode")}</button>
-        <button class=${this._sample ? "on" : ""} @click=${() => (this._sample = !this._sample)}>${this._sample ? t("sample_data") : t("live_data")}</button>
-        <button class=${this._night ? "on" : ""} @click=${() => (this._night = !this._night)}>☾ ${t("night_view")}</button>
-        ${this._mode === "preview" && p.settings?.device_actions !== false ? html`<button title=${t("test_message_hint")}
-          @click=${() => (this._message = this._message ? null : { title: t("test_message_title"), text: t("test_message_text") })}>✉ ${t("test_message")}</button>` : nothing}
-        ${this.info?.preview_real_actions && this._mode === "preview" ? html`<label class="check" style="margin:0">
-          <input type="checkbox" .checked=${this._realActions} @change=${(e: Event) => (this._realActions = (e.target as HTMLInputElement).checked)} />⚡</label>` : nothing}
-        <span class="zoom">
-          <button class="small" @click=${() => (this._zoom = Math.max(1, (this._zoom === "fit" ? this.fitScale() : this._zoom) - 0.5))}>−</button>
-          <button class="small ${this._zoom === "fit" ? "on" : ""}" @click=${() => (this._zoom = "fit")}>${t("zoom_fit")}</button>
-          <button class="small" @click=${() => (this._zoom = Math.min(3, (this._zoom === "fit" ? this.fitScale() : this._zoom) + 0.5))}>+</button>
+        <span class="seg">
+          <button ?disabled=${!this.undoStack.length} title="${t("undo")} (Strg+Z)" @click=${() => this.undo()}>${ico("mdi:undo")}${t("undo")}</button>
+          <button ?disabled=${!this.redoStack.length} title="${t("redo")} (Strg+Y)" @click=${() => this.redo()}>${ico("mdi:redo")}${t("redo")}</button>
         </span>
-        <span class="status">${saveText}</span>
-        <button class="primary" @click=${() => { void this.flushSave(); this._showExport = true; }}>${t("generate_code")}${errors ? ` (${errors} ⚠)` : ""}</button>
+        <span class="seg">
+          <button class=${this._mode === "edit" ? "on" : ""} @click=${() => { this._mode = "edit"; this._selected = []; this._overlay = null; }}>${ico("mdi:pencil")}${t("edit_mode")}</button>
+          <button class=${this._mode === "preview" ? "on" : ""} @click=${() => { this._mode = "preview"; this._selected = []; this._overlay = null; }}>${ico("mdi:play")}${t("preview_mode")}</button>
+        </span>
+        <span class="seg">
+          <button class=${this._sample ? "on" : ""} title=${t("sample_data")} @click=${() => (this._sample = !this._sample)}>${ico(this._sample ? "mdi:flask-outline" : "mdi:home-assistant")}${this._sample ? t("sample_data") : t("live_data")}</button>
+          <button class=${this._night ? "on" : ""} @click=${() => (this._night = !this._night)}>${ico("mdi:weather-night")}${t("night_view")}</button>
+          ${this._mode === "preview" && p.settings?.device_actions !== false ? html`<button title=${t("test_message_hint")}
+            @click=${() => (this._message = this._message ? null : { title: t("test_message_title"), text: t("test_message_text") })}>${ico("mdi:message-text-outline")}${t("test_message")}</button>` : nothing}
+          ${this.info?.preview_real_actions && this._mode === "preview" ? html`<label class="check tb-check" title=${t("real_actions")}>
+            <input type="checkbox" .checked=${this._realActions} @change=${(e: Event) => (this._realActions = (e.target as HTMLInputElement).checked)} />${ico("mdi:flash")}</label>` : nothing}
+        </span>
+        <span class="seg">
+          <button title=${t("zoom_out")} @click=${() => (this._zoom = Math.max(1, (this._zoom === "fit" ? this.fitScale() : this._zoom) - 0.5))}>${ico("mdi:magnify-minus-outline")}</button>
+          <button class=${this._zoom === "fit" ? "on" : ""} @click=${() => (this._zoom = "fit")}>${t("zoom_fit")}</button>
+          <button title=${t("zoom_in")} @click=${() => (this._zoom = Math.min(3, (this._zoom === "fit" ? this.fitScale() : this._zoom) + 0.5))}>${ico("mdi:magnify-plus-outline")}</button>
+        </span>
+        <button class="ghost" title=${t("png_hint")} @click=${() => this.savePng()}>${ico("mdi:camera-outline")}PNG</button>
+        <span class="status ${this._saveState}">${this._saveState === "saved" ? ico("mdi:cloud-check-outline") : nothing}${saveText}</span>
+        <button class="primary" @click=${() => { void this.flushSave(); this._showExport = true; }}>${ico("mdi:code-braces")}${t("generate_code")}${errors ? ` (${errors} ⚠)` : ""}</button>
       </div>
       <div class="main ${this.narrow ? "narrow" : ""}">
         ${this.narrow ? nothing : html`<div class="col left">${this.renderPalette()}${this.renderPageTree()}</div>`}
@@ -692,7 +754,6 @@ export class CydEditor extends LitElement {
             @preview-tap=${this.onPreviewTap} @preview-swipe=${this.onPreviewSwipe}></cyd-screen>` : html`<div>Board/Theme?</div>`}
           <div class="note">${this.page && !this.page.widgets.length && this._mode === "edit" ? t("empty_page_hint") : t("next_step_hint")}</div>
           <div class="note">${t("preview_note")}</div>
-          <button @click=${() => this.savePng()}>PNG</button>
           ${this.narrow ? html`<div style="width:100%">${this.renderPalette()}${this.renderPageTree()}</div>` : nothing}
         </div>
         <div class="col right">${this.renderProperties()}</div>
@@ -728,14 +789,26 @@ export class CydEditor extends LitElement {
   }
 
   private renderPalette() {
-    const defs = Object.values(this.widgetDefs);
+    const q = this._paletteFilter.trim().toLowerCase();
+    const defs = Object.values(this.widgetDefs).filter((d) => !q
+      || `${loc(d, "name")} ${loc(d, "description")} ${d.type}`.toLowerCase().includes(q));
+    const grouped = new Set(PALETTE_GROUPS.flatMap(([, types]) => types));
+    const groups: [string, typeof defs][] = [
+      ...PALETTE_GROUPS.map(([key, types]): [string, typeof defs] => [key, types.map((ty) => defs.find((d) => d.type === ty)).filter((d): d is (typeof defs)[number] => !!d)]),
+      ["group_other", defs.filter((d) => !grouped.has(d.type))],
+    ];
+    const item = (d: (typeof defs)[number]) => html`<div class="palette-item" draggable="true" title=${loc(d, "description")}
+        @dragstart=${(e: DragEvent) => e.dataTransfer?.setData(WIDGET_DND_TYPE, d.type)}
+        @click=${() => this.addWidget(d.type)}>
+        <span class="glyph pi-icon">${iconChar(d.icon) ?? ""}</span>
+        <span class="pi-text"><span class="pi-name">${loc(d, "name")}</span><span class="pi-desc">${loc(d, "description")}</span></span>
+      </div>`;
     return html`<h3>${t("palette")}</h3>
-      ${defs.map((d) => html`<div class="palette-item" draggable="true" title=${loc(d, "description")}
-          @dragstart=${(e: DragEvent) => e.dataTransfer?.setData(WIDGET_DND_TYPE, d.type)}
-          @click=${() => this.addWidget(d.type)}>
-          <span class="glyph">${iconChar(d.icon) ?? ""}</span>
-          <span class="pi-text"><span class="pi-name">${loc(d, "name")}</span><span class="pi-desc">${loc(d, "description")}</span></span>
-        </div>`)}`;
+      <div class="search">${ico("mdi:magnify")}<input type="search" placeholder=${t("palette_search")} .value=${this._paletteFilter}
+        @input=${(e: Event) => (this._paletteFilter = (e.target as HTMLInputElement).value)} /></div>
+      <div class="muted pal-hint">${t("palette_hint")}</div>
+      ${groups.filter(([, list]) => list.length).map(([key, list]) => html`<div class="pal-group">${t(key as "group_tiles")}</div>${list.map(item)}`)}
+      ${!defs.length ? html`<div class="muted">${t("palette_none")}</div>` : nothing}`;
   }
 
   private renderPageTree() {
@@ -812,7 +885,7 @@ export class CydEditor extends LitElement {
         case "text": return this.text(label, value, setProp);
         case "int": return this.num(label, value, (v) => setProp(v ?? d.default), d.min, d.max);
         case "bool": return this.check(label, value, setProp);
-        case "select": return this.select(label, value, (d.options ?? []).map((o) => [o, o]), setProp);
+        case "select": return this.select(label, value, (d.options ?? []).map((o) => [o, optionLabel(o)]), setProp);
         case "page": return this.select(label, value, pages, (v) => setProp(v || null));
         case "entity": return html`<div class="field"><span>${label}</span><cyd-entity-picker .hass=${this.hass}
           .value=${(value as string) ?? null} .domains=${d.domains ?? []}
@@ -848,9 +921,9 @@ export class CydEditor extends LitElement {
       </div>
       ${w.entity ? this.select(t("simulate_state"), sim, [["", t("sim_live")], ["on", t("sim_on")], ["off", t("sim_off")], ["unavailable", t("sim_unavailable")]],
         (v) => { const next = { ...this._sim }; if (v) next[w.entity!] = v; else delete next[w.entity!]; this._sim = next; }) : nothing}
-      <div class="row2">
-        <button @click=${() => this.copySelected()}>${t("copy")}</button>
-        <button class="danger" @click=${() => this.deleteSelected()}>${t("delete_widget")}</button>
+      <div class="row2 footer-btns">
+        <button @click=${() => this.copySelected()}>${ico("mdi:content-duplicate")}${t("copy")}</button>
+        <button class="danger" @click=${() => this.deleteSelected()}>${ico("mdi:delete-outline")}${t("delete_widget")}</button>
       </div>`;
   }
 
@@ -1031,8 +1104,9 @@ export class CydEditor extends LitElement {
       x.style = next;
     });
     const color = (key: keyof typeof resolved, label: string) => html`<label class="field color"><span>${label}</span>
-      <span class="crow"><input type="color" .value=${String(resolved[key])} @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)} />
-      ${st[key] ? html`<button class="small" title=${t("reset")} @click=${() => set(key, null)}>↺</button>` : nothing}</span></label>`;
+      <span class="swatch ${st[key] ? "own" : ""}"><input type="color" .value=${String(resolved[key])} @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)} />
+      <code>${String(resolved[key])}</code>
+      ${st[key] ? html`<button class="small icon" title=${t("reset")} @click=${(e: Event) => { e.preventDefault(); set(key, null); }}>↺</button>` : nothing}</span></label>`;
     const range = (key: keyof typeof resolved, label: string, max: number) => html`<label class="field"><span>${label}: ${resolved[key]}</span>
       <input type="range" min="0" max=${max} .value=${String(resolved[key])} @change=${(e: Event) => set(key, Number((e.target as HTMLInputElement).value))} /></label>`;
     const isTile = ["toggle_tile", "sensor_value", "binary_indicator", "scene_button", "page_button"].includes(w.type) || (w.type === "label" && w.props.background);
@@ -1053,14 +1127,14 @@ export class CydEditor extends LitElement {
         ${this.select(t("text_weight"), resolved.text_weight, [["normal", t("weight_normal")], ["bold", t("weight_bold")]], (v) => set("text_weight", v === "normal" ? null : v))}
       </div>
       ${w.type === "sensor_value" ? this.select(t("value_size"), resolved.value_size, [["auto", t("auto")], ["xs", "XS"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"]], (v) => set("value_size", v === "auto" ? null : v)) : nothing}
-      <div class="row2">
-        <button @click=${() => this.editPage((pg) => { for (const x of pg.widgets) if (x.id !== w.id) x.style = { ...(w.style ?? {}) }; })}>${t("style_to_page")}</button>
-        <button @click=${() => this.mutate((pp) => {
+      <div class="btnrow">
+        <button class="small" @click=${() => this.editPage((pg) => { for (const x of pg.widgets) if (x.id !== w.id) x.style = { ...(w.style ?? {}) }; })}>${ico("mdi:content-copy")}${t("style_to_page")}</button>
+        <button class="small" @click=${() => this.mutate((pp) => {
           pp.tile_style = { ...(w.style ?? {}) };
           for (const pg of pp.pages) for (const x of pg.widgets) if (x.id === w.id && pg.id === this._pageId) x.style = {};
-        })}>${t("style_as_default")}</button>
-      </div>
-      ${Object.keys(st).length ? html`<button class="small" @click=${() => this.editWidget(w.id, (x) => { x.style = {}; })}>↺ ${t("style_reset")}</button>` : nothing}`;
+        })}>${ico("mdi:star-outline")}${t("style_as_default")}</button>
+        ${Object.keys(st).length ? html`<button class="small" @click=${() => this.editWidget(w.id, (x) => { x.style = {}; })}>↺ ${t("style_reset")}</button>` : nothing}
+      </div>`;
   }
 
   private pickEntity(w: Widget, entityId: string) {
