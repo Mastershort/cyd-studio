@@ -299,7 +299,8 @@ async def ws_generate_yaml(
         _, checksum = split_generated(result.yaml)
         await runtime.store.async_mark_exported(project["id"], checksum or "")
         esphome_dir = _esphome_dir(hass, runtime)
-        if assets.used_assets(project) and await hass.async_add_executor_job(os.path.isdir, esphome_dir):
+        dir_exists: bool = await hass.async_add_executor_job(os.path.isdir, esphome_dir)
+        if dir_exists and assets.used_assets(project):
             await hass.async_add_executor_job(
                 assets.copy_assets_to_esphome, hass.config.config_dir, esphome_dir, project
             )
