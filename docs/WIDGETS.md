@@ -23,6 +23,20 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 | `page_button` | – | `button`; Tippen → Seite (Animation) | – |
 | `page_title` | – | Seitenname, auf Unterseiten mit Zurück-Pfeil | – |
 
+## Phase 2 (ab 0.5)
+
+| Typ | Entität | Gerät |
+|---|---|---|
+| `cover_control` | cover | ▲ ■ ▼ (`cover.open_cover` / `stop_cover` / `close_cover`), Position aus `current_position` |
+| `climate` | climate | Soll aus `temperature`, − / + → `climate.set_temperature` (Schritt 0,5/1, Min/Max), Modus + Ist-Wert (`current_temperature`) |
+| `slider` | light, cover, fan, media_player, input_number, number | LVGL-Slider, beim Loslassen `light.turn_on` (brightness_pct), `cover.set_cover_position`, `fan.set_percentage`, `media_player.volume_set`, `input_number/number.set_value` |
+| `gauge` | sensor, input_number, number | LVGL-Arc 270° (Start 135°), Min/Max, Einheit, Nachkommastellen |
+| `weather` | weather | Icon je Wetterlage, Temperatur, Beschreibung, optional Luftfeuchte (Texte/Icons: `data/state_texts.json`) |
+| `multi_value` | sensor, input_number, number | bis zu 3 Werte nebeneinander (`entity`, `entity_2`, `entity_3`) |
+
+Kleine Tasten in Kacheln nutzen den Style `cyd_small_btn` (Farbe = Kreis-Hintergrund des Stils,
+Icon = „Icon an“).
+
 **Regler-Overlay** (ab 0.2): ein gemeinsames, verstecktes Overlay im `top_layer` (Layout aus
 `overlay_layout()`), geöffnet vom Skript `cyd_overlay_open(entity, title, kind, value)`. Beim
 Loslassen des Reglers sendet das Gerät `light.turn_on` (`brightness_pct`),

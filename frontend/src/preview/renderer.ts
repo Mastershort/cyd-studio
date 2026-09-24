@@ -7,6 +7,7 @@ import {
 } from "../layout";
 import { ON_STATES, rootOf, type ResolvedBoard } from "../model";
 import { layoutProps, resolveTileStyle, type TileStyle } from "../style";
+import stateTextsData from "../../../custom_components/cyd_studio/data/state_texts.json";
 import { deviceStrings } from "../i18n";
 import type { HassEntity, Page, Project, Theme, Widget } from "../types";
 import { iconFont, textFont } from "./fonts";
@@ -112,6 +113,57 @@ class Painter {
       ctx.stroke();
       ctx.restore();
     }
+  }
+
+  /** Small button (cyd_small_btn): rounded box with a centered icon. */
+  smallButton(parent: Rect, el: Element, icon: string, bg: string, iconColor: string, radius: number): void {
+    const w = el.width ?? 20;
+    const h = el.height ?? 20;
+    const pos = alignChild(parent, w, h, el.align, el.x, el.y);
+    const box = { x: pos.x, y: pos.y, w, h };
+    this.box(box, bg, null, Math.min(radius, 10), 0);
+    this.element(box, { ...el, kind: "icon", align: "CENTER", x: 0, y: 0, width: null }, icon, iconColor);
+  }
+
+  /** LVGL slider: rounded track, filled indicator, round knob. */
+  slider(parent: Rect, el: Element, fraction: number, track: string, indicator: string, knob: string): Rect {
+    const w = el.width ?? 100;
+    const h = el.height ?? 12;
+    const pos = alignChild(parent, w, h, el.align, el.x, el.y);
+    const r = Math.floor(h / 2);
+    this.box({ x: pos.x, y: pos.y, w, h }, track, null, r, 0);
+    const filled = Math.round(w * Math.max(0, Math.min(1, fraction)));
+    if (filled > 0) this.box({ x: pos.x, y: pos.y, w: Math.max(filled, h), h }, indicator, null, r, 0);
+    const k = h + 6;
+    this.box({ x: pos.x + filled - Math.floor(k / 2), y: pos.y - 3, w: k, h: k }, knob, null, k, 0);
+    return { x: pos.x, y: pos.y, w, h };
+  }
+
+  /** LVGL arc from 135° over 270° (0° = 3 o'clock, clockwise), rounded ends. */
+  arc(parent: Rect, el: Element, fraction: number, track: string, indicator: string): void {
+    const d = el.width ?? 60;
+    const pos = alignChild(parent, d, d, el.align, el.x, el.y);
+    const ctx = this.ctx;
+    const r = d / 2 - el.size / 2;
+    const cx = pos.x + d / 2;
+    const cy = pos.y + d / 2;
+    const start = (135 * Math.PI) / 180;
+    const sweep = (270 * Math.PI) / 180;
+    ctx.save();
+    ctx.lineWidth = el.size;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = track;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, start, start + sweep);
+    ctx.stroke();
+    const f = Math.max(0, Math.min(1, fraction));
+    if (f > 0) {
+      ctx.strokeStyle = indicator;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, start, start + sweep * f);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** Draw one layout element inside the parent's content box (like an LVGL label). */
@@ -321,6 +373,91 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       }
       break;
     }
+    case "cover_control": {
+      tileBox();
+      const pos = attrNumber(entity, "current_position");
+      const stateText2 = pos !== null ? `${Math.round(pos)} %` : stateText(st, strings);
+      const icons: Record<string, string> = { up: "mdi:arrow-up", stop: "mdi:stop", down: "mdi:arrow-down" };
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "state") draw(el, stateText2, col(el.color));
+        else p.smallButton(content, el, icons[el.role], style.circle_bg, style.icon_on, style.radius);
+      }
+      break;
+    }
+    case "climate": {
+      tileBox();
+      const lang = project.settings?.language === "en" ? "en" : "de";
+      const modes = STATE_TEXTS.climate as Record<string, Record<string, string>>;
+      const mode = st === "unavailable" ? strings.unavailable : st && modes[st] ? modes[st][lang] : strings.unknown;
+      const cur = attrNumber(entity, "current_temperature");
+      const target = attrNumber(entity, "temperature");
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "state") draw(el, cur !== null ? `${mode} · ${cur.toFixed(1)}°` : mode, col(el.color));
+        else if (el.role === "value") draw(el, target !== null ? `${target.toFixed(1)}°` : "--", col(el.color));
+        else p.smallButton(content, el, el.role === "plus" ? "mdi:plus" : "mdi:minus", style.circle_bg, style.icon_on, style.radius);
+      }
+      break;
+    }
+    case "slider": {
+      tileBox();
+      const v = sliderValue(w, entity);
+      const isNumber = ["input_number", "number"].includes((w.entity ?? "").split(".")[0]);
+      const vmin = isNumber ? Number(props.min ?? 0) : 0;
+      const vmax = isNumber ? Number(props.max ?? 100) : 100;
+      const unit = isNumber ? String(props.unit ?? "") : "%";
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+        else if (el.role === "value") draw(el, v === null ? "--" : `${Math.round(v)}${unit ? ` ${unit}` : ""}`, col(el.color));
+        else p.slider(content, el, v === null ? 0 : (v - vmin) / Math.max(vmax - vmin, 1), style.circle_bg, style.icon_on, style.text);
+      }
+      break;
+    }
+    case "gauge": {
+      tileBox();
+      const vmin = Number(props.min ?? 0);
+      const vmax = Math.max(Number(props.max ?? 100), vmin + 1);
+      const n = st !== undefined ? Number.parseFloat(st) : Number.NaN;
+      const unit = String(props.unit ?? "");
+      const decimals = Math.max(0, Math.min(Number(props.decimals ?? 0), 2));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.kind === "arc") p.arc(content, el, Number.isNaN(n) ? 0 : (Math.round(Math.min(vmax, Math.max(vmin, n))) - vmin) / (vmax - vmin), style.circle_bg, style.icon_on);
+        else if (el.role === "value") draw(el, Number.isNaN(n) ? "--" : `${n.toFixed(decimals)}${unit ? ` ${unit}` : ""}`, col(el.color));
+        else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
+      }
+      break;
+    }
+    case "weather": {
+      tileBox();
+      const lang = project.settings?.language === "en" ? "en" : "de";
+      const conds = STATE_TEXTS.weather as Record<string, Record<string, string>>;
+      const info = (st && conds[st]) || (STATE_TEXTS.weather_unknown as Record<string, string>);
+      const temp = attrNumber(entity, "temperature");
+      const hum = (props.show_humidity ?? true) ? attrNumber(entity, "humidity") : null;
+      const text = hum !== null ? `${info[lang]} · ${Math.round(hum)} %` : info[lang];
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
+        if (el.role === "icon") draw(el, info.icon, col(el.color));
+        else if (el.role === "value") draw(el, temp !== null ? `${temp.toFixed(0)}°` : "--", col(el.color));
+        else if (el.role === "state") draw(el, text, col(el.color));
+      }
+      break;
+    }
+    case "multi_value": {
+      tileBox();
+      const items = multiItems(w);
+      const decimals = Math.max(0, Math.min(Number(props.decimals ?? 1), 2));
+      for (const el of widgetElements(w.type, rect.w, rect.h, lp({ _count: items.length }), fs, ics)) {
+        const item = items[Number(el.role.slice(-1))];
+        if (!item) continue;
+        if (el.role.startsWith("label")) draw(el, item.label || fallbackLabel(item.entity), col(el.color));
+        else {
+          const n = Number.parseFloat(input.state(item.entity)?.state ?? "");
+          draw(el, Number.isNaN(n) ? "--" : `${n.toFixed(decimals)}${item.unit ? ` ${item.unit}` : ""}`, col(el.color));
+        }
+      }
+      break;
+    }
     default: {
       // Unknown / future widget: draw a placeholder box
       p.box(rect, null, p.color("warning"), style.radius, 1);
@@ -378,6 +515,12 @@ export function sampleState(project: Project): StateResolver {
   let i = 0;
   for (const page of project.pages) {
     for (const w of page.widgets) {
+      for (const n of [2, 3]) {
+        const extra = w.props?.[`entity_${n}`];
+        if (typeof extra === "string" && !values.has(extra)) {
+          values.set(extra, { entity_id: extra, state: String(40 + n * 11), attributes: {} });
+        }
+      }
       if (!w.entity || values.has(w.entity)) continue;
       const domain = w.entity.split(".")[0];
       let state = i % 2 === 0 ? "on" : "off";
@@ -388,6 +531,10 @@ export function sampleState(project: Project): StateResolver {
       if (domain === "light" && state === "on") attributes.brightness = 204;
       if (domain === "cover") attributes.current_position = state === "open" ? 60 : 0;
       if (domain === "fan" && state === "on") attributes.percentage = 50;
+      if (domain === "climate") { state = "heat"; attributes.temperature = 21.5; attributes.current_temperature = 20.8; }
+      if (domain === "weather") { state = "partlycloudy"; attributes.temperature = 17; attributes.humidity = 62; }
+      if (domain === "media_player") { state = "playing"; attributes.volume_level = 0.35; }
+      if (domain === "input_number" || domain === "number") state = "21";
       values.set(w.entity, { entity_id: w.entity, state, attributes });
       i++;
     }
@@ -445,4 +592,43 @@ function renderOverlay(p: Painter, input: RenderInput, ov: { title: string; valu
       hits.push({ kind: "overlay-slider", id: "slider", rect: track });
     }
   }
+}
+
+const STATE_TEXTS = stateTextsData as Record<string, unknown>;
+
+function attrNumber(entity: HassEntity | undefined, attr: string): number | null {
+  const v = entity?.attributes[attr];
+  if (v === undefined || v === null || v === "") return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+
+/** Slider value in slider units (mirrors generator/widgets/controls.py SLIDER_DOMAINS). */
+function sliderValue(w: Widget, entity: HassEntity | undefined): number | null {
+  const domain = (w.entity ?? "").split(".")[0];
+  if (!entity) return null;
+  if (domain === "input_number" || domain === "number") {
+    const n = Number.parseFloat(entity.state);
+    return Number.isNaN(n) ? null : n;
+  }
+  const spec: Record<string, [string, number]> = {
+    light: ["brightness", 1], cover: ["current_position", 2], fan: ["percentage", 2], media_player: ["volume_level", 3],
+  };
+  const [attr, kind] = spec[domain] ?? ["", 2];
+  const v = attrNumber(entity, attr);
+  if (v === null) return 0;
+  if ((kind === 1 || kind === 3) && entity.state === "off") return 0;
+  return kind === 1 ? (v * 100) / 255 : kind === 3 ? v * 100 : v;
+}
+
+/** (entity, label, unit) of a multi_value widget (mirrors controls.multi_entities). */
+export function multiItems(w: Widget): { entity: string; label: string; unit: string }[] {
+  const p = w.props ?? {};
+  const out: { entity: string; label: string; unit: string }[] = [];
+  if (w.entity) out.push({ entity: w.entity, label: String(p.label ?? ""), unit: String(p.unit ?? "") });
+  for (const n of [2, 3]) {
+    const e = p[`entity_${n}`];
+    if (e) out.push({ entity: String(e), label: String(p[`label_${n}`] ?? ""), unit: String(p[`unit_${n}`] ?? "") });
+  }
+  return out;
 }

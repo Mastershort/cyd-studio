@@ -1,0 +1,99 @@
+{
+  "type": "multi_value",
+  "name": "Mehrfachwert",
+  "name_en": "Multi value",
+  "description": "Bis zu 3 Werte in einer Kachel (z. B. Temperatur, Feuchte, CO₂)",
+  "description_en": "Up to 3 values in one tile (e.g. temperature, humidity, CO₂)",
+  "icon": "mdi:view-column",
+  "domains": [
+    "sensor",
+    "input_number",
+    "number"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung 1",
+      "label_en": "Label 1"
+    },
+    {
+      "key": "unit",
+      "type": "text",
+      "default": "",
+      "label": "Einheit 1",
+      "label_en": "Unit 1"
+    },
+    {
+      "key": "entity_2",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "sensor",
+        "input_number",
+        "number"
+      ],
+      "label": "Entität 2",
+      "label_en": "Entity 2"
+    },
+    {
+      "key": "label_2",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung 2",
+      "label_en": "Label 2"
+    },
+    {
+      "key": "unit_2",
+      "type": "text",
+      "default": "",
+      "label": "Einheit 2",
+      "label_en": "Unit 2"
+    },
+    {
+      "key": "entity_3",
+      "type": "entity",
+      "default": null,
+      "domains": [
+        "sensor",
+        "input_number",
+        "number"
+      ],
+      "label": "Entität 3",
+      "label_en": "Entity 3"
+    },
+    {
+      "key": "label_3",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung 3",
+      "label_en": "Label 3"
+    },
+    {
+      "key": "unit_3",
+      "type": "text",
+      "default": "",
+      "label": "Einheit 3",
+      "label_en": "Unit 3"
+    },
+    {
+      "key": "decimals",
+      "type": "int",
+      "default": 1,
+      "min": 0,
+      "max": 2,
+      "label": "Nachkommastellen",
+      "label_en": "Decimals"
+    }
+  ]
+}

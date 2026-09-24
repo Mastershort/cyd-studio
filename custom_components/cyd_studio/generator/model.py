@@ -316,6 +316,11 @@ def validate(
                             pid,
                             wid,
                         )
+            for pdef in wdef.get("props", []):
+                value = widget.get("props", {}).get(pdef["key"])
+                if pdef.get("type") == "entity" and value and not ENTITY_ID_RE.match(str(value)):
+                    add("error", "entity_invalid", f"„{label}“: Entität „{value}“ ist ungültig.",
+                        f"\"{label}\": entity \"{value}\" is invalid.", pid, wid)  # fmt: skip
             if widget["type"] == "scene_button":
                 action = widget.get("action") or {}
                 service = action.get("service")

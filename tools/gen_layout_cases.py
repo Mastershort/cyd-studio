@@ -45,6 +45,12 @@ WIDGET_TYPES = [
     "scene_button",
     "page_button",
     "page_title",
+    "cover_control",
+    "climate",
+    "slider",
+    "gauge",
+    "weather",
+    "multi_value",
 ]
 PROPS = [
     {"icon": "mdi:lightbulb", "show_state": True, "show_date": True, "size": "xl", "align": "center"},
@@ -52,6 +58,8 @@ PROPS = [
     {"icon": "mdi:home", "_has_back": True, "size": "l", "align": "right", "muted": True},
     {"icon": "mdi:lightbulb", "icon_circle": True, "text_size": "m", "show_state": True},
     {"icon": "mdi:fan", "icon_circle": True, "text_size": "l", "show_date": False},
+    {"icon": "mdi:weather-sunny", "_count": 2, "text_size": "m"},
+    {"icon": "", "_count": 3, "icon_circle": True},
 ]
 SIZES = [(30, 30), (60, 48), (147, 52), (147, 112), (304, 48), (100, 160), (200, 200)]
 

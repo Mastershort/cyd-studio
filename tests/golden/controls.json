@@ -1,0 +1,158 @@
+{
+  "schema": 1,
+  "id": "golden-controls",
+  "name": "Steuerung",
+  "device_name": "cyd-controls",
+  "board": "esp32-2432s028r",
+  "orientation": "landscape",
+  "theme": "mastershort_dark",
+  "grid": {
+    "cols": 4,
+    "rows": 3,
+    "gap": 8,
+    "padding": 8
+  },
+  "settings": {
+    "language": "de"
+  },
+  "navigation": {
+    "style": "tabbar",
+    "tabbar_position": "bottom"
+  },
+  "pages": [
+    {
+      "id": "klima",
+      "name": "Klima",
+      "icon": "mdi:thermostat",
+      "widgets": [
+        {
+          "id": "c",
+          "type": "climate",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 2,
+          "entity": "climate.wohnzimmer",
+          "props": {
+            "label": "Heizung",
+            "step": "0.5",
+            "min": 5,
+            "max": 28
+          }
+        },
+        {
+          "id": "g",
+          "type": "gauge",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 2,
+          "entity": "sensor.pv_leistung",
+          "props": {
+            "label": "PV",
+            "min": 0,
+            "max": 8000,
+            "unit": "W",
+            "decimals": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "steuer",
+      "name": "Steuern",
+      "icon": "mdi:tune",
+      "widgets": [
+        {
+          "id": "r",
+          "type": "cover_control",
+          "x": 0,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "cover.rollo",
+          "props": {
+            "label": "Rollo"
+          }
+        },
+        {
+          "id": "s1",
+          "type": "slider",
+          "x": 2,
+          "y": 0,
+          "w": 2,
+          "h": 1,
+          "entity": "light.decke",
+          "props": {
+            "label": "Decke"
+          }
+        },
+        {
+          "id": "s2",
+          "type": "slider",
+          "x": 0,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "media_player.kueche",
+          "props": {
+            "label": "Radio"
+          }
+        },
+        {
+          "id": "s3",
+          "type": "slider",
+          "x": 2,
+          "y": 1,
+          "w": 2,
+          "h": 1,
+          "entity": "input_number.soll",
+          "props": {
+            "label": "Soll",
+            "min": 10,
+            "max": 30,
+            "unit": "°C"
+          }
+        },
+        {
+          "id": "w",
+          "type": "weather",
+          "x": 0,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "weather.home",
+          "props": {
+            "show_humidity": true
+          },
+          "style": {
+            "circle": true
+          }
+        },
+        {
+          "id": "m",
+          "type": "multi_value",
+          "x": 2,
+          "y": 2,
+          "w": 2,
+          "h": 1,
+          "entity": "sensor.temp",
+          "props": {
+            "label": "Temp",
+            "unit": "°C",
+            "entity_2": "sensor.feuchte",
+            "label_2": "Feuchte",
+            "unit_2": "%",
+            "entity_3": "sensor.co2",
+            "label_3": "CO₂",
+            "unit_3": "ppm",
+            "decimals": 0
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "updated": "2026-09-24"
+  }
+}

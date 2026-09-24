@@ -1,0 +1,118 @@
+{
+  "weather": {
+    "clear-night": {
+      "icon": "mdi:weather-night",
+      "de": "Klare Nacht",
+      "en": "Clear night"
+    },
+    "cloudy": {
+      "icon": "mdi:weather-cloudy",
+      "de": "Bewölkt",
+      "en": "Cloudy"
+    },
+    "exceptional": {
+      "icon": "mdi:alert-circle-outline",
+      "de": "Unwetter",
+      "en": "Exceptional"
+    },
+    "fog": {
+      "icon": "mdi:weather-fog",
+      "de": "Nebel",
+      "en": "Fog"
+    },
+    "hail": {
+      "icon": "mdi:weather-hail",
+      "de": "Hagel",
+      "en": "Hail"
+    },
+    "lightning": {
+      "icon": "mdi:weather-lightning",
+      "de": "Gewitter",
+      "en": "Lightning"
+    },
+    "lightning-rainy": {
+      "icon": "mdi:weather-lightning-rainy",
+      "de": "Gewitter, Regen",
+      "en": "Lightning, rainy"
+    },
+    "partlycloudy": {
+      "icon": "mdi:weather-partly-cloudy",
+      "de": "Teilweise bewölkt",
+      "en": "Partly cloudy"
+    },
+    "pouring": {
+      "icon": "mdi:weather-pouring",
+      "de": "Starkregen",
+      "en": "Pouring"
+    },
+    "rainy": {
+      "icon": "mdi:weather-rainy",
+      "de": "Regen",
+      "en": "Rainy"
+    },
+    "snowy": {
+      "icon": "mdi:weather-snowy",
+      "de": "Schnee",
+      "en": "Snowy"
+    },
+    "snowy-rainy": {
+      "icon": "mdi:weather-snowy-rainy",
+      "de": "Schneeregen",
+      "en": "Snowy, rainy"
+    },
+    "sunny": {
+      "icon": "mdi:weather-sunny",
+      "de": "Sonnig",
+      "en": "Sunny"
+    },
+    "windy": {
+      "icon": "mdi:weather-windy",
+      "de": "Windig",
+      "en": "Windy"
+    },
+    "windy-variant": {
+      "icon": "mdi:weather-windy-variant",
+      "de": "Windig, bewölkt",
+      "en": "Windy, cloudy"
+    }
+  },
+  "weather_unknown": {
+    "icon": "mdi:weather-cloudy-alert",
+    "de": "–",
+    "en": "–"
+  },
+  "climate": {
+    "off": {
+      "de": "Aus",
+      "en": "Off"
+    },
+    "heat": {
+      "de": "Heizen",
+      "en": "Heat"
+    },
+    "cool": {
+      "de": "Kühlen",
+      "en": "Cool"
+    },
+    "heat_cool": {
+      "de": "Heizen/Kühlen",
+      "en": "Heat/Cool"
+    },
+    "auto": {
+      "de": "Automatik",
+      "en": "Auto"
+    },
+    "dry": {
+      "de": "Entfeuchten",
+      "en": "Dry"
+    },
+    "fan_only": {
+      "de": "Lüften",
+      "en": "Fan"
+    }
+  },
+  "climate_unknown": {
+    "de": "–",
+    "en": "–"
+  }
+}

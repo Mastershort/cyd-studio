@@ -1,0 +1,29 @@
+{
+  "type": "weather",
+  "name": "Wetter",
+  "name_en": "Weather",
+  "description": "Wetterlage als Icon, Temperatur und Beschreibung",
+  "description_en": "Condition icon, temperature and description",
+  "icon": "mdi:weather-partly-cloudy",
+  "domains": [
+    "weather"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "show_humidity",
+      "type": "bool",
+      "default": true,
+      "label": "Luftfeuchte anzeigen",
+      "label_en": "Show humidity"
+    }
+  ]
+}

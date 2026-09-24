@@ -1,0 +1,1295 @@
+# ======================================================================
+# Erzeugt von CYD Studio (Generator 0.5.0) – ESPHome >= 2026.9.0
+# Projekt: Steuerung · Board: ESP32-2432S028R (Cheap Yellow Display 2,8″)
+# Stand: 2026-09-24
+#
+# Änderungen bitte in CYD Studio vornehmen – sonst werden sie beim
+# nächsten Export überschrieben.
+#
+# WLAN-Zugangsdaten kommen aus secrets.yaml (wifi_ssid, wifi_password).
+# In Home Assistant beim ESPHome-Gerät „Dem Gerät erlauben,
+# Home-Assistant-Aktionen auszuführen“ aktivieren – sonst reagieren
+# die Schalter nicht.
+#
+# Hardware-Grundkonfiguration nach github.com/akuehlewind/ESPHome-touch-display-mount (MIT, (c) 2023 Adrian Kuehlewind)
+# ======================================================================
+
+substitutions:
+  device_name: cyd-controls
+  friendly_name: Steuerung
+  ent_climate_wohnzimmer: climate.wohnzimmer
+  ent_cover_rollo: cover.rollo
+  ent_input_number_soll: input_number.soll
+  ent_light_decke: light.decke
+  ent_media_player_kueche: media_player.kueche
+  ent_sensor_co2: sensor.co2
+  ent_sensor_feuchte: sensor.feuchte
+  ent_sensor_pv_leistung: sensor.pv_leistung
+  ent_sensor_temp: sensor.temp
+  ent_weather_home: weather.home
+
+esphome:
+  name: "${device_name}"
+  friendly_name: "${friendly_name}"
+  min_version: 2026.9.0
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: "100%"
+      - script.execute: cyd_update_time
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    id: cyd_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Steuerung Fallback"
+
+captive_portal:
+
+globals:
+  - id: cyd_page
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - script.execute: cyd_update_time
+    on_time:
+      - seconds: 0
+        minutes: "/1"
+        then:
+          - script.execute: cyd_update_time
+
+spi:
+  - id: spi_display
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+  - id: spi_touch
+    clk_pin: GPIO25
+    mosi_pin: GPIO32
+    miso_pin: GPIO39
+
+display:
+  - platform: mipi_spi
+    id: cyd_display
+    spi_id: spi_display
+    model: ILI9341
+    color_order: BGR
+    data_rate: 10MHz
+    cs_pin:
+      number: 15
+      ignore_strapping_warning: true
+    dc_pin:
+      number: 2
+      ignore_strapping_warning: true
+    invert_colors: false
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: xpt2046
+    id: cyd_touch
+    spi_id: spi_touch
+    cs_pin: 33
+    interrupt_pin: 36
+    update_interval: 20ms
+    threshold: 300
+    calibration:
+      x_min: 280
+      x_max: 3860
+      y_min: 340
+      y_max: 3860
+    transform:
+      swap_xy: false
+      mirror_x: true
+      mirror_y: false
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Display-Beleuchtung
+    id: backlight
+    restore_mode: ALWAYS_ON
+
+sensor:
+  - platform: wifi_signal
+    name: WLAN-Signal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Laufzeit
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: homeassistant
+    id: ha_climate_wohnzimmer_temperature_num
+    entity_id: "${ent_climate_wohnzimmer}"
+    attribute: temperature
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_klima_c_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[12];
+              snprintf(buf, sizeof(buf), "%.1f°", x);
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_climate_wohnzimmer_current_temperature_num
+    entity_id: "${ent_climate_wohnzimmer}"
+    attribute: current_temperature
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_klima_c_state
+            text: !lambda |-
+              const std::string st = id(ha_climate_wohnzimmer).state;
+              auto mode = [&]() -> std::string {
+              if (st == "off") return std::string("Aus");
+              if (st == "heat") return std::string("Heizen");
+              if (st == "cool") return std::string("Kühlen");
+              if (st == "heat_cool") return std::string("Heizen/Kühlen");
+              if (st == "auto") return std::string("Automatik");
+              if (st == "dry") return std::string("Entfeuchten");
+              if (st == "fan_only") return std::string("Lüften");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("–");
+              }();
+              const float c = id(ha_climate_wohnzimmer_current_temperature_num).state;
+              if (std::isnan(c)) return mode;
+              char buf[48];
+              snprintf(buf, sizeof(buf), "%s · %.1f°", mode.c_str(), c);
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_sensor_pv_leistung_num
+    entity_id: "${ent_sensor_pv_leistung}"
+    on_value:
+      then:
+        - lvgl.arc.update:
+            id: w_klima_g_arc
+            value: !lambda |-
+              if (std::isnan(x)) return 0;
+              return (int) lroundf(std::min((float) 8000, std::max((float) 0, x)));
+        - lvgl.label.update:
+            id: w_klima_g_value
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " W";
+  - platform: homeassistant
+    id: ha_cover_rollo_current_position_num
+    entity_id: "${ent_cover_rollo}"
+    attribute: current_position
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_decke_brightness_num
+    entity_id: "${ent_light_decke}"
+    attribute: brightness
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_steuer_s1_slider
+            value: !lambda |-
+              float v = id(ha_light_decke_brightness_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_light_decke).state == "off") return 0.0f;
+              return v * 100.0f / 255.0f;
+        - lvgl.label.update:
+            id: w_steuer_s1_value
+            text: !lambda |-
+              const float cur = [&]() -> float {
+              float v = id(ha_light_decke_brightness_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_light_decke).state == "off") return 0.0f;
+              return v * 100.0f / 255.0f;
+              }();
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(cur));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_media_player_kueche_volume_level_num
+    entity_id: "${ent_media_player_kueche}"
+    attribute: volume_level
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_steuer_s2_slider
+            value: !lambda |-
+              float v = id(ha_media_player_kueche_volume_level_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_media_player_kueche).state == "off") return 0.0f;
+              return v * 100.0f;
+        - lvgl.label.update:
+            id: w_steuer_s2_value
+            text: !lambda |-
+              const float cur = [&]() -> float {
+              float v = id(ha_media_player_kueche_volume_level_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_media_player_kueche).state == "off") return 0.0f;
+              return v * 100.0f;
+              }();
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(cur));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_input_number_soll_num
+    entity_id: "${ent_input_number_soll}"
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_steuer_s3_slider
+            value: !lambda |-
+              float v = id(ha_input_number_soll_num).state;
+              if (std::isnan(v)) return 0.0f;
+              return v;
+        - lvgl.label.update:
+            id: w_steuer_s3_value
+            text: !lambda |-
+              const float cur = [&]() -> float {
+              float v = id(ha_input_number_soll_num).state;
+              if (std::isnan(v)) return 0.0f;
+              return v;
+              }();
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%d °C", (int) lroundf(cur));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_weather_home_temperature_num
+    entity_id: "${ent_weather_home}"
+    attribute: temperature
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_w_temp
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[12];
+              snprintf(buf, sizeof(buf), "%.0f°", x);
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_weather_home_humidity_num
+    entity_id: "${ent_weather_home}"
+    attribute: humidity
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_w_state
+            text: !lambda |-
+              const std::string st = id(ha_weather_home).state;
+              const std::string t = [&]() -> std::string {
+              if (st == "clear-night") return std::string("Klare Nacht");
+              if (st == "cloudy") return std::string("Bewölkt");
+              if (st == "exceptional") return std::string("Unwetter");
+              if (st == "fog") return std::string("Nebel");
+              if (st == "hail") return std::string("Hagel");
+              if (st == "lightning") return std::string("Gewitter");
+              if (st == "lightning-rainy") return std::string("Gewitter, Regen");
+              if (st == "partlycloudy") return std::string("Teilweise bewölkt");
+              if (st == "pouring") return std::string("Starkregen");
+              if (st == "rainy") return std::string("Regen");
+              if (st == "snowy") return std::string("Schnee");
+              if (st == "snowy-rainy") return std::string("Schneeregen");
+              if (st == "sunny") return std::string("Sonnig");
+              if (st == "windy") return std::string("Windig");
+              if (st == "windy-variant") return std::string("Windig, bewölkt");
+              return std::string("–");
+              }();
+              const float h = id(ha_weather_home_humidity_num).state;
+              if (std::isnan(h)) return t;
+              char buf[64];
+              snprintf(buf, sizeof(buf), "%s · %d %%", t.c_str(), (int) lroundf(h));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_sensor_temp_num
+    entity_id: "${ent_sensor_temp}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_m_v0
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " °C";
+  - platform: homeassistant
+    id: ha_sensor_feuchte_num
+    entity_id: "${ent_sensor_feuchte}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_m_v1
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " %";
+  - platform: homeassistant
+    id: ha_sensor_co2_num
+    entity_id: "${ent_sensor_co2}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_m_v2
+            text: !lambda |-
+              if (std::isnan(x)) return std::string("--");
+              char buf[24];
+              snprintf(buf, sizeof(buf), "%.0f", x);
+              return std::string(buf) + " ppm";
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_climate_wohnzimmer
+    entity_id: "${ent_climate_wohnzimmer}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_klima_c_state
+            text: !lambda |-
+              const std::string st = id(ha_climate_wohnzimmer).state;
+              auto mode = [&]() -> std::string {
+              if (st == "off") return std::string("Aus");
+              if (st == "heat") return std::string("Heizen");
+              if (st == "cool") return std::string("Kühlen");
+              if (st == "heat_cool") return std::string("Heizen/Kühlen");
+              if (st == "auto") return std::string("Automatik");
+              if (st == "dry") return std::string("Entfeuchten");
+              if (st == "fan_only") return std::string("Lüften");
+              if (st == "unavailable") return std::string("Nicht verfügbar");
+              return std::string("–");
+              }();
+              const float c = id(ha_climate_wohnzimmer_current_temperature_num).state;
+              if (std::isnan(c)) return mode;
+              char buf[48];
+              snprintf(buf, sizeof(buf), "%s · %.1f°", mode.c_str(), c);
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_cover_rollo
+    entity_id: "${ent_cover_rollo}"
+    on_value:
+      then: []
+  - platform: homeassistant
+    id: ha_light_decke
+    entity_id: "${ent_light_decke}"
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_steuer_s1_slider
+            value: !lambda |-
+              float v = id(ha_light_decke_brightness_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_light_decke).state == "off") return 0.0f;
+              return v * 100.0f / 255.0f;
+        - lvgl.label.update:
+            id: w_steuer_s1_value
+            text: !lambda |-
+              const float cur = [&]() -> float {
+              float v = id(ha_light_decke_brightness_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_light_decke).state == "off") return 0.0f;
+              return v * 100.0f / 255.0f;
+              }();
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(cur));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_media_player_kueche
+    entity_id: "${ent_media_player_kueche}"
+    on_value:
+      then:
+        - lvgl.slider.update:
+            id: w_steuer_s2_slider
+            value: !lambda |-
+              float v = id(ha_media_player_kueche_volume_level_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_media_player_kueche).state == "off") return 0.0f;
+              return v * 100.0f;
+        - lvgl.label.update:
+            id: w_steuer_s2_value
+            text: !lambda |-
+              const float cur = [&]() -> float {
+              float v = id(ha_media_player_kueche_volume_level_num).state;
+              if (std::isnan(v)) return 0.0f;
+              if (id(ha_media_player_kueche).state == "off") return 0.0f;
+              return v * 100.0f;
+              }();
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(cur));
+              return std::string(buf);
+  - platform: homeassistant
+    id: ha_weather_home
+    entity_id: "${ent_weather_home}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: w_steuer_w_icon
+            text: !lambda |-
+              if (x == "clear-night") return std::string("󰖔");
+              if (x == "cloudy") return std::string("󰖐");
+              if (x == "exceptional") return std::string("󰗖");
+              if (x == "fog") return std::string("󰖑");
+              if (x == "hail") return std::string("󰖒");
+              if (x == "lightning") return std::string("󰖓");
+              if (x == "lightning-rainy") return std::string("󰙾");
+              if (x == "partlycloudy") return std::string("󰖕");
+              if (x == "pouring") return std::string("󰖖");
+              if (x == "rainy") return std::string("󰖗");
+              if (x == "snowy") return std::string("󰖘");
+              if (x == "snowy-rainy") return std::string("󰙿");
+              if (x == "sunny") return std::string("󰖙");
+              if (x == "windy") return std::string("󰖝");
+              if (x == "windy-variant") return std::string("󰖞");
+              return std::string("󰼯");
+        - lvgl.label.update:
+            id: w_steuer_w_state
+            text: !lambda |-
+              const std::string st = id(ha_weather_home).state;
+              const std::string t = [&]() -> std::string {
+              if (st == "clear-night") return std::string("Klare Nacht");
+              if (st == "cloudy") return std::string("Bewölkt");
+              if (st == "exceptional") return std::string("Unwetter");
+              if (st == "fog") return std::string("Nebel");
+              if (st == "hail") return std::string("Hagel");
+              if (st == "lightning") return std::string("Gewitter");
+              if (st == "lightning-rainy") return std::string("Gewitter, Regen");
+              if (st == "partlycloudy") return std::string("Teilweise bewölkt");
+              if (st == "pouring") return std::string("Starkregen");
+              if (st == "rainy") return std::string("Regen");
+              if (st == "snowy") return std::string("Schnee");
+              if (st == "snowy-rainy") return std::string("Schneeregen");
+              if (st == "sunny") return std::string("Sonnig");
+              if (st == "windy") return std::string("Windig");
+              if (st == "windy-variant") return std::string("Windig, bewölkt");
+              return std::string("–");
+              }();
+              const float h = id(ha_weather_home_humidity_num).state;
+              if (std::isnan(h)) return t;
+              char buf[64];
+              snprintf(buf, sizeof(buf), "%s · %d %%", t.c_str(), (int) lroundf(h));
+              return std::string(buf);
+
+button:
+  - platform: restart
+    name: Neustart
+    entity_category: diagnostic
+
+font:
+  - file: "gfonts://Montserrat@500"
+    id: font_12
+    size: 12
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·₂"
+  - file: "gfonts://Montserrat@500"
+    id: font_14
+    size: 14
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_16
+    size: 16
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "gfonts://Montserrat@500"
+    id: font_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÖÜäöüß°µ²³€–·"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_20
+    size: 20
+    bpp: 4
+    glyphs:
+      - "\U000F0045\U000F005D\U000F0374\U000F0393\U000F0415\U000F04DB\U000F062E"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icons_28
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F0590\U000F0591\U000F0592\U000F0593\U000F0594\U000F0595\U000F0596\U000F0597\U000F0598\U000F0599\U000F059D\U000F059E\U000F05D6\U000F067E\U000F067F\U000F0F2F"
+
+script:
+  - id: cyd_update_time
+    mode: restart
+    then:
+      - lvgl.label.update:
+          id: cyd_header_time
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) return std::string("--:--");
+            return now.strftime("%H:%M");
+  - id: cyd_on_page
+    mode: restart
+    parameters:
+      page: int
+      root: int
+    then:
+      - lambda: !lambda |-
+          id(cyd_page) = page;
+      - lvgl.label.update:
+          id: cyd_title
+          text: !lambda |-
+            static const char *const names[] = {"Klima", "Steuern"};
+            if (page < 0 || page >= 2) return std::string("");
+            return std::string(names[page]);
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 0;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_klima_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_klima_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_klima_icon
+                text_color: 0x8B98A5
+            - lvgl.label.update:
+                id: cyd_tab_klima_label
+                text_color: 0x8B98A5
+      - if:
+          condition:
+            lambda: !lambda |-
+              return root == 1;
+          then:
+            - lvgl.label.update:
+                id: cyd_tab_steuer_icon
+                text_color: 0x22D3EE
+            - lvgl.label.update:
+                id: cyd_tab_steuer_label
+                text_color: 0x22D3EE
+          else:
+            - lvgl.label.update:
+                id: cyd_tab_steuer_icon
+                text_color: 0x8B98A5
+            - lvgl.label.update:
+                id: cyd_tab_steuer_label
+                text_color: 0x8B98A5
+
+lvgl:
+  displays:
+    - cyd_display
+  touchscreens:
+    - touchscreen_id: cyd_touch
+  rotation: 90
+  page_wrap: false
+  theme:
+    button:
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      shadow_width: 0
+      pad_all: 5
+      text_color: 0xE6EDF3
+      pressed:
+        bg_color: 0x1B2430
+      checked:
+        bg_color: 0x1B2430
+        bg_opa: COVER
+        border_color: 0x22D3EE
+      disabled:
+        bg_opa: "50%"
+  style_definitions:
+    - id: cyd_tile
+      bg_color: 0x12171F
+      bg_opa: COVER
+      radius: 10
+      border_width: 1
+      border_color: 0x1F2933
+      pad_all: 5
+      shadow_width: 0
+    - id: cyd_plain
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 6
+      shadow_width: 0
+    - id: cyd_bar
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_navbar
+      bg_color: 0x12171F
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_tab
+      bg_opa: TRANSP
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      shadow_width: 0
+    - id: cyd_text_1
+      text_font: font_12
+      text_color: 0x8B98A5
+    - id: cyd_text_2
+      text_font: font_12
+      text_color: 0x8B98A5
+      text_align: CENTER
+    - id: cyd_text_3
+      text_font: font_16
+      text_color: 0xE6EDF3
+      text_align: CENTER
+    - id: cyd_text_4
+      text_font: icons_20
+      text_color: 0xA3E635
+    - id: cyd_text_5
+      text_font: font_14
+      text_color: 0xE6EDF3
+    - id: cyd_text_6
+      text_font: font_12
+      text_color: 0x8B98A5
+      text_align: RIGHT
+    - id: cyd_text_7
+      text_font: icons_28
+      text_color: 0xA3E635
+    - id: cyd_text_8
+      text_font: font_20
+      text_color: 0xE6EDF3
+    - id: cyd_text_9
+      text_font: icons_20
+      text_color: 0x22D3EE
+    - id: cyd_text_10
+      text_font: font_12
+      text_color: 0x22D3EE
+      text_align: CENTER
+    - id: cyd_text_11
+      text_font: icons_20
+      text_color: 0x8B98A5
+    - id: cyd_small_btn
+      bg_color: 0x1B2430
+      bg_opa: COVER
+      radius: 10
+      border_width: 0
+      pad_all: 0
+      shadow_width: 0
+  on_idle:
+    - timeout: 30s
+      then:
+        - if:
+            condition:
+              lambda: !lambda |-
+                return id(cyd_page) != 0;
+            then:
+              - lvgl.page.show: page_klima
+  top_layer:
+    widgets:
+      - obj:
+          id: cyd_header
+          x: 0
+          y: 0
+          width: 320
+          height: 28
+          styles: cyd_bar
+          pad_left: 6
+          pad_right: 6
+          scrollable: false
+          clickable: false
+          widgets:
+            - label:
+                id: cyd_title
+                align: LEFT_MID
+                styles: cyd_text_5
+                text: Klima
+            - label:
+                id: cyd_header_time
+                align: RIGHT_MID
+                styles: cyd_text_5
+                text: "--:--"
+      - obj:
+          id: cyd_tabbar
+          x: 0
+          y: 200
+          width: 320
+          height: 40
+          styles: cyd_navbar
+          scrollable: false
+          clickable: false
+          widgets:
+            - button:
+                id: cyd_tab_klima
+                x: 0
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_klima
+                widgets:
+                  - label:
+                      id: cyd_tab_klima_icon
+                      align: TOP_MID
+                      y: 2
+                      styles: cyd_text_9
+                      text: "\U000F0393"
+                  - label:
+                      id: cyd_tab_klima_label
+                      align: BOTTOM_MID
+                      y: -1
+                      width: 158
+                      long_mode: DOT
+                      styles: cyd_text_10
+                      text: Klima
+            - button:
+                id: cyd_tab_steuer
+                x: 160
+                y: 0
+                width: 160
+                height: 40
+                styles: cyd_tab
+                scrollable: false
+                on_short_click:
+                  - lvgl.page.show: page_steuer
+                widgets:
+                  - label:
+                      id: cyd_tab_steuer_icon
+                      align: TOP_MID
+                      y: 2
+                      styles: cyd_text_11
+                      text: "\U000F062E"
+                  - label:
+                      id: cyd_tab_steuer_label
+                      align: BOTTOM_MID
+                      y: -1
+                      width: 158
+                      long_mode: DOT
+                      styles: cyd_text_2
+                      text: Steuern
+  pages:
+    - id: page_klima
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 0
+            root: 0
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_klima_c
+            x: 8
+            y: 36
+            width: 148
+            height: 101
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: Heizung
+              - label:
+                  id: w_klima_c_state
+                  align: BOTTOM_MID
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: "–"
+              - label:
+                  id: w_klima_c_value
+                  align: CENTER
+                  width: 56
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "--"
+              - button:
+                  align: LEFT_MID
+                  width: 34
+                  height: 34
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: climate.set_temperature
+                        data:
+                          entity_id: "${ent_climate_wohnzimmer}"
+                          temperature: !lambda |-
+                            float t = id(ha_climate_wohnzimmer_temperature_num).state;
+                            if (std::isnan(t)) t = 16.5f;
+                            t = std::min(28.0f, std::max(5.0f, t + (-0.5f)));
+                            char buf[12];
+                            snprintf(buf, sizeof(buf), "%.1f", t);
+                            return std::string(buf);
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F0374"
+              - button:
+                  align: RIGHT_MID
+                  width: 34
+                  height: 34
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: climate.set_temperature
+                        data:
+                          entity_id: "${ent_climate_wohnzimmer}"
+                          temperature: !lambda |-
+                            float t = id(ha_climate_wohnzimmer_temperature_num).state;
+                            if (std::isnan(t)) t = 16.5f;
+                            t = std::min(28.0f, std::max(5.0f, t + (0.5f)));
+                            char buf[12];
+                            snprintf(buf, sizeof(buf), "%.1f", t);
+                            return std::string(buf);
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F0415"
+        - obj:
+            id: w_klima_g
+            x: 164
+            y: 36
+            width: 148
+            height: 101
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - arc:
+                  id: w_klima_g_arc
+                  align: TOP_MID
+                  width: 74
+                  height: 74
+                  min_value: 0
+                  max_value: 8000
+                  value: 0
+                  start_angle: 135
+                  end_angle: 45
+                  adjustable: false
+                  clickable: false
+                  arc_width: 7
+                  arc_color: 0x1B2430
+                  arc_rounded: true
+                  indicator:
+                    arc_width: 7
+                    arc_color: 0xA3E635
+                    arc_rounded: true
+                  knob:
+                    bg_opa: TRANSP
+                    pad_all: 0
+              - label:
+                  id: w_klima_g_value
+                  align: TOP_MID
+                  y: 27
+                  width: 74
+                  long_mode: DOT
+                  styles: cyd_text_3
+                  text: "--"
+              - label:
+                  align: BOTTOM_MID
+                  width: 136
+                  long_mode: DOT
+                  styles: cyd_text_2
+                  text: PV
+    - id: page_steuer
+      bg_color: 0x0A0E14
+      bg_opa: COVER
+      pad_all: 0
+      on_load:
+        - script.execute:
+            id: cyd_on_page
+            page: 1
+            root: 1
+      on_swipe_left:
+        - lvgl.page.next:
+            animation: MOVE_LEFT
+            time: 200ms
+      on_swipe_right:
+        - lvgl.page.previous:
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - obj:
+            id: w_steuer_r
+            x: 8
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - button:
+                  align: BOTTOM_LEFT
+                  width: 41
+                  height: 34
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: cover.open_cover
+                        data:
+                          entity_id: "${ent_cover_rollo}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F005D"
+              - button:
+                  align: BOTTOM_LEFT
+                  x: 47
+                  width: 41
+                  height: 34
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: cover.stop_cover
+                        data:
+                          entity_id: "${ent_cover_rollo}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F04DB"
+              - button:
+                  align: BOTTOM_LEFT
+                  x: 94
+                  width: 42
+                  height: 34
+                  styles: cyd_small_btn
+                  on_short_click:
+                    - homeassistant.action:
+                        action: cover.close_cover
+                        data:
+                          entity_id: "${ent_cover_rollo}"
+                  widgets:
+                    - label:
+                        align: CENTER
+                        styles: cyd_text_4
+                        text: "\U000F0045"
+        - obj:
+            id: w_steuer_s1
+            x: 164
+            y: 36
+            width: 148
+            height: 46
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 86
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: Decke
+              - label:
+                  id: w_steuer_s1_value
+                  align: TOP_RIGHT
+                  width: 44
+                  long_mode: DOT
+                  styles: cyd_text_6
+                  text: "--"
+              - slider:
+                  id: w_steuer_s1_slider
+                  align: BOTTOM_MID
+                  y: -2
+                  width: 112
+                  height: 12
+                  min_value: 0
+                  max_value: 100
+                  value: 0
+                  bg_color: 0x1B2430
+                  bg_opa: COVER
+                  indicator:
+                    bg_color: 0xA3E635
+                    bg_opa: COVER
+                  knob:
+                    bg_color: 0xE6EDF3
+                    bg_opa: COVER
+                    pad_all: 3
+                  on_release:
+                    - homeassistant.action:
+                        action: light.turn_on
+                        data:
+                          entity_id: "${ent_light_decke}"
+                          brightness_pct: !lambda |-
+                            return to_string((int) lroundf(x));
+                  on_value:
+                    - lvgl.label.update:
+                        id: w_steuer_s1_value
+                        text: !lambda |-
+                          char buf[16];
+                          snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(x));
+                          return std::string(buf);
+        - obj:
+            id: w_steuer_s2
+            x: 8
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 86
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: Radio
+              - label:
+                  id: w_steuer_s2_value
+                  align: TOP_RIGHT
+                  width: 44
+                  long_mode: DOT
+                  styles: cyd_text_6
+                  text: "--"
+              - slider:
+                  id: w_steuer_s2_slider
+                  align: BOTTOM_MID
+                  y: -2
+                  width: 112
+                  height: 12
+                  min_value: 0
+                  max_value: 100
+                  value: 0
+                  bg_color: 0x1B2430
+                  bg_opa: COVER
+                  indicator:
+                    bg_color: 0xA3E635
+                    bg_opa: COVER
+                  knob:
+                    bg_color: 0xE6EDF3
+                    bg_opa: COVER
+                    pad_all: 3
+                  on_release:
+                    - homeassistant.action:
+                        action: media_player.volume_set
+                        data:
+                          entity_id: "${ent_media_player_kueche}"
+                          volume_level: !lambda |-
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "%.2f", x / 100.0f);
+                            return std::string(buf);
+                  on_value:
+                    - lvgl.label.update:
+                        id: w_steuer_s2_value
+                        text: !lambda |-
+                          char buf[16];
+                          snprintf(buf, sizeof(buf), "%d %%", (int) lroundf(x));
+                          return std::string(buf);
+        - obj:
+            id: w_steuer_s3
+            x: 164
+            y: 90
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 86
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: Soll
+              - label:
+                  id: w_steuer_s3_value
+                  align: TOP_RIGHT
+                  width: 44
+                  long_mode: DOT
+                  styles: cyd_text_6
+                  text: "--"
+              - slider:
+                  id: w_steuer_s3_slider
+                  align: BOTTOM_MID
+                  y: -2
+                  width: 112
+                  height: 12
+                  min_value: 10
+                  max_value: 30
+                  value: 10
+                  bg_color: 0x1B2430
+                  bg_opa: COVER
+                  indicator:
+                    bg_color: 0xA3E635
+                    bg_opa: COVER
+                  knob:
+                    bg_color: 0xE6EDF3
+                    bg_opa: COVER
+                    pad_all: 3
+                  on_release:
+                    - homeassistant.action:
+                        action: input_number.set_value
+                        data:
+                          entity_id: "${ent_input_number_soll}"
+                          value: !lambda |-
+                            return to_string((int) lroundf(x));
+                  on_value:
+                    - lvgl.label.update:
+                        id: w_steuer_s3_value
+                        text: !lambda |-
+                          char buf[16];
+                          snprintf(buf, sizeof(buf), "%d °C", (int) lroundf(x));
+                          return std::string(buf);
+        - obj:
+            id: w_steuer_w
+            x: 8
+            y: 145
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - obj:
+                  id: w_steuer_w_circle
+                  align: LEFT_MID
+                  width: 38
+                  height: 38
+                  radius: 38
+                  bg_color: 0x1B2430
+                  bg_opa: COVER
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  clickable: false
+                  widgets:
+                    - label:
+                        id: w_steuer_w_icon
+                        align: CENTER
+                        styles: cyd_text_7
+                        text: "\U000F0F2F"
+              - label:
+                  id: w_steuer_w_temp
+                  align: TOP_LEFT
+                  x: 44
+                  width: 92
+                  long_mode: DOT
+                  styles: cyd_text_8
+                  text: "--"
+              - label:
+                  id: w_steuer_w_state
+                  align: BOTTOM_LEFT
+                  x: 44
+                  width: 92
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "–"
+        - obj:
+            id: w_steuer_m
+            x: 164
+            y: 145
+            width: 148
+            height: 47
+            styles: cyd_tile
+            scrollable: false
+            clickable: false
+            widgets:
+              - label:
+                  id: w_steuer_m_v0
+                  align: TOP_LEFT
+                  width: 41
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: "--"
+              - label:
+                  align: BOTTOM_LEFT
+                  width: 41
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: Temp
+              - label:
+                  id: w_steuer_m_v1
+                  align: TOP_LEFT
+                  x: 47
+                  width: 41
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: "--"
+              - label:
+                  align: BOTTOM_LEFT
+                  x: 47
+                  width: 41
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: Feuchte
+              - label:
+                  id: w_steuer_m_v2
+                  align: TOP_LEFT
+                  x: 94
+                  width: 42
+                  long_mode: DOT
+                  styles: cyd_text_5
+                  text: "--"
+              - label:
+                  align: BOTTOM_LEFT
+                  x: 94
+                  width: 42
+                  long_mode: DOT
+                  styles: cyd_text_1
+                  text: "CO₂"
+# cyd_studio_checksum: 0c6ead64a6e2a056
+
+# Projektdaten für den Import in CYD Studio (nicht bearbeiten)
+# cyd_studio_project: H4sIAAAAAAAC/61WS47jNhC9C4Hs3IZanm50vJ1BECCLBJkgWQQNgpLKEmH+wI8dT8ObOVHOkKPk
+#   JKkiJVnucWYmQFa2SFbVq1ePVXxhjRW+Y1sGwW3qu/rNpg5V/eTZquzwg/BSmMi2Jim1Yh0cZAvc
+#   CA1o1J66u9aa6K0KaNEr2wjFti9sZ20ET//AiEYBRtgJFWDFBpD9gO42jyt2lF0PMbDt789n2hHd
+#   K5vo08KkflqavDChZG8QhYJdxOjx5AiTEz3wKKMCdl5dDvnsYz7VKtvu2fn5jIF7LzsK21IW2ze4
+#   IBzbYjAnuk6aPv/39oibGzxOh1lvVQdmmbyGKMhLcp2IBJ7VVf14V32LpCISNlL2PkICn9ArLR1k
+#   L6K0hgwHq4ETejy1V1ILPBEGe+QSo4SJjLyiRAPqshRPioyiaBpBlQtHSUmW3bLKnQ2yRMLCxmg1
+#   ceGFmVeDkh3g4tELx4W3yUxFQ/DWSzBxhMqUMF1ohaPjBLiUg2jk9gDek6NRL4QdLXQnt3EAr21A
+#   L2wkccpSGr6kouBW4mRTJKqpPDN/P4w2Tni4yDKzMglozFtqQAc8TGeW0kFTGU9ZB+guwvpoB/NB
+#   ag3E34BaGyG2FMpbF6hCmXZc/B7kh1JBLf4outQSgT9QLQC1w6r1A9V8FlsOQuRmz2hTrRiGr0ih
+#   M5YAJli/dgeuQIZYIiyw9EssHbTolERQrWZgP/06YXqqqmpEhb/JSGLytwWmXqT+ClE9InomTF+s
+#   ZTIwVTFkRf/HMpZrYP7HQhLaNd5FZQtr9yM8f6uCP+dziwqRNR9v85fqpKiVrLEAe7gOFe5vxXqX
+#   D15i5Yvmb1G/DKKhk4I7pA/T2idoh9fB6puJiU7azwYrGd1fBZPGIcEm6QaDBeTmVajNrVDvy7ks
+#   t80ktvuL2v768+1XZH0N5AiC2sSaeuE1huMSQlFJ0rLLZqST89wHsZFL3yqY10cEo+9Puahv3cII
+#   2l0j0P96/Yotry/WO0jtkG/8uLe57LWWKjex+EuJkz+zh+9m07JGlm9//PvjR3bFbPnIFt9MH3TU
+#   Ob1gXScVJc5wlW7c9Rrv+jPmZF1yeQgjhSgzbK+Uc4AYcfjlbIWTfA+n6QI2eZgaCIF3gmpIvWax
+#   aMZ5/UA5mD6VmZanS97i2nZQBn0hvbjdeZxKODbrbVXldoJ3Ms4Ph2CTb8mP3e1odg0eUAYKK1Ov
+#   8S0RLbXdR1Qipe8hJm94Hqlih08R6h4kUt83PD8tPn2ZZFHReErhMvhC6wHLJg7lZSLacQR2kuQw
+#   u37MKlj6O1Of2snCHscl1Qh8cYw9LQXgAdB3HKc4vUNQnbk3aoEt1SMcH5Ffv2fj1tyQqSbn8z+O
+#   h4jdvAkAAA==

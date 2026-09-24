@@ -1,0 +1,61 @@
+{
+  "type": "gauge",
+  "name": "Anzeige",
+  "name_en": "Gauge",
+  "description": "Bogen-Anzeige mit Minimum und Maximum",
+  "description_en": "Arc gauge with minimum and maximum",
+  "icon": "mdi:gauge",
+  "domains": [
+    "sensor",
+    "input_number",
+    "number"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 2
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "min",
+      "type": "int",
+      "default": 0,
+      "label": "Minimum",
+      "label_en": "Minimum"
+    },
+    {
+      "key": "max",
+      "type": "int",
+      "default": 100,
+      "label": "Maximum",
+      "label_en": "Maximum"
+    },
+    {
+      "key": "unit",
+      "type": "text",
+      "default": "",
+      "label": "Einheit",
+      "label_en": "Unit"
+    },
+    {
+      "key": "decimals",
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 2,
+      "label": "Nachkommastellen",
+      "label_en": "Decimals"
+    }
+  ]
+}

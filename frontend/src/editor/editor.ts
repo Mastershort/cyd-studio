@@ -653,6 +653,10 @@ export class CydEditor extends LitElement {
         case "bool": return this.check(label, value, setProp);
         case "select": return this.select(label, value, (d.options ?? []).map((o) => [o, o]), setProp);
         case "page": return this.select(label, value, pages, (v) => setProp(v || null));
+        case "entity": return html`<div class="field"><span>${label}</span><cyd-entity-picker .hass=${this.hass}
+          .value=${(value as string) ?? null} .domains=${d.domains ?? []}
+          @value-changed=${(e: CustomEvent<{ value: string }>) => setProp(e.detail.value)}></cyd-entity-picker>
+          ${value ? html`<button class="small" @click=${() => setProp(null)}>✕</button>` : nothing}</div>`;
         case "icon": return html`<div class="field"><span>${label}</span><cyd-icon-picker .value=${String(value ?? "")}
           @value-changed=${(e: CustomEvent<{ value: string }>) => setProp(e.detail.value)}></cyd-icon-picker></div>`;
         default: return nothing;
@@ -785,6 +789,19 @@ export class CydEditor extends LitElement {
         x.props.numeric = st.state === "unavailable" || st.state === "unknown" || !Number.isNaN(Number.parseFloat(st.state));
       }
       if (st?.attributes.icon && typeof st.attributes.icon === "string" && st.attributes.icon.startsWith("mdi:")) x.props.icon = st.attributes.icon;
+      const domain = entityId.split(".")[0];
+      if (st && x.type === "slider" && (domain === "input_number" || domain === "number")) {
+        if (st.attributes.min !== undefined) x.props.min = Math.round(Number(st.attributes.min));
+        if (st.attributes.max !== undefined) x.props.max = Math.round(Number(st.attributes.max));
+        if (st.attributes.unit_of_measurement) x.props.unit = String(st.attributes.unit_of_measurement);
+      }
+      if (st && x.type === "climate") {
+        if (st.attributes.min_temp !== undefined) x.props.min = Math.round(Number(st.attributes.min_temp));
+        if (st.attributes.max_temp !== undefined) x.props.max = Math.round(Number(st.attributes.max_temp));
+      }
+      if (st && (x.type === "gauge" || x.type === "multi_value") && !x.props.unit && st.attributes.unit_of_measurement) {
+        x.props.unit = String(st.attributes.unit_of_measurement);
+      }
     });
   }
 

@@ -9,6 +9,9 @@ export const TABBAR_W_LEFT = 48;
 export const HEADER_PAD_X = 6;
 export const TILE_PAD = 6;
 export const CIRCLE_PAD = 5;
+export const SMALL_BUTTON_MAX = 40;
+export const TILE_SLIDER_H = 12;
+export const VALUE_W = 44;
 export const ELEMENT_GAP = 6;
 export const ASCENT_PER_MILLE = 968;
 export const LINE_HEIGHT_PER_MILLE = 1219;
@@ -26,7 +29,7 @@ export interface Rect {
 }
 
 export interface Element {
-  kind: "icon" | "text" | "slider";
+  kind: "icon" | "text" | "slider" | "button" | "arc";
   role: string;
   align: string;
   x: number;
@@ -35,7 +38,7 @@ export interface Element {
   size: number;
   color: string;
   text_align: string;
-  /** only for kind "slider" */
+  /** only for boxed kinds (slider, button, arc) */
   height?: number;
   /** only for icons with a round background: diameter of the circle */
   circle?: number;
@@ -179,7 +182,7 @@ export function cellAt(content: Rect, grid: Grid, px: number, py: number): { x: 
 // Inner elements of widgets
 // ---------------------------------------------------------------------------
 
-function el(kind: "icon" | "text" | "slider", role: string, align: string, x: number, y: number, size: number, color: string,
+function el(kind: Element["kind"], role: string, align: string, x: number, y: number, size: number, color: string,
   width: number | null = null, textAlign = "left"): Element {
   return { kind, role, align, x, y, width, size, color, text_align: textAlign };
 }
@@ -284,6 +287,92 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
       els.push(el("text", "label", "LEFT_MID", tx, 0, size, "text", Math.max(cw - tx, 1)));
     } else {
       els.push(el("text", "label", "CENTER", 0, 0, size, "text", cw, "center"));
+    }
+    return els;
+  }
+
+  // Element with a fixed box (buttons, sliders, arcs)
+  const sized = (kind: Element["kind"], role: string, align: string, x: number, y: number, w: number, hh: number, size: number, color: string): Element =>
+    ({ ...el(kind, role, align, x, y, size, color, Math.max(w, 1)), height: Math.max(hh, 1) });
+  const textSize = fs[String(props.text_size ?? "s")] ?? fs.s;
+  const lhT = lineHeight(textSize);
+  const lhXs = lineHeight(fs.xs);
+
+  if (wtype === "cover_control") {
+    const withTitle = ch >= lhT + ELEMENT_GAP + 24;
+    const bh = withTitle ? Math.min(ch - lhT - ELEMENT_GAP, SMALL_BUTTON_MAX) : ch;
+    if (withTitle) {
+      els.push(el("text", "label", "TOP_LEFT", 0, 0, textSize, "text", Math.max(cw - VALUE_W - ELEMENT_GAP, 1)));
+      els.push(el("text", "state", "TOP_RIGHT", 0, 0, fs.xs, "text_muted", VALUE_W, "right"));
+    }
+    ["up", "stop", "down"].forEach((role, i) => {
+      const [bx, bw] = split(0, cw, 3, ELEMENT_GAP, i);
+      const isz = bh >= ics.m + 8 ? ics.m : ics.s;
+      els.push(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"));
+    });
+    return els;
+  }
+
+  if (wtype === "climate") {
+    const tall = ch >= 2 * lhXs + lineHeight(fs.l) + 2 * ELEMENT_GAP;
+    const rows = tall ? 2 * lhXs : lhXs;
+    const bs = Math.max(Math.min(ch - rows - ELEMENT_GAP, SMALL_BUTTON_MAX, fdiv(cw, 4)), 16);
+    const vw = Math.max(cw - 2 * (bs + ELEMENT_GAP), 1);
+    const fits = [fs.xl, fs.l].filter((sz) => vw >= 3 * sz && ch - rows >= lineHeight(sz));
+    const big = fits.length ? fits[0] : fs.m;
+    const cy = tall ? 0 : fdiv(lhXs, 2);
+    if (tall) {
+      els.push(el("text", "label", "TOP_LEFT", 0, 0, fs.xs, "text_muted", cw));
+      els.push(el("text", "state", "BOTTOM_MID", 0, 0, fs.xs, "text_muted", cw, "center"));
+    } else {
+      const half = fdiv(cw, 2);
+      els.push(el("text", "label", "TOP_LEFT", 0, 0, fs.xs, "text_muted", Math.max(half - ELEMENT_GAP, 1)));
+      els.push(el("text", "state", "TOP_RIGHT", 0, 0, fs.xs, "text_muted", Math.max(cw - half, 1), "right"));
+    }
+    els.push(el("text", "value", "CENTER", 0, cy, big, "text", vw, "center"));
+    els.push(sized("button", "minus", "LEFT_MID", 0, cy, bs, bs, ics.s, "accent"));
+    els.push(sized("button", "plus", "RIGHT_MID", 0, cy, bs, bs, ics.s, "accent"));
+    return els;
+  }
+
+  if (wtype === "slider") {
+    if (ch >= lhT + TILE_SLIDER_H + 4) {
+      els.push(el("text", "label", "TOP_LEFT", 0, 0, textSize, "text", Math.max(cw - VALUE_W - ELEMENT_GAP, 1)));
+      els.push(el("text", "value", "TOP_RIGHT", 0, 0, fs.xs, "text_muted", VALUE_W, "right"));
+      els.push(sized("slider", "slider", "BOTTOM_MID", 0, -2, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent"));
+    } else {
+      els.push(sized("slider", "slider", "CENTER", 0, 0, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent"));
+    }
+    return els;
+  }
+
+  if (wtype === "gauge") {
+    const d = Math.max(Math.min(cw, ch - lhXs), 24);
+    const stroke = Math.max(fdiv(d, 10), 4);
+    const valueSize = d >= 90 ? fs.l : d < 60 ? fs.s : fs.m;
+    els.push(sized("arc", "arc", "TOP_MID", 0, 0, d, d, stroke, "accent"));
+    els.push(el("text", "value", "TOP_MID", 0, fdiv(d, 2) - fdiv(lineHeight(valueSize), 2), valueSize, "text", d, "center"));
+    els.push(el("text", "label", "BOTTOM_MID", 0, 0, fs.xs, "text_muted", cw, "center"));
+    return els;
+  }
+
+  if (wtype === "weather") {
+    const isz = ch >= ib(ics.l) && cw >= 3 * ib(ics.l) ? ics.l : ics.m;
+    const tx = ib(isz) + ELEMENT_GAP;
+    const temp = ch >= lineHeight(fs.xl) + lhXs ? fs.xl : fs.l;
+    els.push(icon("icon", "LEFT_MID", 0, 0, isz, "accent"));
+    els.push(el("text", "value", "TOP_LEFT", tx, 0, temp, "text", Math.max(cw - tx, 1)));
+    els.push(el("text", "state", "BOTTOM_LEFT", tx, 0, fs.xs, "text_muted", Math.max(cw - tx, 1)));
+    return els;
+  }
+
+  if (wtype === "multi_value") {
+    const count = Math.max(1, Math.min(Math.trunc(Number(props._count ?? 1)), 3));
+    const valueSize = ch >= lineHeight(fs.l) + lhXs ? fs.l : fs.s;
+    for (let i = 0; i < count; i++) {
+      const [vx, vw] = split(0, cw, count, ELEMENT_GAP, i);
+      els.push(el("text", `value${i}`, "TOP_LEFT", vx, 0, valueSize, "text", vw));
+      els.push(el("text", `label${i}`, "BOTTOM_LEFT", vx, 0, fs.xs, "text_muted", vw));
     }
     return els;
   }

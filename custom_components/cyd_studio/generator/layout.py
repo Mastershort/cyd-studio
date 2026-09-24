@@ -18,6 +18,9 @@ TABBAR_W_LEFT = 48
 HEADER_PAD_X = 6
 TILE_PAD = 6
 CIRCLE_PAD = 5
+SMALL_BUTTON_MAX = 40
+TILE_SLIDER_H = 12
+VALUE_W = 44
 ELEMENT_GAP = 6
 
 # Font metrics of Montserrat as rendered by ESPHome (freetype, ascender 968 / descender 251 per 1000 em)
@@ -299,6 +302,88 @@ def widget_elements(
             els.append(_el("text", "label", "LEFT_MID", tx, 0, size, "text", max(cw - tx, 1)))
         else:
             els.append(_el("text", "label", "CENTER", 0, 0, size, "text", cw, "center"))
+        return els
+
+    def sized(
+        kind: str, role: str, align: str, x: int, y: int, w: int, hh: int, size: int, color: str
+    ) -> dict[str, Any]:
+        """Element with a fixed box (buttons, sliders, arcs)."""
+        return {**_el(kind, role, align, x, y, size, color, max(w, 1)), "height": max(hh, 1)}
+
+    text_size = fs.get(str(props.get("text_size", "s")), fs["s"])
+    lh_t = line_height(text_size)
+    lh_xs = line_height(fs["xs"])
+
+    if wtype == "cover_control":
+        with_title = ch >= lh_t + ELEMENT_GAP + 24
+        bh = min(ch - lh_t - ELEMENT_GAP, SMALL_BUTTON_MAX) if with_title else ch
+        if with_title:
+            els.append(_el("text", "label", "TOP_LEFT", 0, 0, text_size, "text", max(cw - VALUE_W - ELEMENT_GAP, 1)))
+            els.append(_el("text", "state", "TOP_RIGHT", 0, 0, fs["xs"], "text_muted", VALUE_W, "right"))
+        for i, role in enumerate(("up", "stop", "down")):
+            bx, bw = split(0, cw, 3, ELEMENT_GAP, i)
+            isz = ics["m"] if bh >= ics["m"] + 8 else ics["s"]
+            els.append(sized("button", role, "BOTTOM_LEFT", bx, 0, bw, bh, isz, "accent"))
+        return els
+
+    if wtype == "climate":
+        tall = ch >= 2 * lh_xs + line_height(fs["l"]) + 2 * ELEMENT_GAP
+        rows = 2 * lh_xs if tall else lh_xs
+        bs = max(min(ch - rows - ELEMENT_GAP, SMALL_BUTTON_MAX, cw // 4), 16)
+        vw = max(cw - 2 * (bs + ELEMENT_GAP), 1)
+        fits = [sz for sz in (fs["xl"], fs["l"]) if vw >= 3 * sz and ch - rows >= line_height(sz)]
+        big = fits[0] if fits else fs["m"]
+        cy = 0 if tall else lh_xs // 2
+        if tall:
+            els.append(_el("text", "label", "TOP_LEFT", 0, 0, fs["xs"], "text_muted", cw))
+            els.append(_el("text", "state", "BOTTOM_MID", 0, 0, fs["xs"], "text_muted", cw, "center"))
+        else:
+            half = cw // 2
+            els.append(_el("text", "label", "TOP_LEFT", 0, 0, fs["xs"], "text_muted", max(half - ELEMENT_GAP, 1)))
+            els.append(_el("text", "state", "TOP_RIGHT", 0, 0, fs["xs"], "text_muted", max(cw - half, 1), "right"))
+        els.append(_el("text", "value", "CENTER", 0, cy, big, "text", vw, "center"))
+        els.append(sized("button", "minus", "LEFT_MID", 0, cy, bs, bs, ics["s"], "accent"))
+        els.append(sized("button", "plus", "RIGHT_MID", 0, cy, bs, bs, ics["s"], "accent"))
+        return els
+
+    if wtype == "slider":
+        if ch >= lh_t + TILE_SLIDER_H + 4:
+            els.append(_el("text", "label", "TOP_LEFT", 0, 0, text_size, "text", max(cw - VALUE_W - ELEMENT_GAP, 1)))
+            els.append(_el("text", "value", "TOP_RIGHT", 0, 0, fs["xs"], "text_muted", VALUE_W, "right"))
+            els.append(
+                sized("slider", "slider", "BOTTOM_MID", 0, -2, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent")
+            )
+        else:
+            els.append(sized("slider", "slider", "CENTER", 0, 0, cw - 2 * TILE_SLIDER_H, TILE_SLIDER_H, 0, "accent"))
+        return els
+
+    if wtype == "gauge":
+        d = max(min(cw, ch - lh_xs), 24)
+        stroke = max(d // 10, 4)
+        value_size = fs["l"] if d >= 90 else fs["s"] if d < 60 else fs["m"]
+        els.append(sized("arc", "arc", "TOP_MID", 0, 0, d, d, stroke, "accent"))
+        els.append(
+            _el("text", "value", "TOP_MID", 0, d // 2 - line_height(value_size) // 2, value_size, "text", d, "center")
+        )
+        els.append(_el("text", "label", "BOTTOM_MID", 0, 0, fs["xs"], "text_muted", cw, "center"))
+        return els
+
+    if wtype == "weather":
+        isz = ics["l"] if ch >= ib(ics["l"]) and cw >= 3 * ib(ics["l"]) else ics["m"]
+        tx = ib(isz) + ELEMENT_GAP
+        temp = fs["xl"] if ch >= line_height(fs["xl"]) + lh_xs else fs["l"]
+        els.append(icon("icon", "LEFT_MID", 0, 0, isz, "accent"))
+        els.append(_el("text", "value", "TOP_LEFT", tx, 0, temp, "text", max(cw - tx, 1)))
+        els.append(_el("text", "state", "BOTTOM_LEFT", tx, 0, fs["xs"], "text_muted", max(cw - tx, 1)))
+        return els
+
+    if wtype == "multi_value":
+        count = max(1, min(int(props.get("_count", 1)), 3))
+        value_size = fs["l"] if ch >= line_height(fs["l"]) + lh_xs else fs["s"]
+        for i in range(count):
+            vx, vw = split(0, cw, count, ELEMENT_GAP, i)
+            els.append(_el("text", f"value{i}", "TOP_LEFT", vx, 0, value_size, "text", vw))
+            els.append(_el("text", f"label{i}", "BOTTOM_LEFT", vx, 0, fs["xs"], "text_muted", vw))
         return els
 
     if wtype == "page_title":

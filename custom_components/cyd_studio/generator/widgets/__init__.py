@@ -7,7 +7,7 @@ from typing import Any
 
 from ..context import Context
 from ..layout import Rect
-from . import basic, buttons, tiles
+from . import basic, buttons, controls, tiles
 
 Emitter = Callable[[Context, dict[str, Any], dict[str, Any], Rect], list[dict[str, Any]]]
 
@@ -20,4 +20,10 @@ EMITTERS: dict[str, Emitter] = {
     "page_title": basic.page_title,
     "scene_button": buttons.scene_button,
     "page_button": buttons.page_button,
+    "cover_control": controls.cover_control,
+    "climate": controls.climate,
+    "slider": controls.slider,
+    "gauge": controls.gauge,
+    "weather": controls.weather,
+    "multi_value": controls.multi_value,
 }

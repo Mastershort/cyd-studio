@@ -1,0 +1,58 @@
+{
+  "type": "climate",
+  "name": "Klima",
+  "name_en": "Climate",
+  "description": "Soll-Temperatur mit − / +, Ist-Wert und Modus",
+  "description_en": "Target temperature with − / +, current value and mode",
+  "icon": "mdi:thermostat",
+  "domains": [
+    "climate"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 2
+  },
+  "min_size": {
+    "w": 2,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "step",
+      "type": "select",
+      "default": "0.5",
+      "options": [
+        "0.5",
+        "1"
+      ],
+      "label": "Schrittweite",
+      "label_en": "Step"
+    },
+    {
+      "key": "min",
+      "type": "int",
+      "default": 5,
+      "min": 0,
+      "max": 40,
+      "label": "Minimum °",
+      "label_en": "Minimum °"
+    },
+    {
+      "key": "max",
+      "type": "int",
+      "default": 30,
+      "min": 5,
+      "max": 45,
+      "label": "Maximum °",
+      "label_en": "Maximum °"
+    }
+  ]
+}

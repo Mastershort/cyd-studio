@@ -1,0 +1,55 @@
+{
+  "type": "slider",
+  "name": "Regler",
+  "name_en": "Slider",
+  "description": "Helligkeit, Position, Lautstärke oder Zahlenwert",
+  "description_en": "Brightness, position, volume or number",
+  "icon": "mdi:tune-variant",
+  "domains": [
+    "light",
+    "cover",
+    "fan",
+    "media_player",
+    "input_number",
+    "number"
+  ],
+  "entity": "required",
+  "default_size": {
+    "w": 2,
+    "h": 1
+  },
+  "min_size": {
+    "w": 1,
+    "h": 1
+  },
+  "props": [
+    {
+      "key": "label",
+      "type": "text",
+      "default": "",
+      "label": "Beschriftung",
+      "label_en": "Label"
+    },
+    {
+      "key": "min",
+      "type": "int",
+      "default": 0,
+      "label": "Minimum (Zahlen)",
+      "label_en": "Minimum (numbers)"
+    },
+    {
+      "key": "max",
+      "type": "int",
+      "default": 100,
+      "label": "Maximum (Zahlen)",
+      "label_en": "Maximum (numbers)"
+    },
+    {
+      "key": "unit",
+      "type": "text",
+      "default": "",
+      "label": "Einheit (Zahlen)",
+      "label_en": "Unit (numbers)"
+    }
+  ]
+}

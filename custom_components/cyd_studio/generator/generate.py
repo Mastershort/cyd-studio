@@ -20,7 +20,7 @@ from .widgets import EMITTERS
 from .widgets.basic import TIME_FORMATS, time_lambda
 from .widgets.common import opa, page_show
 
-GENERATOR_VERSION = "0.4.0"
+GENERATOR_VERSION = "0.5.0"
 ESPHOME_MIN_VERSION = "2026.9.0"
 ROUNDTRIP_PREFIX = "# cyd_studio_project: "
 CHECKSUM_PREFIX = "# cyd_studio_checksum: "
@@ -699,7 +699,22 @@ def _lvgl(ctx: Context, pages: list[dict[str, Any]], lvgl_pages: list[Any], top_
         + [
             {"id": sid, "text_font": font, "text_color": Raw(color), **({"text_align": align} if align else {})}
             for (font, color, align), sid in ctx.label_styles.items()
-        ],
+        ]
+        + (
+            [
+                {
+                    "id": "cyd_small_btn",
+                    "bg_color": ctx.hex(d["circle_bg"]),
+                    "bg_opa": "COVER",
+                    "radius": min(d["radius"], 10),
+                    "border_width": 0,
+                    "pad_all": 0,
+                    "shadow_width": 0,
+                }
+            ]
+            if "small_button" in ctx.helpers
+            else []
+        ),
     }
     idle: list[Any] = []
     home = p["navigation"]["home_page"]

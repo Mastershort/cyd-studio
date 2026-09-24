@@ -112,7 +112,8 @@ export interface ProjectSummary {
 
 export interface PropDef {
   key: string;
-  type: "text" | "icon" | "bool" | "int" | "select" | "page";
+  type: "text" | "icon" | "bool" | "int" | "select" | "page" | "entity";
+  domains?: string[];
   default: unknown;
   label: string;
   label_en: string;
