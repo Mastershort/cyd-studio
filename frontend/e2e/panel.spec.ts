@@ -32,6 +32,7 @@ test("create a project and add a widget", async ({ page }) => {
   await expect(page.getByText("von Hand geändert")).toBeVisible();
   await page.getByRole("button", { name: "Trotzdem speichern" }).click();
   await expect(page.getByText("Gespeichert: /config/esphome/cyd-dev.yaml")).toBeVisible();
+  await expect(page.getByRole("link", { name: "ESPHome öffnen" })).toHaveAttribute("href", "/hassio/ingress/a0d7b954_esphome");
   await page.getByPlaceholder("WLAN-Name (SSID)").fill("MeinWLAN");
   await page.getByRole("button", { name: "In secrets.yaml speichern" }).click();
   await expect(page.getByText("WLAN-Daten gespeichert.")).toBeVisible();

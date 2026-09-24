@@ -32,6 +32,19 @@ export class Api {
     this.ws<{ asset_id: string }>("assets/upload", { project_id: projectId, data, width, height });
   getAsset = (projectId: string, assetId: string) =>
     this.ws<{ data_url: string }>("assets/get", { project_id: projectId, asset_id: assetId });
+  /** Link to the installed ESPHome add-on (slug differs: official, beta, dev, community); null without Supervisor. */
+  async esphomeUrl(): Promise<string | null> {
+    try {
+      const res = await this.hass.callWS<{ addons?: { slug: string; state?: string }[] }>(
+        { type: "supervisor/api", endpoint: "/addons", method: "get" });
+      const addons = (res.addons ?? []).filter((a) => /(^|_)esphome(-beta|-dev)?$/.test(a.slug));
+      const best = addons.find((a) => a.state === "started") ?? addons[0];
+      return best ? `/hassio/ingress/${best.slug}` : null;
+    } catch {
+      return null;
+    }
+  }
+
   esphomeStatus = () => this.ws<{ directory: string; directory_exists: boolean }>("esphome/status");
   esphomeSave = (projectId: string, overwrite = false) =>
     this.ws<EsphomeSaveResult>("esphome/save", { project_id: projectId, overwrite });

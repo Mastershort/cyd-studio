@@ -71,6 +71,8 @@ const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
   },
   "cyd_studio/assets/get": (m) => ({ data_url: assets.get(m.asset_id as string) }),
   "cyd_studio/esphome/status": () => ({ directory: "/config/esphome", directory_exists: true }),
+  // community ESPHome add-on (the slug is not the official 5c53de3b_esphome)
+  "supervisor/api": () => ({ addons: [{ slug: "core_mosquitto", state: "started" }, { slug: "a0d7b954_esphome", state: "started" }] }),
   // first save: hand-edited file -> conflict with diff; with overwrite: saved, secrets missing
   "cyd_studio/esphome/save": (m) => m.overwrite
     ? { status: "saved", path: "/config/esphome/cyd-dev.yaml", backup: "/config/esphome/cyd-dev.yaml.bak-1", secrets_missing: ["wifi_ssid", "wifi_password"], missing_images: [] }

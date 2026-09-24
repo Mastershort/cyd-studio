@@ -264,7 +264,7 @@ Ie.elementStyles = [], Ie.shadowRootOptions = { mode: "open" }, Ie[De("elementPr
  */
 const yt = globalThis, jt = (r) => r, Ke = yt.trustedTypes, Nt = Ke ? Ke.createPolicy("lit-html", { createHTML: (r) => r }) : void 0, ti = "$lit$", pe = `lit$${Math.random().toFixed(9).slice(2)}$`, ii = "?" + pe, Bi = `<${ii}>`, we = document, Ye = () => we.createComment(""), We = (r) => r === null || typeof r != "object" && typeof r != "function", wt = Array.isArray, Oi = (r) => wt(r) || typeof r?.[Symbol.iterator] == "function", et = `[ 	
 \f\r]`, je = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Dt = /-->/g, Yt = />/g, ve = RegExp(`>|${et}(?:([^\\s"'>=/]+)(${et}*=${et}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), Wt = /'/g, Ht = /"/g, si = /^(?:script|style|textarea|title)$/i, ji = (r) => (e, ...t) => ({ _$litType$: r, strings: e, values: t }), y = ji(1), Se = Symbol.for("lit-noChange"), D = Symbol.for("lit-nothing"), Gt = /* @__PURE__ */ new WeakMap(), be = we.createTreeWalker(we, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), Wt = /'/g, Ht = /"/g, si = /^(?:script|style|textarea|title)$/i, ji = (r) => (e, ...t) => ({ _$litType$: r, strings: e, values: t }), A = ji(1), Se = Symbol.for("lit-noChange"), D = Symbol.for("lit-nothing"), Gt = /* @__PURE__ */ new WeakMap(), be = we.createTreeWalker(we, 129);
 function ni(r, e) {
   if (!wt(r) || !r.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Nt !== void 0 ? Nt.createHTML(e) : e;
@@ -545,6 +545,17 @@ class Ri {
   allowActions = (e) => this.ws("esphome/allow_actions", { project_id: e });
   uploadAsset = (e, t, i, s) => this.ws("assets/upload", { project_id: e, data: t, width: i, height: s });
   getAsset = (e, t) => this.ws("assets/get", { project_id: e, asset_id: t });
+  /** Link to the installed ESPHome add-on (slug differs: official, beta, dev, community); null without Supervisor. */
+  async esphomeUrl() {
+    try {
+      const t = ((await this.hass.callWS(
+        { type: "supervisor/api", endpoint: "/addons", method: "get" }
+      )).addons ?? []).filter((s) => /(^|_)esphome(-beta|-dev)?$/.test(s.slug)), i = t.find((s) => s.state === "started") ?? t[0];
+      return i ? `/hassio/ingress/${i.slug}` : null;
+    } catch {
+      return null;
+    }
+  }
   esphomeStatus = () => this.ws("esphome/status");
   esphomeSave = (e, t = !1) => this.ws("esphome/save", { project_id: e, overwrite: t });
   secretsSet = (e, t) => this.ws("esphome/secrets_set", { wifi_ssid: e, wifi_password: t });
@@ -1514,24 +1525,24 @@ function Gs() {
     var t = (function() {
       var i = function(E, z) {
         var u = 236, f = 17, g = E, m = a[z], b = null, p = 0, B = null, O = [], j = {}, P = function(C, T) {
-          p = g * 4 + 17, b = (function(A) {
-            for (var S = new Array(A), k = 0; k < A; k += 1) {
-              S[k] = new Array(A);
-              for (var Y = 0; Y < A; Y += 1)
+          p = g * 4 + 17, b = (function(y) {
+            for (var S = new Array(y), k = 0; k < y; k += 1) {
+              S[k] = new Array(y);
+              for (var Y = 0; Y < y; Y += 1)
                 S[k][Y] = null;
             }
             return S;
           })(p), U(0, 0), U(p - 7, 0), U(0, p - 7), te(), $(), he(C, T), g >= 7 && de(C), B == null && (B = yi(g, m, O)), ue(B, T);
         }, U = function(C, T) {
-          for (var A = -1; A <= 7; A += 1)
-            if (!(C + A <= -1 || p <= C + A))
+          for (var y = -1; y <= 7; y += 1)
+            if (!(C + y <= -1 || p <= C + y))
               for (var S = -1; S <= 7; S += 1)
-                T + S <= -1 || p <= T + S || (0 <= A && A <= 6 && (S == 0 || S == 6) || 0 <= S && S <= 6 && (A == 0 || A == 6) || 2 <= A && A <= 4 && 2 <= S && S <= 4 ? b[C + A][T + S] = !0 : b[C + A][T + S] = !1);
+                T + S <= -1 || p <= T + S || (0 <= y && y <= 6 && (S == 0 || S == 6) || 0 <= S && S <= 6 && (y == 0 || y == 6) || 2 <= y && y <= 4 && 2 <= S && S <= 4 ? b[C + y][T + S] = !0 : b[C + y][T + S] = !1);
         }, J = function() {
-          for (var C = 0, T = 0, A = 0; A < 8; A += 1) {
-            P(!0, A);
+          for (var C = 0, T = 0, y = 0; y < 8; y += 1) {
+            P(!0, y);
             var S = c.getLostPoint(j);
-            (A == 0 || C > S) && (C = S, T = A);
+            (y == 0 || C > S) && (C = S, T = y);
           }
           return T;
         }, $ = function() {
@@ -1541,24 +1552,24 @@ function Gs() {
             b[6][T] == null && (b[6][T] = T % 2 == 0);
         }, te = function() {
           for (var C = c.getPatternPosition(g), T = 0; T < C.length; T += 1)
-            for (var A = 0; A < C.length; A += 1) {
-              var S = C[T], k = C[A];
+            for (var y = 0; y < C.length; y += 1) {
+              var S = C[T], k = C[y];
               if (b[S][k] == null)
                 for (var Y = -2; Y <= 2; Y += 1)
                   for (var R = -2; R <= 2; R += 1)
                     Y == -2 || Y == 2 || R == -2 || R == 2 || Y == 0 && R == 0 ? b[S + Y][k + R] = !0 : b[S + Y][k + R] = !1;
             }
         }, de = function(C) {
-          for (var T = c.getBCHTypeNumber(g), A = 0; A < 18; A += 1) {
-            var S = !C && (T >> A & 1) == 1;
-            b[Math.floor(A / 3)][A % 3 + p - 8 - 3] = S;
+          for (var T = c.getBCHTypeNumber(g), y = 0; y < 18; y += 1) {
+            var S = !C && (T >> y & 1) == 1;
+            b[Math.floor(y / 3)][y % 3 + p - 8 - 3] = S;
           }
-          for (var A = 0; A < 18; A += 1) {
-            var S = !C && (T >> A & 1) == 1;
-            b[A % 3 + p - 8 - 3][Math.floor(A / 3)] = S;
+          for (var y = 0; y < 18; y += 1) {
+            var S = !C && (T >> y & 1) == 1;
+            b[y % 3 + p - 8 - 3][Math.floor(y / 3)] = S;
           }
         }, he = function(C, T) {
-          for (var A = m << 3 | T, S = c.getBCHTypeInfo(A), k = 0; k < 15; k += 1) {
+          for (var y = m << 3 | T, S = c.getBCHTypeInfo(y), k = 0; k < 15; k += 1) {
             var Y = !C && (S >> k & 1) == 1;
             k < 6 ? b[k][8] = Y : k < 8 ? b[k + 1][8] = Y : b[p - 15 + k][8] = Y;
           }
@@ -1568,7 +1579,7 @@ function Gs() {
           }
           b[p - 8][8] = !C;
         }, ue = function(C, T) {
-          for (var A = -1, S = p - 1, k = 7, Y = 0, R = c.getMaskFunction(T), Q = p - 1; Q > 0; Q -= 2)
+          for (var y = -1, S = p - 1, k = 7, Y = 0, R = c.getMaskFunction(T), Q = p - 1; Q > 0; Q -= 2)
             for (Q == 6 && (Q -= 1); ; ) {
               for (var V = 0; V < 2; V += 1)
                 if (b[S][Q - V] == null) {
@@ -1577,18 +1588,18 @@ function Gs() {
                   var L = R(S, Q - V);
                   L && (ee = !ee), b[S][Q - V] = ee, k -= 1, k == -1 && (Y += 1, k = 7);
                 }
-              if (S += A, S < 0 || p <= S) {
-                S -= A, A = -A;
+              if (S += y, S < 0 || p <= S) {
+                S -= y, y = -y;
                 break;
               }
             }
         }, xe = function(C, T) {
-          for (var A = 0, S = 0, k = 0, Y = new Array(T.length), R = new Array(T.length), Q = 0; Q < T.length; Q += 1) {
+          for (var y = 0, S = 0, k = 0, Y = new Array(T.length), R = new Array(T.length), Q = 0; Q < T.length; Q += 1) {
             var V = T[Q].dataCount, ee = T[Q].totalCount - V;
             S = Math.max(S, V), k = Math.max(k, ee), Y[Q] = new Array(V);
             for (var L = 0; L < Y[Q].length; L += 1)
-              Y[Q][L] = 255 & C.getBuffer()[L + A];
-            A += V;
+              Y[Q][L] = 255 & C.getBuffer()[L + y];
+            y += V;
             var oe = c.getErrorCorrectPolynomial(ee), ce = l(Y[Q], oe.getLength() - 1), Mt = ce.mod(oe);
             R[Q] = new Array(oe.getLength() - 1);
             for (var L = 0; L < R[Q].length; L += 1) {
@@ -1605,9 +1616,9 @@ function Gs() {
             for (var Q = 0; Q < T.length; Q += 1)
               L < R[Q].length && ($e[Qe] = R[Q][L], Qe += 1);
           return $e;
-        }, yi = function(C, T, A) {
-          for (var S = d.getRSBlocks(C, T), k = v(), Y = 0; Y < A.length; Y += 1) {
-            var R = A[Y];
+        }, yi = function(C, T, y) {
+          for (var S = d.getRSBlocks(C, T), k = v(), Y = 0; Y < y.length; Y += 1) {
+            var R = y[Y];
             k.put(R.getMode(), 4), k.put(R.getLength(), c.getLengthInBits(R.getMode(), C)), R.write(k);
           }
           for (var Q = 0, Y = 0; Y < S.length; Y += 1)
@@ -1622,24 +1633,24 @@ function Gs() {
         };
         j.addData = function(C, T) {
           T = T || "Byte";
-          var A = null;
+          var y = null;
           switch (T) {
             case "Numeric":
-              A = I(C);
+              y = I(C);
               break;
             case "Alphanumeric":
-              A = w(C);
+              y = w(C);
               break;
             case "Byte":
-              A = G(C);
+              y = G(C);
               break;
             case "Kanji":
-              A = W(C);
+              y = W(C);
               break;
             default:
               throw "mode:" + T;
           }
-          O.push(A), B = null;
+          O.push(y), B = null;
         }, j.isDark = function(C, T) {
           if (C < 0 || p <= C || T < 0 || p <= T)
             throw C + "," + T;
@@ -1649,13 +1660,13 @@ function Gs() {
         }, j.make = function() {
           if (g < 1) {
             for (var C = 1; C < 40; C++) {
-              for (var T = d.getRSBlocks(C, m), A = v(), S = 0; S < O.length; S++) {
+              for (var T = d.getRSBlocks(C, m), y = v(), S = 0; S < O.length; S++) {
                 var k = O[S];
-                A.put(k.getMode(), 4), A.put(k.getLength(), c.getLengthInBits(k.getMode(), C)), k.write(A);
+                y.put(k.getMode(), 4), y.put(k.getLength(), c.getLengthInBits(k.getMode(), C)), k.write(y);
               }
               for (var Y = 0, S = 0; S < T.length; S++)
                 Y += T[S].dataCount;
-              if (A.getLengthInBits() <= Y * 8)
+              if (y.getLengthInBits() <= Y * 8)
                 break;
             }
             g = C;
@@ -1663,41 +1674,41 @@ function Gs() {
           P(!1, J());
         }, j.createTableTag = function(C, T) {
           C = C || 2, T = typeof T > "u" ? C * 4 : T;
-          var A = "";
-          A += '<table style="', A += " border-width: 0px; border-style: none;", A += " border-collapse: collapse;", A += " padding: 0px; margin: " + T + "px;", A += '">', A += "<tbody>";
+          var y = "";
+          y += '<table style="', y += " border-width: 0px; border-style: none;", y += " border-collapse: collapse;", y += " padding: 0px; margin: " + T + "px;", y += '">', y += "<tbody>";
           for (var S = 0; S < j.getModuleCount(); S += 1) {
-            A += "<tr>";
+            y += "<tr>";
             for (var k = 0; k < j.getModuleCount(); k += 1)
-              A += '<td style="', A += " border-width: 0px; border-style: none;", A += " border-collapse: collapse;", A += " padding: 0px; margin: 0px;", A += " width: " + C + "px;", A += " height: " + C + "px;", A += " background-color: ", A += j.isDark(S, k) ? "#000000" : "#ffffff", A += ";", A += '"/>';
-            A += "</tr>";
+              y += '<td style="', y += " border-width: 0px; border-style: none;", y += " border-collapse: collapse;", y += " padding: 0px; margin: 0px;", y += " width: " + C + "px;", y += " height: " + C + "px;", y += " background-color: ", y += j.isDark(S, k) ? "#000000" : "#ffffff", y += ";", y += '"/>';
+            y += "</tr>";
           }
-          return A += "</tbody>", A += "</table>", A;
-        }, j.createSvgTag = function(C, T, A, S) {
+          return y += "</tbody>", y += "</table>", y;
+        }, j.createSvgTag = function(C, T, y, S) {
           var k = {};
-          typeof arguments[0] == "object" && (k = arguments[0], C = k.cellSize, T = k.margin, A = k.alt, S = k.title), C = C || 2, T = typeof T > "u" ? C * 4 : T, A = typeof A == "string" ? { text: A } : A || {}, A.text = A.text || null, A.id = A.text ? A.id || "qrcode-description" : null, S = typeof S == "string" ? { text: S } : S || {}, S.text = S.text || null, S.id = S.text ? S.id || "qrcode-title" : null;
+          typeof arguments[0] == "object" && (k = arguments[0], C = k.cellSize, T = k.margin, y = k.alt, S = k.title), C = C || 2, T = typeof T > "u" ? C * 4 : T, y = typeof y == "string" ? { text: y } : y || {}, y.text = y.text || null, y.id = y.text ? y.id || "qrcode-description" : null, S = typeof S == "string" ? { text: S } : S || {}, S.text = S.text || null, S.id = S.text ? S.id || "qrcode-title" : null;
           var Y = j.getModuleCount() * C + T * 2, R, Q, V, ee, L = "", oe;
-          for (oe = "l" + C + ",0 0," + C + " -" + C + ",0 0,-" + C + "z ", L += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"', L += k.scalable ? "" : ' width="' + Y + 'px" height="' + Y + 'px"', L += ' viewBox="0 0 ' + Y + " " + Y + '" ', L += ' preserveAspectRatio="xMinYMin meet"', L += S.text || A.text ? ' role="img" aria-labelledby="' + Ee([S.id, A.id].join(" ").trim()) + '"' : "", L += ">", L += S.text ? '<title id="' + Ee(S.id) + '">' + Ee(S.text) + "</title>" : "", L += A.text ? '<description id="' + Ee(A.id) + '">' + Ee(A.text) + "</description>" : "", L += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>', L += '<path d="', V = 0; V < j.getModuleCount(); V += 1)
+          for (oe = "l" + C + ",0 0," + C + " -" + C + ",0 0,-" + C + "z ", L += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"', L += k.scalable ? "" : ' width="' + Y + 'px" height="' + Y + 'px"', L += ' viewBox="0 0 ' + Y + " " + Y + '" ', L += ' preserveAspectRatio="xMinYMin meet"', L += S.text || y.text ? ' role="img" aria-labelledby="' + Ee([S.id, y.id].join(" ").trim()) + '"' : "", L += ">", L += S.text ? '<title id="' + Ee(S.id) + '">' + Ee(S.text) + "</title>" : "", L += y.text ? '<description id="' + Ee(y.id) + '">' + Ee(y.text) + "</description>" : "", L += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>', L += '<path d="', V = 0; V < j.getModuleCount(); V += 1)
             for (ee = V * C + T, R = 0; R < j.getModuleCount(); R += 1)
               j.isDark(V, R) && (Q = R * C + T, L += "M" + Q + "," + ee + oe);
           return L += '" stroke="transparent" fill="black"/>', L += "</svg>", L;
         }, j.createDataURL = function(C, T) {
           C = C || 2, T = typeof T > "u" ? C * 4 : T;
-          var A = j.getModuleCount() * C + T * 2, S = T, k = A - T;
-          return M(A, A, function(Y, R) {
+          var y = j.getModuleCount() * C + T * 2, S = T, k = y - T;
+          return M(y, y, function(Y, R) {
             if (S <= Y && Y < k && S <= R && R < k) {
               var Q = Math.floor((Y - S) / C), V = Math.floor((R - S) / C);
               return j.isDark(V, Q) ? 0 : 1;
             } else
               return 1;
           });
-        }, j.createImgTag = function(C, T, A) {
+        }, j.createImgTag = function(C, T, y) {
           C = C || 2, T = typeof T > "u" ? C * 4 : T;
           var S = j.getModuleCount() * C + T * 2, k = "";
-          return k += "<img", k += ' src="', k += j.createDataURL(C, T), k += '"', k += ' width="', k += S, k += '"', k += ' height="', k += S, k += '"', A && (k += ' alt="', k += Ee(A), k += '"'), k += "/>", k;
+          return k += "<img", k += ' src="', k += j.createDataURL(C, T), k += '"', k += ' width="', k += S, k += '"', k += ' height="', k += S, k += '"', y && (k += ' alt="', k += Ee(y), k += '"'), k += "/>", k;
         };
         var Ee = function(C) {
-          for (var T = "", A = 0; A < C.length; A += 1) {
-            var S = C.charAt(A);
+          for (var T = "", y = 0; y < C.length; y += 1) {
+            var S = C.charAt(y);
             switch (S) {
               case "<":
                 T += "&lt;";
@@ -1720,7 +1731,7 @@ function Gs() {
         }, wi = function(C) {
           var T = 1;
           C = typeof C > "u" ? T * 2 : C;
-          var A = j.getModuleCount() * T + C * 2, S = C, k = A - C, Y, R, Q, V, ee, L = {
+          var y = j.getModuleCount() * T + C * 2, S = C, k = y - C, Y, R, Q, V, ee, L = {
             "██": "█",
             "█ ": "▀",
             " █": "▄",
@@ -1731,21 +1742,21 @@ function Gs() {
             " █": " ",
             "  ": " "
           }, ce = "";
-          for (Y = 0; Y < A; Y += 2) {
-            for (Q = Math.floor((Y - S) / T), V = Math.floor((Y + 1 - S) / T), R = 0; R < A; R += 1)
+          for (Y = 0; Y < y; Y += 2) {
+            for (Q = Math.floor((Y - S) / T), V = Math.floor((Y + 1 - S) / T), R = 0; R < y; R += 1)
               ee = "█", S <= R && R < k && S <= Y && Y < k && j.isDark(Q, Math.floor((R - S) / T)) && (ee = " "), S <= R && R < k && S <= Y + 1 && Y + 1 < k && j.isDark(V, Math.floor((R - S) / T)) ? ee += " " : ee += "█", ce += C < 1 && Y + 1 >= k ? oe[ee] : L[ee];
             ce += `
 `;
           }
-          return A % 2 && C > 0 ? ce.substring(0, ce.length - A - 1) + Array(A + 1).join("▀") : ce.substring(0, ce.length - 1);
+          return y % 2 && C > 0 ? ce.substring(0, ce.length - y - 1) + Array(y + 1).join("▀") : ce.substring(0, ce.length - 1);
         };
         return j.createASCII = function(C, T) {
           if (C = C || 1, C < 2)
             return wi(T);
           C -= 1, T = typeof T > "u" ? C * 2 : T;
-          var A = j.getModuleCount() * C + T * 2, S = T, k = A - T, Y, R, Q, V, ee = Array(C + 1).join("██"), L = Array(C + 1).join("  "), oe = "", ce = "";
-          for (Y = 0; Y < A; Y += 1) {
-            for (Q = Math.floor((Y - S) / C), ce = "", R = 0; R < A; R += 1)
+          var y = j.getModuleCount() * C + T * 2, S = T, k = y - T, Y, R, Q, V, ee = Array(C + 1).join("██"), L = Array(C + 1).join("  "), oe = "", ce = "";
+          for (Y = 0; Y < y; Y += 1) {
+            for (Q = Math.floor((Y - S) / C), ce = "", R = 0; R < y; R += 1)
               V = 1, S <= R && R < k && S <= Y && Y < k && j.isDark(Q, Math.floor((R - S) / C)) && (V = 0), ce += V ? ee : L;
             for (Q = 0; Q < C; Q += 1)
               oe += ce + `
@@ -1754,8 +1765,8 @@ function Gs() {
           return oe.substring(0, oe.length - 1);
         }, j.renderTo2dContext = function(C, T) {
           T = T || 2;
-          for (var A = j.getModuleCount(), S = 0; S < A; S++)
-            for (var k = 0; k < A; k++)
+          for (var y = j.getModuleCount(), S = 0; S < y; S++)
+            for (var k = 0; k < y; k++)
               C.fillStyle = j.isDark(S, k) ? "black" : "white", C.fillRect(S * T, k * T, T, T);
         }, j;
       };
@@ -3217,10 +3228,10 @@ class on extends ae {
     t && (await navigator.clipboard.writeText(t), this._copied = !0, setTimeout(() => this._copied = !1, 2500));
   }
   keyButton() {
-    return y`<button class="btn2" @click=${() => this.copyKey()}>${this._copied ? h("key_copied") : h("copy_key")}</button>`;
+    return A`<button class="btn2" @click=${() => this.copyKey()}>${this._copied ? h("key_copied") : h("copy_key")}</button>`;
   }
   guideNotFound() {
-    return y`<details ?open=${!this.compact && !this.collapsed}>
+    return A`<details ?open=${!this.compact && !this.collapsed}>
       <summary>○ ${h("device_not_found", { name: this.deviceName })} – ${h("how_to_connect")}</summary>
       <ol>
         <li>${h("connect_step_flash")}</li>
@@ -3231,7 +3242,7 @@ class on extends ae {
     </details>`;
   }
   guideOffline() {
-    return y`<details>
+    return A`<details>
       <summary>◐ ${h("device_offline")} – ${h("what_to_do")}</summary>
       <ol>
         <li>${h("offline_step_power")}</li>
@@ -3259,7 +3270,7 @@ class on extends ae {
   }
   render() {
     const e = this.status;
-    return e ? e.found ? e.actions_allowed ? this._done ? y`<div class="ok">✓ ${h("actions_allowed_done")}</div>` : e.loaded ? y`<div class="ok">● ${h("device_connected")}</div>` : this.guideOffline() : y`<div class="row ${this.compact ? "warn" : "banner warn"}">
+    return e ? e.found ? e.actions_allowed ? this._done ? A`<div class="ok">✓ ${h("actions_allowed_done")}</div>` : e.loaded ? A`<div class="ok">● ${h("device_connected")}</div>` : this.guideOffline() : A`<div class="row ${this.compact ? "warn" : "banner warn"}">
         <span>⚠ ${h("actions_blocked")}</span>
         <button ?disabled=${this._busy} @click=${() => this.allow()}>${h("allow_actions")}</button></div>` : this.guideNotFound() : D;
   }
@@ -3345,14 +3356,14 @@ class cn extends ae {
   }
   render() {
     const e = this._projects;
-    return y`
+    return A`
       <div class="head">
         <h1>${h("app_title")}</h1>
         <button @click=${() => this.importFile()}>⤒ ${h("import_file")}</button>
         <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: !0, composed: !0 }))}>+ ${h("new_project")}</button>
       </div>
-      ${e === null ? y`…` : e.length ? y`<div class="grid">${e.map((t) => y`<div class="card">
-          <div class="thumb" @click=${() => this.open(t.id)}>${this._thumbs[t.id] ? y`<img src=${this._thumbs[t.id]} alt="" />` : D}</div>
+      ${e === null ? A`…` : e.length ? A`<div class="grid">${e.map((t) => A`<div class="card">
+          <div class="thumb" @click=${() => this.open(t.id)}>${this._thumbs[t.id] ? A`<img src=${this._thumbs[t.id]} alt="" />` : D}</div>
           <div class="info">
             <span class="name">${t.name}</span>
             <span class="meta">${this.boards[t.board] ? re(this.boards[t.board], "name") : t.board} · ${t.device_name}</span>
@@ -3367,7 +3378,7 @@ class cn extends ae {
             <button @click=${() => this.exportFile(t.id)}>${h("export_file")}</button>
             <button @click=${() => this.removeProject(t)}>${h("delete")}</button>
           </div>
-        </div>`)}</div>` : y`<div class="empty">${h("no_projects")}<br /><br />
+        </div>`)}</div>` : A`<div class="empty">${h("no_projects")}<br /><br />
         <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: !0, composed: !0 }))}>+ ${h("new_project")}</button></div>`}`;
   }
 }
@@ -3418,16 +3429,16 @@ class ln extends ae {
   }
   render() {
     const e = this.value ? this.hass?.states[this.value] : void 0, t = e ? String(e.attributes.friendly_name ?? this.value) : this.value ?? "";
-    return y`
+    return A`
       <input .value=${this._open ? this._query : t} placeholder=${h("pick_entity")}
         @focus=${() => {
       this._open = !0, this._query = "";
     }}
         @input=${(i) => this._query = i.target.value}
         @blur=${() => setTimeout(() => this._open = !1, 150)} />
-      ${this.value && !this._open ? y`<div class="sub">${this.value}${e ? y` · ${e.state}` : y` · ⚠`}</div>` : D}
-      ${this._open ? y`<div class="list">
-        ${this.candidates().map((i) => y`<div class="item" @mousedown=${() => this.pick(i.id)}>
+      ${this.value && !this._open ? A`<div class="sub">${this.value}${e ? A` · ${e.state}` : A` · ⚠`}</div>` : D}
+      ${this._open ? A`<div class="list">
+        ${this.candidates().map((i) => A`<div class="item" @mousedown=${() => this.pick(i.id)}>
           <div class="main"><div class="name">${i.name}</div><div class="sub">${i.id}${i.area ? ` · ${i.area}` : ""}</div></div>
           <div class="state">${i.state}</div></div>`)}
       </div>` : D}`;
@@ -3447,7 +3458,7 @@ class dn extends ae {
     super(), this.value = "", this._open = !1, this._query = "";
   }
   render() {
-    return y`
+    return A`
       <div class="row">
         <span class="preview">${Ze(this.value) ?? ""}</span>
         <input .value=${this._open ? this._query : this.value} placeholder="mdi:lightbulb"
@@ -3460,8 +3471,8 @@ class dn extends ae {
     }}
           @blur=${() => setTimeout(() => this._open = !1, 150)} />
       </div>
-      ${this._open ? y`<div class="list"><div class="grid">
-        ${$i(this._query, 120).map((e) => y`<div class="item" title=${e} @mousedown=${() => this.pick(e)}>
+      ${this._open ? A`<div class="list"><div class="grid">
+        ${$i(this._query, 120).map((e) => A`<div class="item" title=${e} @mousedown=${() => this.pick(e)}>
           <span class="glyph">${Ze(e)}</span></div>`)}
       </div></div>` : D}`;
   }
@@ -3538,55 +3549,55 @@ class hn extends ae {
   }
   render() {
     const e = ["step_board", "step_orientation", "step_template", "step_name"];
-    return y`
+    return A`
       <h1>${h("wizard_title")}</h1>
-      <div class="steps">${e.map((t, i) => y`<span class=${i === this._step ? "active" : ""}>${i + 1}. ${h(t)}</span>`)}</div>
+      <div class="steps">${e.map((t, i) => A`<span class=${i === this._step ? "active" : ""}>${i + 1}. ${h(t)}</span>`)}</div>
       ${[this.stepBoard, this.stepOrientation, this.stepTemplate, this.stepName][this._step].call(this)}
       <div class="nav">
         <button @click=${() => this._step === 0 ? this.dispatchEvent(new CustomEvent("cancel", { bubbles: !0, composed: !0 })) : this._step--}>
           ${this._step === 0 ? h("cancel") : h("back")}</button>
-        ${this._step < 3 ? y`<button class="primary" ?disabled=${!this._board} @click=${() => this._step++}>${h("next")}</button>` : y`<button class="primary" ?disabled=${this._busy || !this._name} @click=${() => this.create()}>${h("create")}</button>`}
+        ${this._step < 3 ? A`<button class="primary" ?disabled=${!this._board} @click=${() => this._step++}>${h("next")}</button>` : A`<button class="primary" ?disabled=${this._busy || !this._name} @click=${() => this.create()}>${h("create")}</button>`}
       </div>`;
   }
   stepBoard() {
     const e = this.boards[this._board];
-    return y`<div class="options">${Object.values(this.boards).map((t) => y`
+    return A`<div class="options">${Object.values(this.boards).map((t) => A`
       <div class="opt ${t.id === this._board ? "sel" : ""}" @click=${() => {
       this._board = t.id, this._variant = "";
     }}>
         <div class="t">${re(t, "name")}</div>
         <div class="d">${ye() === "de" ? t.notes_de : t.notes_en}</div>
-        ${this.info?.hardware_hints ? y`<div class="d"><a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${h("where_to_buy")}</a>
+        ${this.info?.hardware_hints ? A`<div class="d"><a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${h("where_to_buy")}</a>
           · <a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${h("matching_case")}</a></div>` : D}
       </div>`)}</div>
-      ${e?.display.variants?.length ? y`<label class="field"><span>${h("board_variant")}</span>
+      ${e?.display.variants?.length ? A`<label class="field"><span>${h("board_variant")}</span>
         <select @change=${(t) => this._variant = t.target.value}>
           <option value="">${h("variant_default")} (${e.display.model})</option>
-          ${e.display.variants.map((t) => y`<option value=${t.id} ?selected=${t.id === this._variant}>${re(t, "label")}</option>`)}
+          ${e.display.variants.map((t) => A`<option value=${t.id} ?selected=${t.id === this._variant}>${re(t, "label")}</option>`)}
         </select></label>` : D}`;
   }
   stepOrientation() {
     const e = this.boards[this._board];
-    return y`<div class="options">${Object.entries(e?.orientations ?? {}).map(([t, i]) => y`
+    return A`<div class="options">${Object.entries(e?.orientations ?? {}).map(([t, i]) => A`
       <div class="opt ${t === this._orientation ? "sel" : ""}" @click=${() => this._orientation = t}>
         <div class="t">${h(t)}</div>
-        ${i.usb ? y`<div class="d">${h("usb_side", { side: h(`usb_${i.usb}`) })}</div>` : D}
+        ${i.usb ? A`<div class="d">${h("usb_side", { side: h(`usb_${i.usb}`) })}</div>` : D}
       </div>`)}</div>`;
   }
   stepTemplate() {
     const e = this.template;
-    return y`<div class="options">${this.templates.map((t) => y`
+    return A`<div class="options">${this.templates.map((t) => A`
       <div class="opt ${t.id === this._template ? "sel" : ""}" @click=${() => {
       this._template = t.id, this._mapping = {};
     }}>
         <div class="t">${re(t, "name")}</div><div class="d">${re(t, "description")}</div>
       </div>`)}</div>
-      ${e?.placeholders.map((t) => y`<div class="field"><span>${h("assign_placeholder", { label: re(t, "label") })}</span>
+      ${e?.placeholders.map((t) => A`<div class="field"><span>${h("assign_placeholder", { label: re(t, "label") })}</span>
         <cyd-entity-picker .hass=${this.hass} .value=${this._mapping[t.key] ?? null} .domains=${t.domains}
           @value-changed=${(i) => this._mapping = { ...this._mapping, [t.key]: i.detail.value }}></cyd-entity-picker></div>`)}`;
   }
   stepName() {
-    return y`
+    return A`
       <label class="field"><span>${h("project_name")}</span>
         <input .value=${this._name} @input=${(e) => {
       const t = e.target.value, i = !this._device || this._device === Me(this._name);
@@ -3667,24 +3678,24 @@ class un extends ae {
   render() {
     if (!this.project || !this.board) return D;
     const { width: e, height: t } = this.board, i = this.scale, s = this.page, a = s ? Te(this.project, s, e, t) : null, n = (o) => `left:${o.x * i}px;top:${o.y * i}px;width:${o.w * i}px;height:${o.h * i}px`, c = this.mode === "edit";
-    return y`
+    return A`
       <div class="frame ${c ? "edit" : "preview"}" style="width:${e * i}px;height:${t * i}px">
         <canvas style="width:${e * i}px;height:${t * i}px"
           @pointerdown=${this.onCanvasDown} @pointerup=${this.onCanvasUp} @pointercancel=${() => this._pressed = null}></canvas>
-        ${c && a && s ? y`
+        ${c && a && s ? A`
           <div class="overlay" @pointerdown=${this.onBackgroundDown}
             @dragover=${this.onDragOver} @dragleave=${() => this._dropCell = null} @drop=${this.onDrop}>
             ${s.layout !== "free" ? this.renderCells(a, n) : D}
             ${s.widgets.map((o) => {
       const l = this._drag?.id === o.id ? Ue(a.content, a.grid, this._drag.cur) : a.widgets[o.id], d = this.selected.includes(o.id);
-      return y`<div class="w ${d ? "sel" : ""}" style=${n(l)} title=${o.type}
+      return A`<div class="w ${d ? "sel" : ""}" style=${n(l)} title=${o.type}
                   @pointerdown=${(v) => this.onWidgetDown(v, o.id, "move")}
                   @pointermove=${this.onPointerMove} @pointerup=${this.onPointerUp}>
-                  ${d && this.selected.length === 1 ? y`<div class="handle"
+                  ${d && this.selected.length === 1 ? A`<div class="handle"
                     @pointerdown=${(v) => this.onWidgetDown(v, o.id, "resize")}></div>` : D}
                 </div>`;
     })}
-            ${this._dropCell ? y`<div class="ghost" style=${n(Ue(a.content, a.grid, { ...this._dropCell, w: 1, h: 1 }))}></div>` : D}
+            ${this._dropCell ? A`<div class="ghost" style=${n(Ue(a.content, a.grid, { ...this._dropCell, w: 1, h: 1 }))}></div>` : D}
           </div>` : D}
       </div>`;
   }
@@ -3692,7 +3703,7 @@ class un extends ae {
     const i = [];
     for (let s = 0; s < e.grid.rows; s++)
       for (let a = 0; a < e.grid.cols; a++)
-        i.push(y`<div class="cell" style=${t(Ue(e.content, e.grid, { x: a, y: s, w: 1, h: 1 }))}></div>`);
+        i.push(A`<div class="cell" style=${t(Ue(e.content, e.grid, { x: a, y: s, w: 1, h: 1 }))}></div>`);
     return i;
   }
   // -- edit mode ------------------------------------------------------------
@@ -3778,13 +3789,13 @@ customElements.define("cyd-screen", un);
 function pn(r) {
   return r.split(`
 `).map((e) => {
-    if (/^\s*#/.test(e)) return y`<span class="c">${e}</span>\n`;
+    if (/^\s*#/.test(e)) return A`<span class="c">${e}</span>\n`;
     const t = /^(\s*-?\s*)([A-Za-z0-9_."$\\{}-]+:)(.*)$/.exec(e);
     if (t) {
       const i = t[3], s = /^\s*!/.test(i) ? "t" : /^\s*"/.test(i) ? "s" : "v";
-      return y`${t[1]}<span class="k">${t[2]}</span><span class=${s}>${i}</span>\n`;
+      return A`${t[1]}<span class="k">${t[2]}</span><span class=${s}>${i}</span>\n`;
     }
-    return y`${e}\n`;
+    return A`${e}\n`;
   });
 }
 class gn extends ae {
@@ -3798,10 +3809,11 @@ class gn extends ae {
     _dir: { state: !0 },
     _save: { state: !0 },
     _saving: { state: !0 },
-    _secretsDone: { state: !0 }
+    _secretsDone: { state: !0 },
+    _esphomeUrl: { state: !0 }
   };
   constructor() {
-    super(), this._result = null, this._copied = !1, this._error = null, this._dir = null, this._save = null, this._saving = !1, this._secretsDone = !1;
+    super(), this._result = null, this._copied = !1, this._error = null, this._dir = null, this._save = null, this._saving = !1, this._secretsDone = !1, this._esphomeUrl = null;
   }
   static styles = fe`
     .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; display: flex; align-items: center; justify-content: center; }
@@ -3837,7 +3849,7 @@ class gn extends ae {
     super.connectedCallback(), this.generate();
   }
   async generate() {
-    this.api.esphomeStatus().then((e) => this._dir = e).catch(() => this._dir = null);
+    this.api.esphomeStatus().then((e) => this._dir = e).catch(() => this._dir = null), this.api.esphomeUrl().then((e) => this._esphomeUrl = e);
     try {
       this._result = await this.api.generate(this.project, !0);
     } catch (e) {
@@ -3868,23 +3880,23 @@ class gn extends ae {
   }
   renderSave() {
     const e = this._save;
-    return this._dir && !this._dir.directory_exists ? y`<p class="muted">${h("no_esphome_dir", { path: this._dir.directory })}</p>` : e ? e.status === "conflict" ? y`<div class="notice warning">
+    return this._dir && !this._dir.directory_exists ? A`<p class="muted">${h("no_esphome_dir", { path: this._dir.directory })}</p>` : e ? e.status === "conflict" ? A`<div class="notice warning">
         <p>${h(e.state === "foreign" ? "conflict_foreign" : "conflict_modified", { path: e.path ?? "" })}</p>
-        ${e.diff ? y`<pre class="diff">${e.diff}</pre>` : D}
+        ${e.diff ? A`<pre class="diff">${e.diff}</pre>` : D}
         <button class="primary" @click=${() => this.saveToEsphome(!0)}>${h("overwrite")}</button>
-      </div>` : e.status === "saved" ? y`<div class="notice ok">
+      </div>` : e.status === "saved" ? A`<div class="notice ok">
         <p>✓ ${h("saved_to_esphome", { path: e.path ?? "" })}</p>
-        ${e.backup ? y`<p class="muted">${h("backup_created", { path: e.backup })}</p>` : D}
-        ${e.secrets_missing?.length && !this._secretsDone ? y`<form @submit=${(t) => {
+        ${e.backup ? A`<p class="muted">${h("backup_created", { path: e.backup })}</p>` : D}
+        ${e.secrets_missing?.length && !this._secretsDone ? A`<form @submit=${(t) => {
       t.preventDefault(), this.saveSecrets(t.target);
     }}>
           <p>${h("secrets_missing")}</p>
           <input name="ssid" placeholder=${h("wifi_ssid")} required />
           <input name="password" type="password" placeholder=${h("wifi_password")} />
           <button class="primary" type="submit">${h("save_secrets")}</button>
-        </form>` : this._secretsDone ? y`<p>✓ ${h("secrets_saved")}</p>` : D}
+        </form>` : this._secretsDone ? A`<p>✓ ${h("secrets_saved")}</p>` : D}
         <p>${h("next_install")}</p>
-        <a class="btn" href="/hassio/ingress/5c53de3b_esphome" target="_top">${h("open_esphome")}</a>
+        ${this._esphomeUrl ? A`<a class="btn" href=${this._esphomeUrl} target="_top">${h("open_esphome")}</a>` : D}
       </div>` : D : D;
   }
   /** Example automation actions for the device actions (esphome.<device>_<action>). */
@@ -3914,17 +3926,17 @@ class gn extends ae {
   }
   render() {
     const e = this._result, t = (n) => ye() === "de" ? n.message : n.message_en, i = e?.issues.filter((n) => n.level === "error") ?? [], s = e?.issues.filter((n) => n.level === "warning") ?? [], a = e?.memory;
-    return y`<div class="backdrop" @click=${(n) => n.target === n.currentTarget && this.close()}>
+    return A`<div class="backdrop" @click=${(n) => n.target === n.currentTarget && this.close()}>
       <div class="dialog" role="dialog" aria-modal="true">
         <header>
           <h2>${h("export_title")} · ${this.project.device_name}.yaml</h2>
-          ${e?.ok && this._dir?.directory_exists ? y`<button class="primary" ?disabled=${this._saving}
+          ${e?.ok && this._dir?.directory_exists ? A`<button class="primary" ?disabled=${this._saving}
             @click=${() => this.saveToEsphome()}>${this._saving ? h("saving_to_esphome") : h("save_to_esphome")}</button>` : D}
-          ${e?.ok ? y`<button class=${this._dir?.directory_exists ? "" : "primary"} @click=${() => this.copy()}>${this._copied ? h("copied") : h("copy_code")}</button>
+          ${e?.ok ? A`<button class=${this._dir?.directory_exists ? "" : "primary"} @click=${() => this.copy()}>${this._copied ? h("copied") : h("copy_code")}</button>
             <button @click=${() => this.download()}>⤓ ${h("download")}</button>` : D}
           <button @click=${() => this.close()}>${h("close")}</button>
         </header>
-        ${this._error ? y`<div class="blocked error">${this._error}</div>` : e ? e.ok ? y`<div class="body">
+        ${this._error ? A`<div class="blocked error">${this._error}</div>` : e ? e.ok ? A`<div class="body">
             <pre>${pn(e.yaml)}</pre>
             <aside>
               ${this.renderSave()}
@@ -3932,23 +3944,23 @@ class gn extends ae {
               <p>${h("install_steps")}</p>
               <p>${h("secrets_hint")}</p>
               <p><strong>${h("allow_actions_hint")}</strong></p>
-              ${this.project.id ? y`<cyd-device-status .api=${this.api} .projectId=${this.project.id}
+              ${this.project.id ? A`<cyd-device-status .api=${this.api} .projectId=${this.project.id}
                 .deviceName=${this.project.device_name}></cyd-device-status>` : D}
-              ${this.project.settings?.device_actions !== !1 ? y`<h4>${h("ha_actions")}</h4>
+              ${this.project.settings?.device_actions !== !1 ? A`<h4>${h("ha_actions")}</h4>
                 <p>${h("ha_actions_hint")}</p>
                 <pre class="diff">${this.actionsExample()}</pre>` : D}
               <h4>${h("first_install")}</h4>
               <p>${h("first_install_steps")}</p>
-              ${a ? y`<h4>${h("memory")}</h4><p>${h("memory_estimate", {
+              ${a ? A`<h4>${h("memory")}</h4><p>${h("memory_estimate", {
       objects: a.objects,
       ram: Math.round(a.ram_bytes / 1024),
       pct: Math.round(a.ratio * 100),
       flash: Math.round(a.flash_fonts_bytes / 1024)
     })}</p>` : D}
-              ${s.length ? y`<h4>${h("validation")}</h4><ul>${s.map((n) => y`<li class="warning">${t(n)}</li>`)}</ul>` : D}
-              ${this.info?.hardware_hints ? y`<p><a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${h("where_to_buy")} · ${h("matching_case")}</a></p>` : D}
+              ${s.length ? A`<h4>${h("validation")}</h4><ul>${s.map((n) => A`<li class="warning">${t(n)}</li>`)}</ul>` : D}
+              ${this.info?.hardware_hints ? A`<p><a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${h("where_to_buy")} · ${h("matching_case")}</a></p>` : D}
             </aside>
-          </div>` : y`<div class="blocked"><p>${h("export_blocked")}</p><ul>${i.map((n) => y`<li class="error">${t(n)}</li>`)}</ul></div>` : y`<div class="blocked">${h("generating")}</div>`}
+          </div>` : A`<div class="blocked"><p>${h("export_blocked")}</p><ul>${i.map((n) => A`<li class="error">${t(n)}</li>`)}</ul></div>` : A`<div class="blocked">${h("generating")}</div>`}
       </div>
     </div>`;
   }
@@ -4317,9 +4329,9 @@ class fn extends ae {
   }
   render() {
     const e = this._project;
-    if (!e) return y`<div style="padding:24px">…</div>`;
+    if (!e) return A`<div style="padding:24px">…</div>`;
     const t = this.resolved(), i = this.themes[e.theme], s = i ? { ...i, colors: { ...i.colors, ...e.theme_overrides ?? {} } } : void 0, a = { saved: h("saved"), saving: h("saving"), dirty: "•", error: h("save_failed") }[this._saveState], n = this._issues.filter((c) => c.level === "error").length;
-    return y`
+    return A`
       <div class="toolbar">
         <button @click=${() => this.close()}>← ${h("projects")}</button>
         <span class="title">${e.name}</span>
@@ -4331,9 +4343,9 @@ class fn extends ae {
           ${this._mode === "edit" ? "▶ " + h("preview_mode") : "✎ " + h("edit_mode")}</button>
         <button class=${this._sample ? "on" : ""} @click=${() => this._sample = !this._sample}>${this._sample ? h("sample_data") : h("live_data")}</button>
         <button class=${this._night ? "on" : ""} @click=${() => this._night = !this._night}>☾ ${h("night_view")}</button>
-        ${this._mode === "preview" && e.settings?.device_actions !== !1 ? y`<button title=${h("test_message_hint")}
+        ${this._mode === "preview" && e.settings?.device_actions !== !1 ? A`<button title=${h("test_message_hint")}
           @click=${() => this._message = this._message ? null : { title: h("test_message_title"), text: h("test_message_text") }}>✉ ${h("test_message")}</button>` : D}
-        ${this.info?.preview_real_actions && this._mode === "preview" ? y`<label class="check" style="margin:0">
+        ${this.info?.preview_real_actions && this._mode === "preview" ? A`<label class="check" style="margin:0">
           <input type="checkbox" .checked=${this._realActions} @change=${(c) => this._realActions = c.target.checked} />⚡</label>` : D}
         <span class="zoom">
           <button class="small" @click=${() => this._zoom = Math.max(1, (this._zoom === "fit" ? this.fitScale() : this._zoom) - 0.5)}>−</button>
@@ -4346,9 +4358,9 @@ class fn extends ae {
     }}>${h("generate_code")}${n ? ` (${n} ⚠)` : ""}</button>
       </div>
       <div class="main ${this.narrow ? "narrow" : ""}">
-        ${this.narrow ? D : y`<div class="col left">${this.renderPalette()}${this.renderPageTree()}</div>`}
+        ${this.narrow ? D : A`<div class="col left">${this.renderPalette()}${this.renderPageTree()}</div>`}
         <div class="col center">
-          ${t && s ? y`<cyd-screen .project=${e} .board=${t} .theme=${s} .pageId=${this._pageId}
+          ${t && s ? A`<cyd-screen .project=${e} .board=${t} .theme=${s} .pageId=${this._pageId}
             .state=${this.stateResolver()} .mode=${this._mode} .selected=${this._selected} .scale=${this.fitScale()}
             .night=${this._night} .now=${this._now}
             .overlay=${this._overlay ? { title: this._overlay.title, value: this._overlay.value, light: this._overlay.light } : null}
@@ -4357,21 +4369,21 @@ class fn extends ae {
             @select=${(c) => this._selected = c.detail.ids}
             @widget-change=${(c) => this.editWidget(c.detail.id, (o) => Object.assign(o, c.detail.changes))}
             @widget-add=${(c) => this.addWidget(c.detail.type, c.detail)}
-            @preview-tap=${this.onPreviewTap} @preview-swipe=${this.onPreviewSwipe}></cyd-screen>` : y`<div>Board/Theme?</div>`}
+            @preview-tap=${this.onPreviewTap} @preview-swipe=${this.onPreviewSwipe}></cyd-screen>` : A`<div>Board/Theme?</div>`}
           <div class="note">${this.page && !this.page.widgets.length && this._mode === "edit" ? h("empty_page_hint") : h("next_step_hint")}</div>
           <div class="note">${h("preview_note")}</div>
           <button @click=${() => this.savePng()}>PNG</button>
-          ${this.narrow ? y`<div style="width:100%">${this.renderPalette()}${this.renderPageTree()}</div>` : D}
+          ${this.narrow ? A`<div style="width:100%">${this.renderPalette()}${this.renderPageTree()}</div>` : D}
         </div>
         <div class="col right">${this.renderProperties()}</div>
       </div>
-      ${e.id ? y`<cyd-device-status collapsed style="padding:6px 12px" .api=${this.api} .projectId=${e.id}
+      ${e.id ? A`<cyd-device-status collapsed style="padding:6px 12px" .api=${this.api} .projectId=${e.id}
         .deviceName=${e.device_name}></cyd-device-status>` : D}
       <div class="issues">
-        ${this._issues.length ? this._issues.map((c) => y`<div class="issue ${c.level}" @click=${() => this.focusIssue(c)}>
-          ${c.level === "error" ? "⛔" : "⚠"} ${ye() === "de" ? c.message : c.message_en}</div>`) : y`<span class="ok">✓ ${h("no_issues")}</span>`}
+        ${this._issues.length ? this._issues.map((c) => A`<div class="issue ${c.level}" @click=${() => this.focusIssue(c)}>
+          ${c.level === "error" ? "⛔" : "⚠"} ${ye() === "de" ? c.message : c.message_en}</div>`) : A`<span class="ok">✓ ${h("no_issues")}</span>`}
       </div>
-      ${this._showExport ? y`<cyd-export-dialog .api=${this.api} .project=${e} .info=${this.info}
+      ${this._showExport ? A`<cyd-export-dialog .api=${this.api} .project=${e} .info=${this.info}
         @closed=${() => this._showExport = !1}></cyd-export-dialog>` : D}`;
   }
   focusIssue(e) {
@@ -4388,8 +4400,8 @@ class fn extends ae {
   }
   renderPalette() {
     const e = Object.values(this.widgetDefs);
-    return y`<h3>${h("palette")}</h3>
-      ${e.map((t) => y`<div class="palette-item" draggable="true" title=${re(t, "description")}
+    return A`<h3>${h("palette")}</h3>
+      ${e.map((t) => A`<div class="palette-item" draggable="true" title=${re(t, "description")}
           @dragstart=${(i) => i.dataTransfer?.setData(vt, t.type)}
           @click=${() => this.addWidget(t.type)}>
           <span class="glyph">${Ze(t.icon) ?? ""}</span>
@@ -4399,13 +4411,13 @@ class fn extends ae {
   renderPageTree() {
     const e = this._project, t = [], i = (s, a) => {
       for (const n of e.pages.filter((c) => (c.parent ?? null) === s))
-        t.push(y`<div class="page-row ${n.id === this._pageId ? "active" : ""}" style="padding-left:${6 + a * 16}px"
+        t.push(A`<div class="page-row ${n.id === this._pageId ? "active" : ""}" style="padding-left:${6 + a * 16}px"
             @click=${() => {
           this._pageId = n.id, this._selected = [];
         }}>
             <span class="glyph">${Ze(n.icon) ?? ""}</span>
             <span class="pname">${n.name}${e.navigation?.home_page === n.id ? " ⌂" : ""}
-              ${!n.parent && n.in_navigation === !1 ? y`<span class="muted">(${h("hidden_in_navigation")})</span>` : D}</span>
+              ${!n.parent && n.in_navigation === !1 ? A`<span class="muted">(${h("hidden_in_navigation")})</span>` : D}</span>
             <button class="small" title=${h("move_up")} @click=${(c) => {
           c.stopPropagation(), this.movePage(n.id, -1);
         }}>↑</button>
@@ -4414,7 +4426,7 @@ class fn extends ae {
         }}>↓</button>
           </div>`), i(n.id, a + 1);
     };
-    return i(null, 0), y`<h3>${h("pages")}</h3>${t}
+    return i(null, 0), A`<h3>${h("pages")}</h3>${t}
       <div class="row2" style="margin-top:8px">
         <button @click=${() => this.addPage(null)}>+ ${h("add_page")}</button>
         <button ?disabled=${!this.page} @click=${() => this.addPage(this._pageId)}>+ ${h("add_subpage")}</button>
@@ -4427,27 +4439,27 @@ class fn extends ae {
       const t = e.widgets.find((i) => i.id === this._selected[0]);
       if (t) return this.renderWidgetProps(t);
     }
-    return this._selected.length > 1 ? y`<h3>${this._selected.length} Widgets</h3>
-        <button class="danger" @click=${() => this.deleteSelected()}>${h("delete_widget")}</button>` : y`${e ? this.renderPageProps(e) : D}${this.renderProjectProps()}`;
+    return this._selected.length > 1 ? A`<h3>${this._selected.length} Widgets</h3>
+        <button class="danger" @click=${() => this.deleteSelected()}>${h("delete_widget")}</button>` : A`${e ? this.renderPageProps(e) : D}${this.renderProjectProps()}`;
   }
   text(e, t, i) {
-    return y`<label class="field"><span>${e}</span><input type="text" .value=${String(t ?? "")}
+    return A`<label class="field"><span>${e}</span><input type="text" .value=${String(t ?? "")}
       @change=${(s) => i(s.target.value)} /></label>`;
   }
   num(e, t, i, s, a) {
-    return y`<label class="field"><span>${e}</span><input type="number" .value=${t == null ? "" : String(t)}
+    return A`<label class="field"><span>${e}</span><input type="number" .value=${t == null ? "" : String(t)}
       min=${s ?? ""} max=${a ?? ""} @change=${(n) => {
       const c = n.target.value;
       i(c === "" ? null : Number(c));
     }} /></label>`;
   }
   check(e, t, i) {
-    return y`<label class="check"><input type="checkbox" .checked=${!!t}
+    return A`<label class="check"><input type="checkbox" .checked=${!!t}
       @change=${(s) => i(s.target.checked)} />${e}</label>`;
   }
   select(e, t, i, s) {
-    return y`<label class="field"><span>${e}</span><select @change=${(a) => s(a.target.value)}>
-      ${i.map(([a, n]) => y`<option value=${a} ?selected=${String(t ?? "") === a}>${n}</option>`)}</select></label>`;
+    return A`<label class="field"><span>${e}</span><select @change=${(a) => s(a.target.value)}>
+      ${i.map(([a, n]) => A`<option value=${a} ?selected=${String(t ?? "") === a}>${n}</option>`)}</select></label>`;
   }
   renderWidgetProps(e) {
     const t = this.widgetDefs[e.type], i = this._project, s = [["", `– ${h("none")} –`], ...i.pages.map((o) => [o.id, o.name])], a = (o) => this.editWidget(e.id, o), n = (o) => {
@@ -4466,23 +4478,23 @@ class fn extends ae {
         case "page":
           return this.select(l, d, s, (I) => v(I || null));
         case "entity":
-          return y`<div class="field"><span>${l}</span><cyd-entity-picker .hass=${this.hass}
+          return A`<div class="field"><span>${l}</span><cyd-entity-picker .hass=${this.hass}
           .value=${d ?? null} .domains=${o.domains ?? []}
           @value-changed=${(I) => v(I.detail.value)}></cyd-entity-picker>
-          ${d ? y`<button class="small" @click=${() => v(null)}>✕</button>` : D}</div>`;
+          ${d ? A`<button class="small" @click=${() => v(null)}>✕</button>` : D}</div>`;
         case "icon":
-          return y`<div class="field"><span>${l}</span><cyd-icon-picker .value=${String(d ?? "")}
+          return A`<div class="field"><span>${l}</span><cyd-icon-picker .value=${String(d ?? "")}
           @value-changed=${(I) => v(I.detail.value)}></cyd-icon-picker></div>`;
         default:
           return D;
       }
     }, c = e.entity ? this._sim[e.entity] ?? "" : "";
-    return y`
+    return A`
       <h3>${t ? re(t, "name") : e.type}</h3>
-      ${t?.entity === "required" || t?.entity === "optional" ? y`<div class="field"><span>${h("entity")}</span>
+      ${t?.entity === "required" || t?.entity === "optional" ? A`<div class="field"><span>${h("entity")}</span>
         <cyd-entity-picker .hass=${this.hass} .value=${e.entity ?? null} .domains=${t.domains}
           @value-changed=${(o) => this.pickEntity(e, o.detail.value)}></cyd-entity-picker></div>` : D}
-      ${t?.entity === "action" ? y`
+      ${t?.entity === "action" ? A`
         <div class="field"><span>${h("action_target")}</span>
           <cyd-entity-picker .hass=${this.hass} .value=${e.action?.target ?? null} .domains=${t.domains}
             @value-changed=${(o) => this.pickActionTarget(e, o.detail.value)}></cyd-entity-picker></div>
@@ -4539,15 +4551,15 @@ class fn extends ae {
         }
       }, c.click();
     }, n = !!e?.color;
-    return y`<div class="field"><span class="muted">${i}</span></div>
+    return A`<div class="field"><span class="muted">${i}</span></div>
       <div class="row2">
         <label class="field color"><span>${h("bg_color")}</span><span class="crow">
           <input type="color" .value=${e?.color ?? this.themed().colors.background}
             @change=${(c) => t({ ...e ?? {}, color: c.target.value })} />
-          ${n ? y`<button class="small" title=${h("reset")} @click=${() => t(e?.image ? { image: e.image } : null)}>↺</button>` : D}</span></label>
+          ${n ? A`<button class="small" title=${h("reset")} @click=${() => t(e?.image ? { image: e.image } : null)}>↺</button>` : D}</span></label>
         <div class="field"><span>${h("bg_image")}</span>
-          ${e?.image ? y`<span class="crow"><button class="small" @click=${a}>${h("bg_change")}</button>
-            <button class="small danger" @click=${() => t(n ? { color: e.color } : null)}>✕</button></span>` : y`<button @click=${a}>${h("bg_choose")}</button>`}
+          ${e?.image ? A`<span class="crow"><button class="small" @click=${a}>${h("bg_change")}</button>
+            <button class="small danger" @click=${() => t(n ? { color: e.color } : null)}>✕</button></span>` : A`<button @click=${a}>${h("bg_choose")}</button>`}
         </div>
       </div>`;
   }
@@ -4557,14 +4569,14 @@ class fn extends ae {
   /** One condition row: [entity] [operator] [value] – entity empty = the widget's own entity. */
   conditionRow(e, t, i, s) {
     const a = !["on", "off"].includes(e.op);
-    return y`<div class="cond">
+    return A`<div class="cond">
       <cyd-entity-picker .hass=${this.hass} .value=${e.entity ?? null} .domains=${[]}
         @value-changed=${(n) => t({ ...e, entity: n.detail.value })}></cyd-entity-picker>
-      ${s && !e.entity ? y`<span class="muted">${h("this_entity")}</span>` : D}
+      ${s && !e.entity ? A`<span class="muted">${h("this_entity")}</span>` : D}
       <div class="crow">
         <select @change=${(n) => t({ ...e, op: n.target.value })}>
-          ${this.opOptions().map(([n, c]) => y`<option value=${n} ?selected=${e.op === n}>${c}</option>`)}</select>
-        ${a ? y`<input type="text" .value=${e.value ?? ""} placeholder=${h("value")}
+          ${this.opOptions().map(([n, c]) => A`<option value=${n} ?selected=${e.op === n}>${c}</option>`)}</select>
+        ${a ? A`<input type="text" .value=${e.value ?? ""} placeholder=${h("value")}
           @change=${(n) => t({ ...e, value: n.target.value })} />` : D}
         <button class="small danger" @click=${i}>✕</button>
       </div>
@@ -4574,7 +4586,7 @@ class fn extends ae {
     const t = e.visible_if ?? [], i = (s) => this.editWidget(e.id, (a) => {
       a.visible_if = s;
     });
-    return y`<h3>${h("conditions")}</h3>
+    return A`<h3>${h("conditions")}</h3>
       <div class="muted">${h("conditions_hint")}</div>
       ${t.map((s, a) => this.conditionRow(
       s,
@@ -4587,18 +4599,18 @@ class fn extends ae {
   renderRules(e) {
     const t = e.style_rules ?? [], i = (a) => this.editWidget(e.id, (n) => {
       n.style_rules = a;
-    }), s = (a, n, c, o) => y`
+    }), s = (a, n, c, o) => A`
       <label class="field color"><span>${o}</span><span class="crow">
         <input type="color" .value=${a[c] ?? "#ef4444"} @change=${(l) => i(t.map((d, v) => v === n ? { ...d, [c]: l.target.value } : d))} />
-        ${a[c] ? y`<button class="small" @click=${() => i(t.map((l, d) => {
+        ${a[c] ? A`<button class="small" @click=${() => i(t.map((l, d) => {
       if (d !== n) return l;
       const v = { ...l };
       return delete v[c], v;
     }))}>↺</button>` : D}
       </span></label>`;
-    return y`<h3>${h("rules")}</h3>
+    return A`<h3>${h("rules")}</h3>
       <div class="muted">${h("rules_hint")}</div>
-      ${t.map((a, n) => y`<div class="rule">
+      ${t.map((a, n) => A`<div class="rule">
         ${this.conditionRow(a, (c) => i(t.map((o, l) => l === n ? { ...o, ...c } : o)), () => i(t.filter((c, o) => o !== n)), !0)}
         <div class="row4">${s(a, n, "bg", h("color_bg"))}${s(a, n, "border", h("color_border"))}${s(a, n, "text", h("color_text"))}${s(a, n, "icon", h("icon"))}</div>
       </div>`)}
@@ -4617,17 +4629,17 @@ class fn extends ae {
     const t = this._project, i = e.style ?? {}, s = pt(this.themed(), { ...t.tile_style ?? {}, ...i }), a = (l, d) => this.editWidget(e.id, (v) => {
       const I = { ...v.style ?? {} };
       d == null || d === "" ? delete I[l] : I[l] = d, v.style = I;
-    }), n = (l, d) => y`<label class="field color"><span>${d}</span>
+    }), n = (l, d) => A`<label class="field color"><span>${d}</span>
       <span class="crow"><input type="color" .value=${String(s[l])} @change=${(v) => a(l, v.target.value)} />
-      ${i[l] ? y`<button class="small" title=${h("reset")} @click=${() => a(l, null)}>↺</button>` : D}</span></label>`, c = (l, d, v) => y`<label class="field"><span>${d}: ${s[l]}</span>
+      ${i[l] ? A`<button class="small" title=${h("reset")} @click=${() => a(l, null)}>↺</button>` : D}</span></label>`, c = (l, d, v) => A`<label class="field"><span>${d}: ${s[l]}</span>
       <input type="range" min="0" max=${v} .value=${String(s[l])} @change=${(I) => a(l, Number(I.target.value))} /></label>`, o = ["toggle_tile", "sensor_value", "binary_indicator", "scene_button", "page_button"].includes(e.type) || e.type === "label" && e.props.background;
-    return y`
+    return A`
       <h3>${h("appearance")}</h3>
       ${this.select(h("style_preset"), i.preset ?? "", this.presetOptions(h("style_project_default")), (l) => a("preset", l || null))}
-      ${o ? y`<div class="row2">${n("bg", h("color_bg"))}${e.type === "toggle_tile" ? n("bg_on", h("color_bg_on")) : n("border", h("color_border"))}</div>` : D}
+      ${o ? A`<div class="row2">${n("bg", h("color_bg"))}${e.type === "toggle_tile" ? n("bg_on", h("color_bg_on")) : n("border", h("color_border"))}</div>` : D}
       <div class="row2">${n("text", h("color_text"))}${n("icon_on", h("color_icon"))}</div>
-      ${e.type === "toggle_tile" ? y`<div class="row2">${n("text_on", h("color_text_on"))}${n("icon", h("color_icon_off"))}</div>` : D}
-      ${o ? y`${c("bg_opa", h("opacity"), 100)}${c("radius", h("corners"), 40)}${c("border_width", h("border_width"), 4)}` : D}
+      ${e.type === "toggle_tile" ? A`<div class="row2">${n("text_on", h("color_text_on"))}${n("icon", h("color_icon_off"))}</div>` : D}
+      ${o ? A`${c("bg_opa", h("opacity"), 100)}${c("radius", h("corners"), 40)}${c("border_width", h("border_width"), 4)}` : D}
       <div class="row2">
         ${this.check(h("icon_circle"), s.circle, (l) => a("circle", l))}
         ${this.select(h("text_size"), s.text_size, [["s", "S"], ["m", "M"], ["l", "L"]], (l) => a("text_size", l))}
@@ -4641,7 +4653,7 @@ class fn extends ae {
       for (const d of l.pages) for (const v of d.widgets) v.id === e.id && d.id === this._pageId && (v.style = {});
     })}>${h("style_as_default")}</button>
       </div>
-      ${Object.keys(i).length ? y`<button class="small" @click=${() => this.editWidget(e.id, (l) => {
+      ${Object.keys(i).length ? A`<button class="small" @click=${() => this.editWidget(e.id, (l) => {
       l.style = {};
     })}>↺ ${h("style_reset")}</button>` : D}`;
   }
@@ -4661,7 +4673,7 @@ class fn extends ae {
   }
   renderPageProps(e) {
     const t = this._project, i = [["", `– ${h("none")} –`], ...t.pages.filter((s) => s.id !== e.id).map((s) => [s.id, s.name])];
-    return y`
+    return A`
       <h3>${h("page_settings")}</h3>
       ${this.text(h("page_name"), e.name, (s) => this.editPage((a) => {
       a.name = s || a.name;
@@ -4692,7 +4704,7 @@ class fn extends ae {
   }
   renderProjectProps() {
     const e = this._project, t = this.boards[e.board], i = (o) => this.mutate(o), s = [["", h("variant_default")], ...(t?.display.variants ?? []).map((o) => [o.id, re(o, "label")])], a = Object.keys(t?.orientations ?? {}).map((o) => [o, h(o)]), n = e.navigation ?? {}, c = e.settings ?? {};
-    return y`
+    return A`
       <h3>${h("project_settings")}</h3>
       ${this.text(h("project_name"), e.name, (o) => i((l) => {
       l.name = o || l.name;
@@ -4761,7 +4773,7 @@ class fn extends ae {
       ${this.select(h("nav_style"), n.style ?? "tabbar", [["tabbar", h("nav_tabbar")], ["none", h("nav_none")]], (o) => i((l) => {
       l.navigation = { ...l.navigation, style: o };
     }))}
-      ${n.style !== "none" ? y`
+      ${n.style !== "none" ? A`
         ${this.select(
       h("tabbar_position"),
       n.tabbar_position ?? "bottom",
@@ -4857,14 +4869,14 @@ class vn extends ae {
     this._view = e, history.replaceState(null, "", e.name === "editor" ? `#project=${e.id}` : location.pathname);
   }
   render() {
-    if (this._error) return y`<div class="error">CYD Studio: ${this._error}</div>`;
-    if (!this._ready) return y`<div class="loading">CYD Studio …</div>`;
+    if (this._error) return A`<div class="error">CYD Studio: ${this._error}</div>`;
+    if (!this._ready) return A`<div class="loading">CYD Studio …</div>`;
     const e = this._view;
-    return e.name === "wizard" ? y`<cyd-wizard .hass=${this.hass} .api=${this.api} .info=${this.info} .boards=${this.boards} .templates=${this.templates}
+    return e.name === "wizard" ? A`<cyd-wizard .hass=${this.hass} .api=${this.api} .info=${this.info} .boards=${this.boards} .templates=${this.templates}
         @cancel=${() => this.go({ name: "list" })}
-        @open-project=${(t) => this.go({ name: "editor", id: t.detail.id })}></cyd-wizard>` : e.name === "editor" ? y`<cyd-editor .hass=${this.hass} .api=${this.api} .info=${this.info} .boards=${this.boards}
+        @open-project=${(t) => this.go({ name: "editor", id: t.detail.id })}></cyd-wizard>` : e.name === "editor" ? A`<cyd-editor .hass=${this.hass} .api=${this.api} .info=${this.info} .boards=${this.boards}
         .widgetDefs=${this.widgetDefs} .themes=${this.themes} .projectId=${e.id} .narrow=${this.narrow}
-        @close-editor=${() => this.go({ name: "list" })}></cyd-editor>` : y`${D}<cyd-project-list .api=${this.api} .boards=${this.boards} .themes=${this.themes}
+        @close-editor=${() => this.go({ name: "list" })}></cyd-editor>` : A`${D}<cyd-project-list .api=${this.api} .boards=${this.boards} .themes=${this.themes}
       @new-project=${() => this.go({ name: "wizard" })}
       @open-project=${(t) => this.go({ name: "editor", id: t.detail.id })}></cyd-project-list>`;
   }

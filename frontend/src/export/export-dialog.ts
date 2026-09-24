@@ -30,6 +30,7 @@ export class CydExportDialog extends LitElement {
     _save: { state: true },
     _saving: { state: true },
     _secretsDone: { state: true },
+    _esphomeUrl: { state: true },
   };
 
   declare api: Api;
@@ -42,6 +43,7 @@ export class CydExportDialog extends LitElement {
   declare _save: EsphomeSaveResult | null;
   declare _saving: boolean;
   declare _secretsDone: boolean;
+  declare _esphomeUrl: string | null;
 
   constructor() {
     super();
@@ -52,6 +54,7 @@ export class CydExportDialog extends LitElement {
     this._save = null;
     this._saving = false;
     this._secretsDone = false;
+    this._esphomeUrl = null;
   }
 
   static styles = css`
@@ -92,6 +95,7 @@ export class CydExportDialog extends LitElement {
 
   private async generate() {
     this.api.esphomeStatus().then((d) => (this._dir = d)).catch(() => (this._dir = null));
+    void this.api.esphomeUrl().then((u) => (this._esphomeUrl = u));
     try {
       this._result = await this.api.generate(this.project, true);
     } catch (err) {
@@ -157,7 +161,7 @@ export class CydExportDialog extends LitElement {
           <button class="primary" type="submit">${t("save_secrets")}</button>
         </form>` : this._secretsDone ? html`<p>✓ ${t("secrets_saved")}</p>` : nothing}
         <p>${t("next_install")}</p>
-        <a class="btn" href="/hassio/ingress/5c53de3b_esphome" target="_top">${t("open_esphome")}</a>
+        ${this._esphomeUrl ? html`<a class="btn" href=${this._esphomeUrl} target="_top">${t("open_esphome")}</a>` : nothing}
       </div>`;
     }
     return nothing;
