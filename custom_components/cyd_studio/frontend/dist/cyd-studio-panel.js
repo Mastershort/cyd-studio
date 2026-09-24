@@ -3,7 +3,7 @@
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Pe = globalThis, bt = Pe.ShadowRoot && (Pe.ShadyCSS === void 0 || Pe.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, At = Symbol(), zt = /* @__PURE__ */ new WeakMap();
+const Pe = globalThis, bt = Pe.ShadowRoot && (Pe.ShadyCSS === void 0 || Pe.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, At = Symbol(), St = /* @__PURE__ */ new WeakMap();
 let $t = class {
   constructor(e, t, i) {
     if (this._$cssResult$ = !0, i !== At) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
@@ -14,7 +14,7 @@ let $t = class {
     const t = this.t;
     if (bt && e === void 0) {
       const i = t !== void 0 && t.length === 1;
-      i && (e = zt.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), i && zt.set(t, e));
+      i && (e = St.get(t)), e === void 0 && ((this.o = e = new CSSStyleSheet()).replaceSync(this.cssText), i && St.set(t, e));
     }
     return e;
   }
@@ -45,10 +45,10 @@ const qe = (r) => new $t(typeof r == "string" ? r : r + "", void 0, At), fe = (r
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: Ei, defineProperty: Ii, getOwnPropertyDescriptor: Ci, getOwnPropertyNames: Mi, getOwnPropertySymbols: Ti, getPrototypeOf: Si } = Object, Xe = globalThis, Bt = Xe.trustedTypes, zi = Bt ? Bt.emptyScript : "", ki = Xe.reactiveElementPolyfillSupport, De = (r, e) => r, ot = { toAttribute(r, e) {
+const { is: Ei, defineProperty: Ii, getOwnPropertyDescriptor: Mi, getOwnPropertyNames: Ci, getOwnPropertySymbols: Ti, getPrototypeOf: zi } = Object, Xe = globalThis, Bt = Xe.trustedTypes, Si = Bt ? Bt.emptyScript : "", ki = Xe.reactiveElementPolyfillSupport, De = (r, e) => r, ot = { toAttribute(r, e) {
   switch (e) {
     case Boolean:
-      r = r ? zi : null;
+      r = r ? Si : null;
       break;
     case Object:
     case Array:
@@ -89,7 +89,7 @@ let Ie = class extends HTMLElement {
     }
   }
   static getPropertyDescriptor(e, t, i) {
-    const { get: s, set: a } = Ci(this.prototype, e) ?? { get() {
+    const { get: s, set: a } = Mi(this.prototype, e) ?? { get() {
       return this[t];
     }, set(n) {
       this[t] = n;
@@ -104,13 +104,13 @@ let Ie = class extends HTMLElement {
   }
   static _$Ei() {
     if (this.hasOwnProperty(De("elementProperties"))) return;
-    const e = Si(this);
+    const e = zi(this);
     e.finalize(), e.l !== void 0 && (this.l = [...e.l]), this.elementProperties = new Map(e.elementProperties);
   }
   static finalize() {
     if (this.hasOwnProperty(De("finalized"))) return;
     if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(De("properties"))) {
-      const t = this.properties, i = [...Mi(t), ...Ti(t)];
+      const t = this.properties, i = [...Ci(t), ...Ti(t)];
       for (const s of i) this.createProperty(s, t[s]);
     }
     const e = this[Symbol.metadata];
@@ -264,7 +264,7 @@ Ie.elementStyles = [], Ie.shadowRootOptions = { mode: "open" }, Ie[De("elementPr
  */
 const yt = globalThis, jt = (r) => r, Ke = yt.trustedTypes, Nt = Ke ? Ke.createPolicy("lit-html", { createHTML: (r) => r }) : void 0, ti = "$lit$", pe = `lit$${Math.random().toFixed(9).slice(2)}$`, ii = "?" + pe, Bi = `<${ii}>`, we = document, Ye = () => we.createComment(""), We = (r) => r === null || typeof r != "object" && typeof r != "function", wt = Array.isArray, Oi = (r) => wt(r) || typeof r?.[Symbol.iterator] == "function", et = `[ 	
 \f\r]`, je = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Dt = /-->/g, Yt = />/g, ve = RegExp(`>|${et}(?:([^\\s"'>=/]+)(${et}*=${et}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), Wt = /'/g, Ht = /"/g, si = /^(?:script|style|textarea|title)$/i, ji = (r) => (e, ...t) => ({ _$litType$: r, strings: e, values: t }), A = ji(1), Se = Symbol.for("lit-noChange"), D = Symbol.for("lit-nothing"), Gt = /* @__PURE__ */ new WeakMap(), be = we.createTreeWalker(we, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), Wt = /'/g, Ht = /"/g, si = /^(?:script|style|textarea|title)$/i, ji = (r) => (e, ...t) => ({ _$litType$: r, strings: e, values: t }), A = ji(1), ze = Symbol.for("lit-noChange"), D = Symbol.for("lit-nothing"), Gt = /* @__PURE__ */ new WeakMap(), be = we.createTreeWalker(we, 129);
 function ni(r, e) {
   if (!wt(r) || !r.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Nt !== void 0 ? Nt.createHTML(e) : e;
@@ -318,11 +318,11 @@ class He {
     return i.innerHTML = e, i;
   }
 }
-function ze(r, e, t = r, i) {
-  if (e === Se) return e;
+function Se(r, e, t = r, i) {
+  if (e === ze) return e;
   let s = i !== void 0 ? t._$Co?.[i] : t._$Cl;
   const a = We(e) ? void 0 : e._$litDirective$;
-  return s?.constructor !== a && (s?._$AO?.(!1), a === void 0 ? s = void 0 : (s = new a(r), s._$AT(r, t, i)), i !== void 0 ? (t._$Co ??= [])[i] = s : t._$Cl = s), s !== void 0 && (e = ze(r, s._$AS(r, e.values), s, i)), e;
+  return s?.constructor !== a && (s?._$AO?.(!1), a === void 0 ? s = void 0 : (s = new a(r), s._$AT(r, t, i)), i !== void 0 ? (t._$Co ??= [])[i] = s : t._$Cl = s), s !== void 0 && (e = Se(r, s._$AS(r, e.values), s, i)), e;
 }
 class Di {
   constructor(e, t) {
@@ -371,7 +371,7 @@ class Fe {
     return this._$AB;
   }
   _$AI(e, t = this) {
-    e = ze(this, e, t), We(e) ? e === D || e == null || e === "" ? (this._$AH !== D && this._$AR(), this._$AH = D) : e !== this._$AH && e !== Se && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Oi(e) ? this.k(e) : this._(e);
+    e = Se(this, e, t), We(e) ? e === D || e == null || e === "" ? (this._$AH !== D && this._$AR(), this._$AH = D) : e !== this._$AH && e !== ze && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Oi(e) ? this.k(e) : this._(e);
   }
   O(e) {
     return this._$AA.parentNode.insertBefore(e, this._$AB);
@@ -424,11 +424,11 @@ class Ve {
   _$AI(e, t = this, i, s) {
     const a = this.strings;
     let n = !1;
-    if (a === void 0) e = ze(this, e, t, 0), n = !We(e) || e !== this._$AH && e !== Se, n && (this._$AH = e);
+    if (a === void 0) e = Se(this, e, t, 0), n = !We(e) || e !== this._$AH && e !== ze, n && (this._$AH = e);
     else {
       const c = e;
       let o, l;
-      for (e = a[0], o = 0; o < a.length - 1; o++) l = ze(this, c[i + o], t, o), l === Se && (l = this._$AH[o]), n ||= !We(l) || l !== this._$AH[o], l === D ? e = D : e !== D && (e += (l ?? "") + a[o + 1]), this._$AH[o] = l;
+      for (e = a[0], o = 0; o < a.length - 1; o++) l = Se(this, c[i + o], t, o), l === ze && (l = this._$AH[o]), n ||= !We(l) || l !== this._$AH[o], l === D ? e = D : e !== D && (e += (l ?? "") + a[o + 1]), this._$AH[o] = l;
     }
     n && !s && this.j(e);
   }
@@ -457,7 +457,7 @@ class Hi extends Ve {
     super(e, t, i, s, a), this.type = 5;
   }
   _$AI(e, t = this) {
-    if ((e = ze(this, e, t, 0) ?? D) === Se) return;
+    if ((e = Se(this, e, t, 0) ?? D) === ze) return;
     const i = this._$AH, s = e === D && i !== D || e.capture !== i.capture || e.once !== i.once || e.passive !== i.passive, a = e !== D && (i === D || s);
     s && this.element.removeEventListener(this.name, this, i), a && this.element.addEventListener(this.name, this, e), this._$AH = e;
   }
@@ -473,7 +473,7 @@ class Gi {
     return this._$AM._$AU;
   }
   _$AI(e) {
-    ze(this, e);
+    Se(this, e);
   }
 }
 const Zi = yt.litHtmlPolyfillSupport;
@@ -512,7 +512,7 @@ class ae extends Ie {
     super.disconnectedCallback(), this._$Do?.setConnected(!1);
   }
   render() {
-    return Se;
+    return ze;
   }
 }
 ae._$litElement$ = !0, ae.finalized = !0, xt.litElementHydrateSupport?.({ LitElement: ae });
@@ -1160,11 +1160,11 @@ function ci(r, e, t) {
   return { width: c ? i.height : i.width, height: c ? i.width : i.height, rotation: n };
 }
 const ts = { ä: "ae", ö: "oe", ü: "ue", ß: "ss" };
-function Me(r, e = 31) {
+function Ce(r, e = 31) {
   return r.toLowerCase().replace(/[äöüß]/g, (i) => ts[i]).normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, e).replace(/-+$/g, "") || "cyd";
 }
 function is(r, e) {
-  const t = Me(r, 24).replace(/-/g, "_") || "page";
+  const t = Ce(r, 24).replace(/-/g, "_") || "page";
   let i = t, s = 2;
   for (; e.includes(i); ) i = `${t}_${s++}`;
   return i;
@@ -1272,104 +1272,104 @@ function H(r, e, t, i, s, a, n, c = null, o = "left") {
   return { kind: r, role: e, align: t, x: i, y: s, width: c, size: a, color: n, text_align: o };
 }
 function _(r, e, t, i, s = {}, a = {}) {
-  const n = { ...Be, ...s }, c = { ...Oe, ...a }, o = Math.max(e - 2 * se, 1), l = Math.max(t - 2 * se, 1), d = [], v = !!i.icon, I = !!i.icon_circle, w = (x) => I ? x + 2 * os : x, G = (x, M, E, z, u, f) => {
-    const g = H("icon", x, M, E, z, u, f);
+  const n = { ...Be, ...s }, c = { ...Oe, ...a }, o = Math.max(e - 2 * se, 1), l = Math.max(t - 2 * se, 1), d = [], v = !!i.icon, I = !!i.icon_circle, w = (x) => I ? x + 2 * os : x, G = (x, C, E, S, u, f) => {
+    const g = H("icon", x, C, E, S, u, f);
     return I && (g.circle = w(u)), g;
   };
   if (r === "toggle_tile" || r === "binary_indicator" || r === "sensor_value" || r === "person_presence" || r === "notification_area") {
     const x = r === "sensor_value" ? n.l : n[String(i.text_size ?? "s")] ?? n.s;
     (r === "person_presence" || r === "notification_area") && (r = "binary_indicator");
-    const M = n.xs;
-    if (l >= w(c.m) + X(x) + X(M))
+    const C = n.xs;
+    if (l >= w(c.m) + X(x) + X(C))
       if (r === "sensor_value") {
-        const z = l >= w(c.s) + X(n.xl) ? n.xl : n.l;
-        d.push(H("text", "label", "TOP_LEFT", 0, 0, M, "text_muted", o - (v ? w(c.s) + K : 0))), v && d.push(G("icon", "TOP_RIGHT", 0, 0, c.s, "accent")), d.push(H("text", "value", "BOTTOM_LEFT", 0, 0, z, "text", o));
+        const S = l >= w(c.s) + X(n.xl) ? n.xl : n.l;
+        d.push(H("text", "label", "TOP_LEFT", 0, 0, C, "text_muted", o - (v ? w(c.s) + K : 0))), v && d.push(G("icon", "TOP_RIGHT", 0, 0, c.s, "accent")), d.push(H("text", "value", "BOTTOM_LEFT", 0, 0, S, "text", o));
       } else
-        v && d.push(G("icon", "TOP_LEFT", 0, 0, c.m, "state_icon")), r === "toggle_tile" && (i.show_state ?? !0) || r === "binary_indicator" ? (d.push(H("text", "label", "BOTTOM_LEFT", 0, -X(M), x, "text", o)), d.push(H("text", "state", "BOTTOM_LEFT", 0, 0, M, "text_muted", o))) : d.push(H("text", "label", "BOTTOM_LEFT", 0, 0, x, "text", o));
+        v && d.push(G("icon", "TOP_LEFT", 0, 0, c.m, "state_icon")), r === "toggle_tile" && (i.show_state ?? !0) || r === "binary_indicator" ? (d.push(H("text", "label", "BOTTOM_LEFT", 0, -X(C), x, "text", o)), d.push(H("text", "state", "BOTTOM_LEFT", 0, 0, C, "text_muted", o))) : d.push(H("text", "label", "BOTTOM_LEFT", 0, 0, x, "text", o));
     else {
-      const z = l >= w(c.m) && o >= 3 * w(c.m) ? c.m : c.s, u = v ? w(z) + K : 0, f = Math.max(o - u, 1);
-      v && d.push(G("icon", "LEFT_MID", 0, 0, z, r === "sensor_value" ? "accent" : "state_icon")), r === "sensor_value" ? (d.push(H("text", "value", "TOP_LEFT", u, 0, x, "text", f)), d.push(H("text", "label", "BOTTOM_LEFT", u, 0, M, "text_muted", f))) : (r === "binary_indicator" || (i.show_state ?? !0)) && l >= X(x) + X(M) ? (d.push(H("text", "label", "TOP_LEFT", u, 0, x, "text", f)), d.push(H("text", "state", "BOTTOM_LEFT", u, 0, M, "text_muted", f))) : d.push(H("text", "label", "LEFT_MID", u, 0, x, "text", f));
+      const S = l >= w(c.m) && o >= 3 * w(c.m) ? c.m : c.s, u = v ? w(S) + K : 0, f = Math.max(o - u, 1);
+      v && d.push(G("icon", "LEFT_MID", 0, 0, S, r === "sensor_value" ? "accent" : "state_icon")), r === "sensor_value" ? (d.push(H("text", "value", "TOP_LEFT", u, 0, x, "text", f)), d.push(H("text", "label", "BOTTOM_LEFT", u, 0, C, "text_muted", f))) : (r === "binary_indicator" || (i.show_state ?? !0)) && l >= X(x) + X(C) ? (d.push(H("text", "label", "TOP_LEFT", u, 0, x, "text", f)), d.push(H("text", "state", "BOTTOM_LEFT", u, 0, C, "text_muted", f))) : d.push(H("text", "label", "LEFT_MID", u, 0, x, "text", f));
     }
     return d;
   }
   if (r === "clock") {
     let x = n[String(i.size ?? "xl")] ?? n.xl;
     if (i.show_date ?? !0) {
-      let M = x <= n.l ? n.xs : n.s;
-      X(x) + X(M) > l && (x = n.l, M = n.xs);
-      const E = X(x), z = X(M);
-      d.push(H("text", "time", "CENTER", 0, -q(z, 2), x, "text", o, "center")), d.push(H("text", "date", "CENTER", 0, q(E, 2), M, "text_muted", o, "center"));
+      let C = x <= n.l ? n.xs : n.s;
+      X(x) + X(C) > l && (x = n.l, C = n.xs);
+      const E = X(x), S = X(C);
+      d.push(H("text", "time", "CENTER", 0, -q(S, 2), x, "text", o, "center")), d.push(H("text", "date", "CENTER", 0, q(E, 2), C, "text_muted", o, "center"));
     } else
       d.push(H("text", "time", "CENTER", 0, 0, x, "text", o, "center"));
     return d;
   }
   if (r === "label") {
-    const x = n[String(i.size ?? "m")] ?? n.m, M = String(i.align ?? "center"), E = M === "left" ? "LEFT_MID" : M === "right" ? "RIGHT_MID" : "CENTER";
-    return d.push(H("text", "text", E, 0, 0, x, i.muted ? "text_muted" : "text", o, M)), d;
+    const x = n[String(i.size ?? "m")] ?? n.m, C = String(i.align ?? "center"), E = C === "left" ? "LEFT_MID" : C === "right" ? "RIGHT_MID" : "CENTER";
+    return d.push(H("text", "text", E, 0, 0, x, i.muted ? "text_muted" : "text", o, C)), d;
   }
   if (r === "scene_button" || r === "page_button") {
-    const x = n[String(i.text_size ?? "s")] ?? n.s, M = X(x);
-    if (v && l >= w(c.m) + M + 2)
-      d.push(G("icon", "CENTER", 0, -q(M, 2) - 1, c.m, "accent")), d.push(H("text", "label", "CENTER", 0, q(w(c.m), 2) + 1, x, "text", o, "center"));
+    const x = n[String(i.text_size ?? "s")] ?? n.s, C = X(x);
+    if (v && l >= w(c.m) + C + 2)
+      d.push(G("icon", "CENTER", 0, -q(C, 2) - 1, c.m, "accent")), d.push(H("text", "label", "CENTER", 0, q(w(c.m), 2) + 1, x, "text", o, "center"));
     else if (v) {
-      const E = l >= w(c.m) ? c.m : c.s, z = w(E) + K;
-      d.push(G("icon", "LEFT_MID", 0, 0, E, "accent")), d.push(H("text", "label", "LEFT_MID", z, 0, x, "text", Math.max(o - z, 1)));
+      const E = l >= w(c.m) ? c.m : c.s, S = w(E) + K;
+      d.push(G("icon", "LEFT_MID", 0, 0, E, "accent")), d.push(H("text", "label", "LEFT_MID", S, 0, x, "text", Math.max(o - S, 1)));
     } else
       d.push(H("text", "label", "CENTER", 0, 0, x, "text", o, "center"));
     return d;
   }
-  const W = (x, M, E, z, u, f, g, m, b) => ({ ...H(x, M, E, z, u, m, b, Math.max(f, 1)), height: Math.max(g, 1) }), F = n[String(i.text_size ?? "s")] ?? n.s, N = X(F), Z = X(n.xs);
+  const W = (x, C, E, S, u, f, g, m, b) => ({ ...H(x, C, E, S, u, m, b, Math.max(f, 1)), height: Math.max(g, 1) }), F = n[String(i.text_size ?? "s")] ?? n.s, N = X(F), Z = X(n.xs);
   if (r === "cover_control") {
-    const x = l >= N + K + 24, M = x ? Math.min(l - N - K, Lt) : l;
-    return x && (d.push(H("text", "label", "TOP_LEFT", 0, 0, F, "text", Math.max(o - Le - K, 1))), d.push(H("text", "state", "TOP_RIGHT", 0, 0, n.xs, "text_muted", Le, "right"))), ["up", "stop", "down"].forEach((E, z) => {
-      const [u, f] = me(0, o, 3, K, z), g = M >= c.m + 8 ? c.m : c.s;
-      d.push(W("button", E, "BOTTOM_LEFT", u, 0, f, M, g, "accent"));
+    const x = l >= N + K + 24, C = x ? Math.min(l - N - K, Lt) : l;
+    return x && (d.push(H("text", "label", "TOP_LEFT", 0, 0, F, "text", Math.max(o - Le - K, 1))), d.push(H("text", "state", "TOP_RIGHT", 0, 0, n.xs, "text_muted", Le, "right"))), ["up", "stop", "down"].forEach((E, S) => {
+      const [u, f] = me(0, o, 3, K, S), g = C >= c.m + 8 ? c.m : c.s;
+      d.push(W("button", E, "BOTTOM_LEFT", u, 0, f, C, g, "accent"));
     }), d;
   }
   if (r === "climate" || r === "number_stepper" || r === "select") {
-    const x = l >= 2 * Z + X(n.l) + 2 * K, M = x ? 2 * Z : Z, E = Math.max(Math.min(l - M - K, Lt, q(o, 4)), 16), z = Math.max(o - 2 * (E + K), 1), u = [n.xl, n.l].filter((m) => z >= 3 * m && l - M >= X(m)), f = u.length ? u[0] : n.m, g = x ? 0 : q(Z, 2);
+    const x = l >= 2 * Z + X(n.l) + 2 * K, C = x ? 2 * Z : Z, E = Math.max(Math.min(l - C - K, Lt, q(o, 4)), 16), S = Math.max(o - 2 * (E + K), 1), u = [n.xl, n.l].filter((m) => S >= 3 * m && l - C >= X(m)), f = u.length ? u[0] : n.m, g = x ? 0 : q(Z, 2);
     if (x)
       d.push(H("text", "label", "TOP_LEFT", 0, 0, n.xs, "text_muted", o)), d.push(H("text", "state", "BOTTOM_MID", 0, 0, n.xs, "text_muted", o, "center"));
     else {
       const m = q(o, 2);
       d.push(H("text", "label", "TOP_LEFT", 0, 0, n.xs, "text_muted", Math.max(m - K, 1))), d.push(H("text", "state", "TOP_RIGHT", 0, 0, n.xs, "text_muted", Math.max(o - m, 1), "right"));
     }
-    return d.push(H("text", "value", "CENTER", 0, g, f, "text", z, "center")), d.push(W("button", "minus", "LEFT_MID", 0, g, E, E, c.s, "accent")), d.push(W("button", "plus", "RIGHT_MID", 0, g, E, E, c.s, "accent")), d;
+    return d.push(H("text", "value", "CENTER", 0, g, f, "text", S, "center")), d.push(W("button", "minus", "LEFT_MID", 0, g, E, E, c.s, "accent")), d.push(W("button", "plus", "RIGHT_MID", 0, g, E, E, c.s, "accent")), d;
   }
   if (r === "slider")
     return l >= N + Ne + 4 ? (d.push(H("text", "label", "TOP_LEFT", 0, 0, F, "text", Math.max(o - Le - K, 1))), d.push(H("text", "value", "TOP_RIGHT", 0, 0, n.xs, "text_muted", Le, "right")), d.push(W("slider", "slider", "BOTTOM_MID", 0, -2, o - 2 * Ne, Ne, 0, "accent"))) : d.push(W("slider", "slider", "CENTER", 0, 0, o - 2 * Ne, Ne, 0, "accent")), d;
   if (r === "gauge") {
-    const x = Math.max(Math.min(o, l - Z), 24), M = Math.max(q(x, 10), 4), E = x >= 90 ? n.l : x < 60 ? n.s : n.m;
-    return d.push(W("arc", "arc", "TOP_MID", 0, 0, x, x, M, "accent")), d.push(H("text", "value", "TOP_MID", 0, q(x, 2) - q(X(E), 2), E, "text", x, "center")), d.push(H("text", "label", "BOTTOM_MID", 0, 0, n.xs, "text_muted", o, "center")), d;
+    const x = Math.max(Math.min(o, l - Z), 24), C = Math.max(q(x, 10), 4), E = x >= 90 ? n.l : x < 60 ? n.s : n.m;
+    return d.push(W("arc", "arc", "TOP_MID", 0, 0, x, x, C, "accent")), d.push(H("text", "value", "TOP_MID", 0, q(x, 2) - q(X(E), 2), E, "text", x, "center")), d.push(H("text", "label", "BOTTOM_MID", 0, 0, n.xs, "text_muted", o, "center")), d;
   }
   if (r === "weather") {
-    const x = l >= w(c.l) && o >= 3 * w(c.l) ? c.l : c.m, M = w(x) + K, E = l >= X(n.xl) + Z ? n.xl : n.l;
-    return d.push(G("icon", "LEFT_MID", 0, 0, x, "accent")), d.push(H("text", "value", "TOP_LEFT", M, 0, E, "text", Math.max(o - M, 1))), d.push(H("text", "state", "BOTTOM_LEFT", M, 0, n.xs, "text_muted", Math.max(o - M, 1))), d;
+    const x = l >= w(c.l) && o >= 3 * w(c.l) ? c.l : c.m, C = w(x) + K, E = l >= X(n.xl) + Z ? n.xl : n.l;
+    return d.push(G("icon", "LEFT_MID", 0, 0, x, "accent")), d.push(H("text", "value", "TOP_LEFT", C, 0, E, "text", Math.max(o - C, 1))), d.push(H("text", "state", "BOTTOM_LEFT", C, 0, n.xs, "text_muted", Math.max(o - C, 1))), d;
   }
   if (r === "multi_value") {
-    const x = Math.max(1, Math.min(Math.trunc(Number(i._count ?? 1)), 3)), M = l >= X(n.l) + Z ? n.l : n.s;
+    const x = Math.max(1, Math.min(Math.trunc(Number(i._count ?? 1)), 3)), C = l >= X(n.l) + Z ? n.l : n.s;
     for (let E = 0; E < x; E++) {
-      const [z, u] = me(0, o, x, K, E);
-      d.push(H("text", `value${E}`, "TOP_LEFT", z, 0, M, "text", u)), d.push(H("text", `label${E}`, "BOTTOM_LEFT", z, 0, n.xs, "text_muted", u));
+      const [S, u] = me(0, o, x, K, E);
+      d.push(H("text", `value${E}`, "TOP_LEFT", S, 0, C, "text", u)), d.push(H("text", `label${E}`, "BOTTOM_LEFT", S, 0, n.xs, "text_muted", u));
     }
     return d;
   }
   if (r === "countdown") {
     if (l < N + X(n.l))
       return d.push(H("text", "label", "LEFT_MID", 0, 0, F, "text", Math.max(q(o, 2) - K, 1))), d.push(H("text", "value", "RIGHT_MID", 0, 0, n.l, "text", o - q(o, 2), "right")), d;
-    const x = l >= N + X(n.xl) + it + 4 ? n.xl : n.l, M = l >= N + X(x) + it + 4;
-    return d.push(H("text", "label", "TOP_LEFT", 0, 0, F, "text", o)), d.push(H("text", "value", "BOTTOM_LEFT", 0, M ? -10 : 0, x, "text", o)), M && d.push(W("bar", "bar", "BOTTOM_MID", 0, 0, o, it, 0, "accent")), d;
+    const x = l >= N + X(n.xl) + it + 4 ? n.xl : n.l, C = l >= N + X(x) + it + 4;
+    return d.push(H("text", "label", "TOP_LEFT", 0, 0, F, "text", o)), d.push(H("text", "value", "BOTTOM_LEFT", 0, C ? -10 : 0, x, "text", o)), C && d.push(W("bar", "bar", "BOTTOM_MID", 0, 0, o, it, 0, "accent")), d;
   }
   if (r === "qr_code") {
-    const x = !!i.label && l >= 48 + Z, M = Math.max(Math.min(o, l - (x ? Z : 0)), 16);
-    return d.push(W("qr", "qr", x ? "TOP_MID" : "CENTER", 0, 0, M, M, 0, "text")), x && d.push(H("text", "label", "BOTTOM_MID", 0, 0, n.xs, "text_muted", o, "center")), d;
+    const x = !!i.label && l >= 48 + Z, C = Math.max(Math.min(o, l - (x ? Z : 0)), 16);
+    return d.push(W("qr", "qr", x ? "TOP_MID" : "CENTER", 0, 0, C, C, 0, "text")), x && d.push(H("text", "label", "BOTTOM_MID", 0, 0, n.xs, "text_muted", o, "center")), d;
   }
   if (r === "divider")
     return d.push(W("line", "line", "CENTER", 0, 0, o, 2, 0, "text_muted")), d;
   if (r === "button_grid") {
-    const x = Math.max(1, Math.min(Math.trunc(Number(i._count ?? 1)), 6)), M = x <= 3 ? x : q(x + 1, 2), E = q(x + M - 1, M);
-    for (let z = 0; z < x; z++) {
-      const [u, f] = me(0, o, M, K, z % M), [g, m] = me(0, l, E, K, q(z, M)), b = m >= c.s + Z + 4, p = W("button", `btn${z}`, "TOP_LEFT", u, g, f, m, b || m < c.m + 6 ? c.s : c.m, "accent");
+    const x = Math.max(1, Math.min(Math.trunc(Number(i._count ?? 1)), 6)), C = x <= 3 ? x : q(x + 1, 2), E = q(x + C - 1, C);
+    for (let S = 0; S < x; S++) {
+      const [u, f] = me(0, o, C, K, S % C), [g, m] = me(0, l, E, K, q(S, C)), b = m >= c.s + Z + 4, p = W("button", `btn${S}`, "TOP_LEFT", u, g, f, m, b || m < c.m + 6 ? c.s : c.m, "accent");
       p.label_size = b ? n.xs : 0, d.push(p);
     }
     return d;
@@ -1377,8 +1377,8 @@ function _(r, e, t, i, s = {}, a = {}) {
   if (r === "page_title") {
     const x = n[String(i.size ?? "m")] ?? n.m;
     if (i._has_back) {
-      const M = c.s;
-      d.push(H("icon", "back", "LEFT_MID", 0, 0, M, "accent")), d.push(H("text", "title", "LEFT_MID", M + K, 0, x, "text", Math.max(o - M - K, 1)));
+      const C = c.s;
+      d.push(H("icon", "back", "LEFT_MID", 0, 0, C, "accent")), d.push(H("text", "title", "LEFT_MID", C + K, 0, x, "text", Math.max(o - C - K, 1)));
     } else
       d.push(H("text", "title", "LEFT_MID", 0, 0, x, "text", o));
     return d;
@@ -1445,11 +1445,11 @@ function xs(r, e, t = {}, i = {}) {
     W.push(H("icon", `${F}_icon`, "TOP_LEFT", 0, Z + q(I - a.s, 2), a.s, "text_muted")), W.push({ ...H("slider", F, "TOP_LEFT", w, Z + q(I - Ae, 2), 0, "accent", G), height: Ae }), W.push(H("text", `${F}_value`, "TOP_RIGHT", 0, Z + q(I - X(s.s), 2), s.s, "text", qt, "right"));
   }), { panel: o, elements: W };
 }
-const Es = "Tile style presets. Color values are theme color roles or #rrggbb. Numbers: opacity 0-100, px.", Is = { card: { name: "Karte", name_en: "Card", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "border", border_on: "accent", border_width: "theme", radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, flat: { name: "Flach", name_en: "Flat", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "tile", border_on: "tile_on", border_width: 0, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, outline: { name: "Umriss", name_en: "Outline", bg: "background", bg_opa: 0, bg_on: "accent", bg_opa_on: 20, border: "border", border_on: "accent", border_width: 2, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile", circle_bg_on: "accent", text_size: "s" }, glass: { name: "Glas (für Hintergrundbilder)", name_en: "Glass (for background images)", bg: "tile", bg_opa: 55, bg_on: "tile_on", bg_opa_on: 80, border: "border", border_on: "accent", border_width: 1, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, solid: { name: "Kräftig (an = hell)", name_en: "Bold (on = light)", bg: "tile", bg_opa: 100, bg_on: "on_bg", bg_opa_on: 100, border: "tile", border_on: "on_bg", border_width: 0, radius: "theme", text: "text", text_on: "on_text", sub: "text_muted", sub_on: "on_sub", icon: "off", icon_on: "#ffffff", circle: !0, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" } }, Cs = { on_bg: "#f2f2f2", on_text: "#111111", on_sub: "#5f6b76" }, Ms = {
+const Es = "Tile style presets. Color values are theme color roles or #rrggbb. Numbers: opacity 0-100, px.", Is = { card: { name: "Karte", name_en: "Card", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "border", border_on: "accent", border_width: "theme", radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, flat: { name: "Flach", name_en: "Flat", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "tile", border_on: "tile_on", border_width: 0, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, outline: { name: "Umriss", name_en: "Outline", bg: "background", bg_opa: 0, bg_on: "accent", bg_opa_on: 20, border: "border", border_on: "accent", border_width: 2, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile", circle_bg_on: "accent", text_size: "s" }, glass: { name: "Glas (für Hintergrundbilder)", name_en: "Glass (for background images)", bg: "tile", bg_opa: 55, bg_on: "tile_on", bg_opa_on: 80, border: "border", border_on: "accent", border_width: 1, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, solid: { name: "Kräftig (an = hell)", name_en: "Bold (on = light)", bg: "tile", bg_opa: 100, bg_on: "on_bg", bg_opa_on: 100, border: "tile", border_on: "on_bg", border_width: 0, radius: "theme", text: "text", text_on: "on_text", sub: "text_muted", sub_on: "on_sub", icon: "off", icon_on: "#ffffff", circle: !0, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" } }, Ms = { on_bg: "#f2f2f2", on_text: "#111111", on_sub: "#5f6b76" }, Cs = {
   _doc: Es,
   presets: Is,
-  role_defaults: Cs
-}, di = Ms, Ts = [
+  role_defaults: Ms
+}, di = Cs, Ts = [
   "bg",
   "bg_on",
   "border",
@@ -1462,7 +1462,7 @@ const Es = "Tile style presets. Color values are theme color roles or #rrggbb. N
   "icon_on",
   "circle_bg",
   "circle_bg_on"
-], Ss = ["bg_opa", "bg_opa_on", "border_width", "radius"], zs = ["s", "m", "l"];
+], zs = ["bg_opa", "bg_opa_on", "border_width", "radius"], Ss = ["s", "m", "l"];
 function ks(r, e, t) {
   const i = String(r);
   return i.startsWith("#") ? i.toLowerCase() : String(e[i] || t[i] || e.text || "#ffffff").toLowerCase();
@@ -1472,13 +1472,13 @@ function pt(r, e, t = di) {
   for (const [v, I] of Object.entries(i)) I != null && I !== "" && (c[v] = I);
   const o = r.colors ?? {}, l = { preset: a in t.presets ? a : "card" };
   for (const v of Ts) l[v] = ks(c[v], o, t.role_defaults ?? {});
-  for (const v of Ss) {
+  for (const v of zs) {
     let I = c[v];
     I === "theme" && (I = r[v] ?? 0), l[v] = Math.max(0, Math.trunc(Number(I)));
   }
   l.bg_opa = Math.min(l.bg_opa, 100), l.bg_opa_on = Math.min(l.bg_opa_on, 100), l.circle = !!(c.circle ?? !1);
   const d = String(c.text_size ?? "s");
-  return l.text_size = zs.includes(d) ? d : "s", l;
+  return l.text_size = Ss.includes(d) ? d : "s", l;
 }
 function Bs(r, e) {
   return { ...r, icon_circle: e.circle, text_size: e.text_size };
@@ -1523,193 +1523,193 @@ var nt = { exports: {} }, Kt;
 function Gs() {
   return Kt || (Kt = 1, (function(r, e) {
     var t = (function() {
-      var i = function(E, z) {
-        var u = 236, f = 17, g = E, m = a[z], b = null, p = 0, B = null, O = [], j = {}, P = function(C, T) {
+      var i = function(E, S) {
+        var u = 236, f = 17, g = E, m = a[S], b = null, p = 0, B = null, O = [], j = {}, P = function(M, T) {
           p = g * 4 + 17, b = (function(y) {
-            for (var S = new Array(y), k = 0; k < y; k += 1) {
-              S[k] = new Array(y);
+            for (var z = new Array(y), k = 0; k < y; k += 1) {
+              z[k] = new Array(y);
               for (var Y = 0; Y < y; Y += 1)
-                S[k][Y] = null;
+                z[k][Y] = null;
             }
-            return S;
-          })(p), U(0, 0), U(p - 7, 0), U(0, p - 7), te(), $(), he(C, T), g >= 7 && de(C), B == null && (B = yi(g, m, O)), ue(B, T);
-        }, U = function(C, T) {
+            return z;
+          })(p), U(0, 0), U(p - 7, 0), U(0, p - 7), te(), $(), he(M, T), g >= 7 && de(M), B == null && (B = yi(g, m, O)), ue(B, T);
+        }, U = function(M, T) {
           for (var y = -1; y <= 7; y += 1)
-            if (!(C + y <= -1 || p <= C + y))
-              for (var S = -1; S <= 7; S += 1)
-                T + S <= -1 || p <= T + S || (0 <= y && y <= 6 && (S == 0 || S == 6) || 0 <= S && S <= 6 && (y == 0 || y == 6) || 2 <= y && y <= 4 && 2 <= S && S <= 4 ? b[C + y][T + S] = !0 : b[C + y][T + S] = !1);
+            if (!(M + y <= -1 || p <= M + y))
+              for (var z = -1; z <= 7; z += 1)
+                T + z <= -1 || p <= T + z || (0 <= y && y <= 6 && (z == 0 || z == 6) || 0 <= z && z <= 6 && (y == 0 || y == 6) || 2 <= y && y <= 4 && 2 <= z && z <= 4 ? b[M + y][T + z] = !0 : b[M + y][T + z] = !1);
         }, J = function() {
-          for (var C = 0, T = 0, y = 0; y < 8; y += 1) {
+          for (var M = 0, T = 0, y = 0; y < 8; y += 1) {
             P(!0, y);
-            var S = c.getLostPoint(j);
-            (y == 0 || C > S) && (C = S, T = y);
+            var z = c.getLostPoint(j);
+            (y == 0 || M > z) && (M = z, T = y);
           }
           return T;
         }, $ = function() {
-          for (var C = 8; C < p - 8; C += 1)
-            b[C][6] == null && (b[C][6] = C % 2 == 0);
+          for (var M = 8; M < p - 8; M += 1)
+            b[M][6] == null && (b[M][6] = M % 2 == 0);
           for (var T = 8; T < p - 8; T += 1)
             b[6][T] == null && (b[6][T] = T % 2 == 0);
         }, te = function() {
-          for (var C = c.getPatternPosition(g), T = 0; T < C.length; T += 1)
-            for (var y = 0; y < C.length; y += 1) {
-              var S = C[T], k = C[y];
-              if (b[S][k] == null)
+          for (var M = c.getPatternPosition(g), T = 0; T < M.length; T += 1)
+            for (var y = 0; y < M.length; y += 1) {
+              var z = M[T], k = M[y];
+              if (b[z][k] == null)
                 for (var Y = -2; Y <= 2; Y += 1)
                   for (var R = -2; R <= 2; R += 1)
-                    Y == -2 || Y == 2 || R == -2 || R == 2 || Y == 0 && R == 0 ? b[S + Y][k + R] = !0 : b[S + Y][k + R] = !1;
+                    Y == -2 || Y == 2 || R == -2 || R == 2 || Y == 0 && R == 0 ? b[z + Y][k + R] = !0 : b[z + Y][k + R] = !1;
             }
-        }, de = function(C) {
+        }, de = function(M) {
           for (var T = c.getBCHTypeNumber(g), y = 0; y < 18; y += 1) {
-            var S = !C && (T >> y & 1) == 1;
-            b[Math.floor(y / 3)][y % 3 + p - 8 - 3] = S;
+            var z = !M && (T >> y & 1) == 1;
+            b[Math.floor(y / 3)][y % 3 + p - 8 - 3] = z;
           }
           for (var y = 0; y < 18; y += 1) {
-            var S = !C && (T >> y & 1) == 1;
-            b[y % 3 + p - 8 - 3][Math.floor(y / 3)] = S;
+            var z = !M && (T >> y & 1) == 1;
+            b[y % 3 + p - 8 - 3][Math.floor(y / 3)] = z;
           }
-        }, he = function(C, T) {
-          for (var y = m << 3 | T, S = c.getBCHTypeInfo(y), k = 0; k < 15; k += 1) {
-            var Y = !C && (S >> k & 1) == 1;
+        }, he = function(M, T) {
+          for (var y = m << 3 | T, z = c.getBCHTypeInfo(y), k = 0; k < 15; k += 1) {
+            var Y = !M && (z >> k & 1) == 1;
             k < 6 ? b[k][8] = Y : k < 8 ? b[k + 1][8] = Y : b[p - 15 + k][8] = Y;
           }
           for (var k = 0; k < 15; k += 1) {
-            var Y = !C && (S >> k & 1) == 1;
+            var Y = !M && (z >> k & 1) == 1;
             k < 8 ? b[8][p - k - 1] = Y : k < 9 ? b[8][15 - k - 1 + 1] = Y : b[8][15 - k - 1] = Y;
           }
-          b[p - 8][8] = !C;
-        }, ue = function(C, T) {
-          for (var y = -1, S = p - 1, k = 7, Y = 0, R = c.getMaskFunction(T), Q = p - 1; Q > 0; Q -= 2)
+          b[p - 8][8] = !M;
+        }, ue = function(M, T) {
+          for (var y = -1, z = p - 1, k = 7, Y = 0, R = c.getMaskFunction(T), Q = p - 1; Q > 0; Q -= 2)
             for (Q == 6 && (Q -= 1); ; ) {
               for (var V = 0; V < 2; V += 1)
-                if (b[S][Q - V] == null) {
+                if (b[z][Q - V] == null) {
                   var ee = !1;
-                  Y < C.length && (ee = (C[Y] >>> k & 1) == 1);
-                  var L = R(S, Q - V);
-                  L && (ee = !ee), b[S][Q - V] = ee, k -= 1, k == -1 && (Y += 1, k = 7);
+                  Y < M.length && (ee = (M[Y] >>> k & 1) == 1);
+                  var L = R(z, Q - V);
+                  L && (ee = !ee), b[z][Q - V] = ee, k -= 1, k == -1 && (Y += 1, k = 7);
                 }
-              if (S += y, S < 0 || p <= S) {
-                S -= y, y = -y;
+              if (z += y, z < 0 || p <= z) {
+                z -= y, y = -y;
                 break;
               }
             }
-        }, xe = function(C, T) {
-          for (var y = 0, S = 0, k = 0, Y = new Array(T.length), R = new Array(T.length), Q = 0; Q < T.length; Q += 1) {
+        }, xe = function(M, T) {
+          for (var y = 0, z = 0, k = 0, Y = new Array(T.length), R = new Array(T.length), Q = 0; Q < T.length; Q += 1) {
             var V = T[Q].dataCount, ee = T[Q].totalCount - V;
-            S = Math.max(S, V), k = Math.max(k, ee), Y[Q] = new Array(V);
+            z = Math.max(z, V), k = Math.max(k, ee), Y[Q] = new Array(V);
             for (var L = 0; L < Y[Q].length; L += 1)
-              Y[Q][L] = 255 & C.getBuffer()[L + y];
+              Y[Q][L] = 255 & M.getBuffer()[L + y];
             y += V;
-            var oe = c.getErrorCorrectPolynomial(ee), ce = l(Y[Q], oe.getLength() - 1), Mt = ce.mod(oe);
+            var oe = c.getErrorCorrectPolynomial(ee), ce = l(Y[Q], oe.getLength() - 1), Ct = ce.mod(oe);
             R[Q] = new Array(oe.getLength() - 1);
             for (var L = 0; L < R[Q].length; L += 1) {
-              var Tt = L + Mt.getLength() - R[Q].length;
-              R[Q][L] = Tt >= 0 ? Mt.getAt(Tt) : 0;
+              var Tt = L + Ct.getLength() - R[Q].length;
+              R[Q][L] = Tt >= 0 ? Ct.getAt(Tt) : 0;
             }
           }
-          for (var St = 0, L = 0; L < T.length; L += 1)
-            St += T[L].totalCount;
-          for (var $e = new Array(St), Qe = 0, L = 0; L < S; L += 1)
+          for (var zt = 0, L = 0; L < T.length; L += 1)
+            zt += T[L].totalCount;
+          for (var $e = new Array(zt), Qe = 0, L = 0; L < z; L += 1)
             for (var Q = 0; Q < T.length; Q += 1)
               L < Y[Q].length && ($e[Qe] = Y[Q][L], Qe += 1);
           for (var L = 0; L < k; L += 1)
             for (var Q = 0; Q < T.length; Q += 1)
               L < R[Q].length && ($e[Qe] = R[Q][L], Qe += 1);
           return $e;
-        }, yi = function(C, T, y) {
-          for (var S = d.getRSBlocks(C, T), k = v(), Y = 0; Y < y.length; Y += 1) {
+        }, yi = function(M, T, y) {
+          for (var z = d.getRSBlocks(M, T), k = v(), Y = 0; Y < y.length; Y += 1) {
             var R = y[Y];
-            k.put(R.getMode(), 4), k.put(R.getLength(), c.getLengthInBits(R.getMode(), C)), R.write(k);
+            k.put(R.getMode(), 4), k.put(R.getLength(), c.getLengthInBits(R.getMode(), M)), R.write(k);
           }
-          for (var Q = 0, Y = 0; Y < S.length; Y += 1)
-            Q += S[Y].dataCount;
+          for (var Q = 0, Y = 0; Y < z.length; Y += 1)
+            Q += z[Y].dataCount;
           if (k.getLengthInBits() > Q * 8)
             throw "code length overflow. (" + k.getLengthInBits() + ">" + Q * 8 + ")";
           for (k.getLengthInBits() + 4 <= Q * 8 && k.put(0, 4); k.getLengthInBits() % 8 != 0; )
             k.putBit(!1);
           for (; !(k.getLengthInBits() >= Q * 8 || (k.put(u, 8), k.getLengthInBits() >= Q * 8)); )
             k.put(f, 8);
-          return xe(k, S);
+          return xe(k, z);
         };
-        j.addData = function(C, T) {
+        j.addData = function(M, T) {
           T = T || "Byte";
           var y = null;
           switch (T) {
             case "Numeric":
-              y = I(C);
+              y = I(M);
               break;
             case "Alphanumeric":
-              y = w(C);
+              y = w(M);
               break;
             case "Byte":
-              y = G(C);
+              y = G(M);
               break;
             case "Kanji":
-              y = W(C);
+              y = W(M);
               break;
             default:
               throw "mode:" + T;
           }
           O.push(y), B = null;
-        }, j.isDark = function(C, T) {
-          if (C < 0 || p <= C || T < 0 || p <= T)
-            throw C + "," + T;
-          return b[C][T];
+        }, j.isDark = function(M, T) {
+          if (M < 0 || p <= M || T < 0 || p <= T)
+            throw M + "," + T;
+          return b[M][T];
         }, j.getModuleCount = function() {
           return p;
         }, j.make = function() {
           if (g < 1) {
-            for (var C = 1; C < 40; C++) {
-              for (var T = d.getRSBlocks(C, m), y = v(), S = 0; S < O.length; S++) {
-                var k = O[S];
-                y.put(k.getMode(), 4), y.put(k.getLength(), c.getLengthInBits(k.getMode(), C)), k.write(y);
+            for (var M = 1; M < 40; M++) {
+              for (var T = d.getRSBlocks(M, m), y = v(), z = 0; z < O.length; z++) {
+                var k = O[z];
+                y.put(k.getMode(), 4), y.put(k.getLength(), c.getLengthInBits(k.getMode(), M)), k.write(y);
               }
-              for (var Y = 0, S = 0; S < T.length; S++)
-                Y += T[S].dataCount;
+              for (var Y = 0, z = 0; z < T.length; z++)
+                Y += T[z].dataCount;
               if (y.getLengthInBits() <= Y * 8)
                 break;
             }
-            g = C;
+            g = M;
           }
           P(!1, J());
-        }, j.createTableTag = function(C, T) {
-          C = C || 2, T = typeof T > "u" ? C * 4 : T;
+        }, j.createTableTag = function(M, T) {
+          M = M || 2, T = typeof T > "u" ? M * 4 : T;
           var y = "";
           y += '<table style="', y += " border-width: 0px; border-style: none;", y += " border-collapse: collapse;", y += " padding: 0px; margin: " + T + "px;", y += '">', y += "<tbody>";
-          for (var S = 0; S < j.getModuleCount(); S += 1) {
+          for (var z = 0; z < j.getModuleCount(); z += 1) {
             y += "<tr>";
             for (var k = 0; k < j.getModuleCount(); k += 1)
-              y += '<td style="', y += " border-width: 0px; border-style: none;", y += " border-collapse: collapse;", y += " padding: 0px; margin: 0px;", y += " width: " + C + "px;", y += " height: " + C + "px;", y += " background-color: ", y += j.isDark(S, k) ? "#000000" : "#ffffff", y += ";", y += '"/>';
+              y += '<td style="', y += " border-width: 0px; border-style: none;", y += " border-collapse: collapse;", y += " padding: 0px; margin: 0px;", y += " width: " + M + "px;", y += " height: " + M + "px;", y += " background-color: ", y += j.isDark(z, k) ? "#000000" : "#ffffff", y += ";", y += '"/>';
             y += "</tr>";
           }
           return y += "</tbody>", y += "</table>", y;
-        }, j.createSvgTag = function(C, T, y, S) {
+        }, j.createSvgTag = function(M, T, y, z) {
           var k = {};
-          typeof arguments[0] == "object" && (k = arguments[0], C = k.cellSize, T = k.margin, y = k.alt, S = k.title), C = C || 2, T = typeof T > "u" ? C * 4 : T, y = typeof y == "string" ? { text: y } : y || {}, y.text = y.text || null, y.id = y.text ? y.id || "qrcode-description" : null, S = typeof S == "string" ? { text: S } : S || {}, S.text = S.text || null, S.id = S.text ? S.id || "qrcode-title" : null;
-          var Y = j.getModuleCount() * C + T * 2, R, Q, V, ee, L = "", oe;
-          for (oe = "l" + C + ",0 0," + C + " -" + C + ",0 0,-" + C + "z ", L += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"', L += k.scalable ? "" : ' width="' + Y + 'px" height="' + Y + 'px"', L += ' viewBox="0 0 ' + Y + " " + Y + '" ', L += ' preserveAspectRatio="xMinYMin meet"', L += S.text || y.text ? ' role="img" aria-labelledby="' + Ee([S.id, y.id].join(" ").trim()) + '"' : "", L += ">", L += S.text ? '<title id="' + Ee(S.id) + '">' + Ee(S.text) + "</title>" : "", L += y.text ? '<description id="' + Ee(y.id) + '">' + Ee(y.text) + "</description>" : "", L += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>', L += '<path d="', V = 0; V < j.getModuleCount(); V += 1)
-            for (ee = V * C + T, R = 0; R < j.getModuleCount(); R += 1)
-              j.isDark(V, R) && (Q = R * C + T, L += "M" + Q + "," + ee + oe);
+          typeof arguments[0] == "object" && (k = arguments[0], M = k.cellSize, T = k.margin, y = k.alt, z = k.title), M = M || 2, T = typeof T > "u" ? M * 4 : T, y = typeof y == "string" ? { text: y } : y || {}, y.text = y.text || null, y.id = y.text ? y.id || "qrcode-description" : null, z = typeof z == "string" ? { text: z } : z || {}, z.text = z.text || null, z.id = z.text ? z.id || "qrcode-title" : null;
+          var Y = j.getModuleCount() * M + T * 2, R, Q, V, ee, L = "", oe;
+          for (oe = "l" + M + ",0 0," + M + " -" + M + ",0 0,-" + M + "z ", L += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"', L += k.scalable ? "" : ' width="' + Y + 'px" height="' + Y + 'px"', L += ' viewBox="0 0 ' + Y + " " + Y + '" ', L += ' preserveAspectRatio="xMinYMin meet"', L += z.text || y.text ? ' role="img" aria-labelledby="' + Ee([z.id, y.id].join(" ").trim()) + '"' : "", L += ">", L += z.text ? '<title id="' + Ee(z.id) + '">' + Ee(z.text) + "</title>" : "", L += y.text ? '<description id="' + Ee(y.id) + '">' + Ee(y.text) + "</description>" : "", L += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>', L += '<path d="', V = 0; V < j.getModuleCount(); V += 1)
+            for (ee = V * M + T, R = 0; R < j.getModuleCount(); R += 1)
+              j.isDark(V, R) && (Q = R * M + T, L += "M" + Q + "," + ee + oe);
           return L += '" stroke="transparent" fill="black"/>', L += "</svg>", L;
-        }, j.createDataURL = function(C, T) {
-          C = C || 2, T = typeof T > "u" ? C * 4 : T;
-          var y = j.getModuleCount() * C + T * 2, S = T, k = y - T;
-          return M(y, y, function(Y, R) {
-            if (S <= Y && Y < k && S <= R && R < k) {
-              var Q = Math.floor((Y - S) / C), V = Math.floor((R - S) / C);
+        }, j.createDataURL = function(M, T) {
+          M = M || 2, T = typeof T > "u" ? M * 4 : T;
+          var y = j.getModuleCount() * M + T * 2, z = T, k = y - T;
+          return C(y, y, function(Y, R) {
+            if (z <= Y && Y < k && z <= R && R < k) {
+              var Q = Math.floor((Y - z) / M), V = Math.floor((R - z) / M);
               return j.isDark(V, Q) ? 0 : 1;
             } else
               return 1;
           });
-        }, j.createImgTag = function(C, T, y) {
-          C = C || 2, T = typeof T > "u" ? C * 4 : T;
-          var S = j.getModuleCount() * C + T * 2, k = "";
-          return k += "<img", k += ' src="', k += j.createDataURL(C, T), k += '"', k += ' width="', k += S, k += '"', k += ' height="', k += S, k += '"', y && (k += ' alt="', k += Ee(y), k += '"'), k += "/>", k;
+        }, j.createImgTag = function(M, T, y) {
+          M = M || 2, T = typeof T > "u" ? M * 4 : T;
+          var z = j.getModuleCount() * M + T * 2, k = "";
+          return k += "<img", k += ' src="', k += j.createDataURL(M, T), k += '"', k += ' width="', k += z, k += '"', k += ' height="', k += z, k += '"', y && (k += ' alt="', k += Ee(y), k += '"'), k += "/>", k;
         };
-        var Ee = function(C) {
-          for (var T = "", y = 0; y < C.length; y += 1) {
-            var S = C.charAt(y);
-            switch (S) {
+        var Ee = function(M) {
+          for (var T = "", y = 0; y < M.length; y += 1) {
+            var z = M.charAt(y);
+            switch (z) {
               case "<":
                 T += "&lt;";
                 break;
@@ -1723,15 +1723,15 @@ function Gs() {
                 T += "&quot;";
                 break;
               default:
-                T += S;
+                T += z;
                 break;
             }
           }
           return T;
-        }, wi = function(C) {
+        }, wi = function(M) {
           var T = 1;
-          C = typeof C > "u" ? T * 2 : C;
-          var y = j.getModuleCount() * T + C * 2, S = C, k = y - C, Y, R, Q, V, ee, L = {
+          M = typeof M > "u" ? T * 2 : M;
+          var y = j.getModuleCount() * T + M * 2, z = M, k = y - M, Y, R, Q, V, ee, L = {
             "██": "█",
             "█ ": "▀",
             " █": "▄",
@@ -1743,42 +1743,42 @@ function Gs() {
             "  ": " "
           }, ce = "";
           for (Y = 0; Y < y; Y += 2) {
-            for (Q = Math.floor((Y - S) / T), V = Math.floor((Y + 1 - S) / T), R = 0; R < y; R += 1)
-              ee = "█", S <= R && R < k && S <= Y && Y < k && j.isDark(Q, Math.floor((R - S) / T)) && (ee = " "), S <= R && R < k && S <= Y + 1 && Y + 1 < k && j.isDark(V, Math.floor((R - S) / T)) ? ee += " " : ee += "█", ce += C < 1 && Y + 1 >= k ? oe[ee] : L[ee];
+            for (Q = Math.floor((Y - z) / T), V = Math.floor((Y + 1 - z) / T), R = 0; R < y; R += 1)
+              ee = "█", z <= R && R < k && z <= Y && Y < k && j.isDark(Q, Math.floor((R - z) / T)) && (ee = " "), z <= R && R < k && z <= Y + 1 && Y + 1 < k && j.isDark(V, Math.floor((R - z) / T)) ? ee += " " : ee += "█", ce += M < 1 && Y + 1 >= k ? oe[ee] : L[ee];
             ce += `
 `;
           }
-          return y % 2 && C > 0 ? ce.substring(0, ce.length - y - 1) + Array(y + 1).join("▀") : ce.substring(0, ce.length - 1);
+          return y % 2 && M > 0 ? ce.substring(0, ce.length - y - 1) + Array(y + 1).join("▀") : ce.substring(0, ce.length - 1);
         };
-        return j.createASCII = function(C, T) {
-          if (C = C || 1, C < 2)
+        return j.createASCII = function(M, T) {
+          if (M = M || 1, M < 2)
             return wi(T);
-          C -= 1, T = typeof T > "u" ? C * 2 : T;
-          var y = j.getModuleCount() * C + T * 2, S = T, k = y - T, Y, R, Q, V, ee = Array(C + 1).join("██"), L = Array(C + 1).join("  "), oe = "", ce = "";
+          M -= 1, T = typeof T > "u" ? M * 2 : T;
+          var y = j.getModuleCount() * M + T * 2, z = T, k = y - T, Y, R, Q, V, ee = Array(M + 1).join("██"), L = Array(M + 1).join("  "), oe = "", ce = "";
           for (Y = 0; Y < y; Y += 1) {
-            for (Q = Math.floor((Y - S) / C), ce = "", R = 0; R < y; R += 1)
-              V = 1, S <= R && R < k && S <= Y && Y < k && j.isDark(Q, Math.floor((R - S) / C)) && (V = 0), ce += V ? ee : L;
-            for (Q = 0; Q < C; Q += 1)
+            for (Q = Math.floor((Y - z) / M), ce = "", R = 0; R < y; R += 1)
+              V = 1, z <= R && R < k && z <= Y && Y < k && j.isDark(Q, Math.floor((R - z) / M)) && (V = 0), ce += V ? ee : L;
+            for (Q = 0; Q < M; Q += 1)
               oe += ce + `
 `;
           }
           return oe.substring(0, oe.length - 1);
-        }, j.renderTo2dContext = function(C, T) {
+        }, j.renderTo2dContext = function(M, T) {
           T = T || 2;
-          for (var y = j.getModuleCount(), S = 0; S < y; S++)
+          for (var y = j.getModuleCount(), z = 0; z < y; z++)
             for (var k = 0; k < y; k++)
-              C.fillStyle = j.isDark(S, k) ? "black" : "white", C.fillRect(S * T, k * T, T, T);
+              M.fillStyle = j.isDark(z, k) ? "black" : "white", M.fillRect(z * T, k * T, T, T);
         }, j;
       };
       i.stringToBytesFuncs = {
         default: function(E) {
-          for (var z = [], u = 0; u < E.length; u += 1) {
+          for (var S = [], u = 0; u < E.length; u += 1) {
             var f = E.charCodeAt(u);
-            z.push(f & 255);
+            S.push(f & 255);
           }
-          return z;
+          return S;
         }
-      }, i.stringToBytes = i.stringToBytesFuncs.default, i.createStringToBytes = function(E, z) {
+      }, i.stringToBytes = i.stringToBytesFuncs.default, i.createStringToBytes = function(E, S) {
         var u = (function() {
           for (var g = Z(E), m = function() {
             var $ = g.read();
@@ -1790,8 +1790,8 @@ function Gs() {
             var O = m(), j = m(), P = m(), U = String.fromCharCode(B << 8 | O), J = j << 8 | P;
             p[U] = J, b += 1;
           }
-          if (b != z)
-            throw b + " != " + z;
+          if (b != S)
+            throw b + " != " + S;
           return p;
         })(), f = 63;
         return function(g) {
@@ -1868,14 +1868,14 @@ function Gs() {
           [6, 32, 58, 84, 110, 136, 162],
           [6, 26, 54, 82, 110, 138, 166],
           [6, 30, 58, 86, 114, 142, 170]
-        ], z = 1335, u = 7973, f = 21522, g = {}, m = function(b) {
+        ], S = 1335, u = 7973, f = 21522, g = {}, m = function(b) {
           for (var p = 0; b != 0; )
             p += 1, b >>>= 1;
           return p;
         };
         return g.getBCHTypeInfo = function(b) {
-          for (var p = b << 10; m(p) - m(z) >= 0; )
-            p ^= z << m(p) - m(z);
+          for (var p = b << 10; m(p) - m(S) >= 0; )
+            p ^= S << m(p) - m(S);
           return (b << 10 | p) ^ f;
         }, g.getBCHTypeNumber = function(b) {
           for (var p = b << 12; m(p) - m(u) >= 0; )
@@ -1993,17 +1993,17 @@ function Gs() {
           return B += he * 10, B;
         }, g;
       })(), o = (function() {
-        for (var E = new Array(256), z = new Array(256), u = 0; u < 8; u += 1)
+        for (var E = new Array(256), S = new Array(256), u = 0; u < 8; u += 1)
           E[u] = 1 << u;
         for (var u = 8; u < 256; u += 1)
           E[u] = E[u - 4] ^ E[u - 5] ^ E[u - 6] ^ E[u - 8];
         for (var u = 0; u < 255; u += 1)
-          z[E[u]] = u;
+          S[E[u]] = u;
         var f = {};
         return f.glog = function(g) {
           if (g < 1)
             throw "glog(" + g + ")";
-          return z[g];
+          return S[g];
         }, f.gexp = function(g) {
           for (; g < 0; )
             g += 255;
@@ -2012,13 +2012,13 @@ function Gs() {
           return E[g];
         }, f;
       })();
-      function l(E, z) {
+      function l(E, S) {
         if (typeof E.length > "u")
-          throw E.length + "/" + z;
+          throw E.length + "/" + S;
         var u = (function() {
           for (var g = 0; g < E.length && E[g] == 0; )
             g += 1;
-          for (var m = new Array(E.length - g + z), b = 0; b < E.length - g; b += 1)
+          for (var m = new Array(E.length - g + S), b = 0; b < E.length - g; b += 1)
             m[b] = E[b + g];
           return m;
         })(), f = {};
@@ -2247,7 +2247,7 @@ function Gs() {
           [18, 75, 47, 31, 76, 48],
           [34, 54, 24, 34, 55, 25],
           [20, 45, 15, 61, 46, 16]
-        ], z = function(g, m) {
+        ], S = function(g, m) {
           var b = {};
           return b.totalCount = g, b.dataCount = m, b;
         }, u = {}, f = function(g, m) {
@@ -2270,11 +2270,11 @@ function Gs() {
             throw "bad rs block @ typeNumber:" + g + "/errorCorrectionLevel:" + m;
           for (var p = b.length / 3, B = [], O = 0; O < p; O += 1)
             for (var j = b[O * 3 + 0], P = b[O * 3 + 1], U = b[O * 3 + 2], J = 0; J < j; J += 1)
-              B.push(z(P, U));
+              B.push(S(P, U));
           return B;
         }, u;
       })(), v = function() {
-        var E = [], z = 0, u = {};
+        var E = [], S = 0, u = {};
         return u.getBuffer = function() {
           return E;
         }, u.getAt = function(f) {
@@ -2284,15 +2284,15 @@ function Gs() {
           for (var m = 0; m < g; m += 1)
             u.putBit((f >>> g - m - 1 & 1) == 1);
         }, u.getLengthInBits = function() {
-          return z;
+          return S;
         }, u.putBit = function(f) {
-          var g = Math.floor(z / 8);
-          E.length <= g && E.push(0), f && (E[g] |= 128 >>> z % 8), z += 1;
+          var g = Math.floor(S / 8);
+          E.length <= g && E.push(0), f && (E[g] |= 128 >>> S % 8), S += 1;
         }, u;
       }, I = function(E) {
-        var z = s.MODE_NUMBER, u = E, f = {};
+        var S = s.MODE_NUMBER, u = E, f = {};
         f.getMode = function() {
-          return z;
+          return S;
         }, f.getLength = function(b) {
           return u.length;
         }, f.write = function(b) {
@@ -2311,9 +2311,9 @@ function Gs() {
         };
         return f;
       }, w = function(E) {
-        var z = s.MODE_ALPHA_NUM, u = E, f = {};
+        var S = s.MODE_ALPHA_NUM, u = E, f = {};
         f.getMode = function() {
-          return z;
+          return S;
         }, f.getLength = function(m) {
           return u.length;
         }, f.write = function(m) {
@@ -2354,9 +2354,9 @@ function Gs() {
         };
         return f;
       }, G = function(E) {
-        var z = s.MODE_8BIT_BYTE, u = i.stringToBytes(E), f = {};
+        var S = s.MODE_8BIT_BYTE, u = i.stringToBytes(E), f = {};
         return f.getMode = function() {
-          return z;
+          return S;
         }, f.getLength = function(g) {
           return u.length;
         }, f.write = function(g) {
@@ -2364,7 +2364,7 @@ function Gs() {
             g.put(u[m], 8);
         }, f;
       }, W = function(E) {
-        var z = s.MODE_KANJI, u = i.stringToBytesFuncs.SJIS;
+        var S = s.MODE_KANJI, u = i.stringToBytesFuncs.SJIS;
         if (!u)
           throw "sjis not supported.";
         (function(m, b) {
@@ -2374,7 +2374,7 @@ function Gs() {
         })("友", 38726);
         var f = u(E), g = {};
         return g.getMode = function() {
-          return z;
+          return S;
         }, g.getLength = function(m) {
           return ~~(f.length / 2);
         }, g.write = function(m) {
@@ -2392,29 +2392,29 @@ function Gs() {
             throw "illegal char at " + (p + 1);
         }, g;
       }, F = function() {
-        var E = [], z = {};
-        return z.writeByte = function(u) {
+        var E = [], S = {};
+        return S.writeByte = function(u) {
           E.push(u & 255);
-        }, z.writeShort = function(u) {
-          z.writeByte(u), z.writeByte(u >>> 8);
-        }, z.writeBytes = function(u, f, g) {
+        }, S.writeShort = function(u) {
+          S.writeByte(u), S.writeByte(u >>> 8);
+        }, S.writeBytes = function(u, f, g) {
           f = f || 0, g = g || u.length;
           for (var m = 0; m < g; m += 1)
-            z.writeByte(u[m + f]);
-        }, z.writeString = function(u) {
+            S.writeByte(u[m + f]);
+        }, S.writeString = function(u) {
           for (var f = 0; f < u.length; f += 1)
-            z.writeByte(u.charCodeAt(f));
-        }, z.toByteArray = function() {
+            S.writeByte(u.charCodeAt(f));
+        }, S.toByteArray = function() {
           return E;
-        }, z.toString = function() {
+        }, S.toString = function() {
           var u = "";
           u += "[";
           for (var f = 0; f < E.length; f += 1)
             f > 0 && (u += ","), u += E[f];
           return u += "]", u;
-        }, z;
+        }, S;
       }, N = function() {
-        var E = 0, z = 0, u = 0, f = "", g = {}, m = function(p) {
+        var E = 0, S = 0, u = 0, f = "", g = {}, m = function(p) {
           f += String.fromCharCode(b(p & 63));
         }, b = function(p) {
           if (!(p < 0)) {
@@ -2432,25 +2432,25 @@ function Gs() {
           throw "n:" + p;
         };
         return g.writeByte = function(p) {
-          for (E = E << 8 | p & 255, z += 8, u += 1; z >= 6; )
-            m(E >>> z - 6), z -= 6;
+          for (E = E << 8 | p & 255, S += 8, u += 1; S >= 6; )
+            m(E >>> S - 6), S -= 6;
         }, g.flush = function() {
-          if (z > 0 && (m(E << 6 - z), E = 0, z = 0), u % 3 != 0)
+          if (S > 0 && (m(E << 6 - S), E = 0, S = 0), u % 3 != 0)
             for (var p = 3 - u % 3, B = 0; B < p; B += 1)
               f += "=";
         }, g.toString = function() {
           return f;
         }, g;
       }, Z = function(E) {
-        var z = E, u = 0, f = 0, g = 0, m = {};
+        var S = E, u = 0, f = 0, g = 0, m = {};
         m.read = function() {
           for (; g < 8; ) {
-            if (u >= z.length) {
+            if (u >= S.length) {
               if (g == 0)
                 return -1;
               throw "unexpected end of file./" + g;
             }
-            var p = z.charAt(u);
+            var p = S.charAt(u);
             if (u += 1, p == "=")
               return g = 0, -1;
             if (p.match(/^\s$/))
@@ -2474,8 +2474,8 @@ function Gs() {
           throw "c:" + p;
         };
         return m;
-      }, x = function(E, z) {
-        var u = E, f = z, g = new Array(E * z), m = {};
+      }, x = function(E, S) {
+        var u = E, f = S, g = new Array(E * S), m = {};
         m.setPixel = function(O, j, P) {
           g[j * u + O] = P;
         }, m.write = function(O) {
@@ -2524,8 +2524,8 @@ function Gs() {
           }, P;
         };
         return m;
-      }, M = function(E, z, u) {
-        for (var f = x(E, z), g = 0; g < z; g += 1)
+      }, C = function(E, S, u) {
+        for (var f = x(E, S), g = 0; g < S; g += 1)
           for (var m = 0; m < E; m += 1)
             f.setPixel(m, g, u(m, g));
         var b = F();
@@ -2712,7 +2712,7 @@ class Ks {
     return t.width !== null && (t.text_align === "center" ? I = v.x + (d - l) / 2 : t.text_align === "right" && (I = v.x + d - l)), n.save(), n.beginPath(), n.rect(v.x, v.y, d, c), n.clip(), n.fillStyle = s, n.textBaseline = "alphabetic", n.textAlign = "left", n.fillText(o, Math.round(I), v.y + Math.round(t.size * Pt / 1e3)), n.restore(), { x: v.x, y: v.y, w: d, h: c };
   }
 }
-const Ct = (r, e) => ({ x: r.x + e, y: r.y + e, w: r.w - 2 * e, h: r.h - 2 * e });
+const Mt = (r, e) => ({ x: r.x + e, y: r.y + e, w: r.w - 2 * e, h: r.h - 2 * e });
 function mi(r, e) {
   const { project: t, board: i, theme: s } = e;
   r.width = i.width, r.height = i.height;
@@ -2742,7 +2742,7 @@ function mi(r, e) {
   return c;
 }
 function Jt(r, e, t, i, s) {
-  const { project: a, theme: n } = e, c = i.props ?? {}, o = Pi(a.settings?.language ?? "de"), l = n.font_sizes, d = n.icon_sizes, v = Ct(s, se), I = i.entity ? e.state(i.entity) : void 0, w = I?.state, G = e.pressed === i.id, W = pt(n, { ...a.tile_style ?? {}, ...i.style ?? {} }), F = js(i, e.state), N = F ? {
+  const { project: a, theme: n } = e, c = i.props ?? {}, o = Pi(a.settings?.language ?? "de"), l = n.font_sizes, d = n.icon_sizes, v = Mt(s, se), I = i.entity ? e.state(i.entity) : void 0, w = I?.state, G = e.pressed === i.id, W = pt(n, { ...a.tile_style ?? {}, ...i.style ?? {} }), F = js(i, e.state), N = F ? {
     ...W,
     ...F.bg ? { bg: F.bg, bg_on: F.bg } : {},
     ...F.border ? { border: F.border, border_on: F.border } : {},
@@ -2756,7 +2756,7 @@ function Jt(r, e, t, i, s) {
       state_icon: ["icon_on", "icon"]
     }[u];
     return m ? String(N[m[f ? 0 : 1]]) : r.color(u);
-  }, M = (u, f, g, m = !1) => r.element(v, u, f, g, u.circle ? m ? N.circle_bg_on : N.circle_bg : void 0), E = () => r.box(s, N.bg, N.border, N.radius, N.border_width, N.bg_opa / 100), z = (u, f) => {
+  }, C = (u, f, g, m = !1) => r.element(v, u, f, g, u.circle ? m ? N.circle_bg_on : N.circle_bg : void 0), E = () => r.box(s, N.bg, N.border, N.radius, N.border_width, N.bg_opa / 100), S = (u, f) => {
     const g = u || G, m = (u ? N.bg_opa_on : N.bg_opa) / 100;
     r.box(
       s,
@@ -2770,13 +2770,13 @@ function Jt(r, e, t, i, s) {
   switch (i.type) {
     case "toggle_tile": {
       const u = mt(w);
-      z(u, w === "unavailable");
+      S(u, w === "unavailable");
       for (const f of _(i.type, s.w, s.h, Z(), l, d))
-        if (f.role === "icon") M(f, String(c.icon ?? ""), u ? N.icon_on : N.icon, u);
-        else if (f.role === "label") M(f, String(c.label || ie(i.entity)), x(f.color, u));
+        if (f.role === "icon") C(f, String(c.icon ?? ""), u ? N.icon_on : N.icon, u);
+        else if (f.role === "label") C(f, String(c.label || ie(i.entity)), x(f.color, u));
         else if (f.role === "state") {
           const g = c.show_value ?? !0 ? vi(i.entity, I) : null;
-          M(f, u && g !== null ? `${g} %` : rt(w, o), x(f.color, u));
+          C(f, u && g !== null ? `${g} %` : rt(w, o), x(f.color, u));
         }
       break;
     }
@@ -2792,81 +2792,81 @@ function Jt(r, e, t, i, s) {
         g !== "--" && u && (g += ` ${u}`);
       }
       for (const m of _(i.type, s.w, s.h, Z(), l, d))
-        m.role === "icon" ? M(m, String(c.icon ?? ""), x(m.color)) : m.role === "label" ? M(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" && M(m, g, x(m.color));
+        m.role === "icon" ? C(m, String(c.icon ?? ""), x(m.color)) : m.role === "label" ? C(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" && C(m, g, x(m.color));
       break;
     }
     case "binary_indicator": {
       E();
       const u = mt(w), f = String(c.text_on || o.on), g = String(c.text_off || o.off), m = w === void 0 ? N.icon : u ? c.alert_on ?? !0 ? r.color("error") : r.color("accent") : r.color("on");
       for (const b of _(i.type, s.w, s.h, Z(), l, d))
-        b.role === "icon" ? M(b, String(c.icon ?? ""), m) : b.role === "label" ? M(b, String(c.label || ie(i.entity)), x(b.color)) : b.role === "state" && M(b, rt(w, o, f, g), x(b.color));
+        b.role === "icon" ? C(b, String(c.icon ?? ""), m) : b.role === "label" ? C(b, String(c.label || ie(i.entity)), x(b.color)) : b.role === "state" && C(b, rt(w, o, f, g), x(b.color));
       break;
     }
     case "clock": {
       for (const u of _(i.type, s.w, s.h, Z(), l, d)) {
         const f = u.role === "time" ? gi(e.now, String(c.format ?? "HH:mm")) : qs(e.now, a.settings?.language ?? "de");
-        M(u, f, x(u.color));
+        C(u, f, x(u.color));
       }
       break;
     }
     case "label": {
       c.background && E();
-      for (const u of _(i.type, s.w, s.h, Z(), l, d)) M(u, String(c.text ?? ""), x(u.color));
+      for (const u of _(i.type, s.w, s.h, Z(), l, d)) C(u, String(c.text ?? ""), x(u.color));
       break;
     }
     case "scene_button": {
-      z(!1, !1);
+      S(!1, !1);
       const u = String(c.label || ie(i.action?.target) || i.action?.service || "");
       for (const f of _(i.type, s.w, s.h, Z(), l, d))
-        M(f, f.role === "icon" ? String(c.icon ?? "") : u, x(f.color));
+        C(f, f.role === "icon" ? String(c.icon ?? "") : u, x(f.color));
       break;
     }
     case "page_button": {
-      z(!1, !1);
+      S(!1, !1);
       const u = a.pages.find((m) => m.id === c.target), f = String(c.label || u?.name || "?"), g = String(c.icon || u?.icon || "");
       for (const m of _(i.type, s.w, s.h, Z({ icon: g }), l, d))
-        M(m, m.role === "icon" ? g : f, x(m.color));
+        C(m, m.role === "icon" ? g : f, x(m.color));
       break;
     }
     case "page_title": {
       const u = !!(t.parent && (c.show_back ?? !0));
       for (const f of _(i.type, s.w, s.h, Z({ _has_back: u }), l, d))
-        M(f, f.role === "back" ? "mdi:chevron-left" : t.name, x(f.color));
+        C(f, f.role === "back" ? "mdi:chevron-left" : t.name, x(f.color));
       break;
     }
     case "cover_control": {
       E();
-      const u = Ce(I, "current_position"), f = u !== null ? `${Math.round(u)} %` : rt(w, o), g = { up: "mdi:arrow-up", stop: "mdi:stop", down: "mdi:arrow-down" };
+      const u = Me(I, "current_position"), f = u !== null ? `${Math.round(u)} %` : rt(w, o), g = { up: "mdi:arrow-up", stop: "mdi:stop", down: "mdi:arrow-down" };
       for (const m of _(i.type, s.w, s.h, Z(), l, d))
-        m.role === "label" ? M(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "state" ? M(m, f, x(m.color)) : r.smallButton(v, m, g[m.role], N.circle_bg, N.icon_on, N.radius);
+        m.role === "label" ? C(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "state" ? C(m, f, x(m.color)) : r.smallButton(v, m, g[m.role], N.circle_bg, N.icon_on, N.radius);
       break;
     }
     case "climate": {
       E();
-      const u = a.settings?.language === "en" ? "en" : "de", f = at.climate, g = w === "unavailable" ? o.unavailable : w && f[w] ? f[w][u] : o.unknown, m = Ce(I, "current_temperature"), b = Ce(I, "temperature");
+      const u = a.settings?.language === "en" ? "en" : "de", f = at.climate, g = w === "unavailable" ? o.unavailable : w && f[w] ? f[w][u] : o.unknown, m = Me(I, "current_temperature"), b = Me(I, "temperature");
       for (const p of _(i.type, s.w, s.h, Z(), l, d))
-        p.role === "label" ? M(p, String(c.label || ie(i.entity)), x(p.color)) : p.role === "state" ? M(p, m !== null ? `${g} · ${m.toFixed(1)}°` : g, x(p.color)) : p.role === "value" ? M(p, b !== null ? `${b.toFixed(1)}°` : "--", x(p.color)) : r.smallButton(v, p, p.role === "plus" ? "mdi:plus" : "mdi:minus", N.circle_bg, N.icon_on, N.radius);
+        p.role === "label" ? C(p, String(c.label || ie(i.entity)), x(p.color)) : p.role === "state" ? C(p, m !== null ? `${g} · ${m.toFixed(1)}°` : g, x(p.color)) : p.role === "value" ? C(p, b !== null ? `${b.toFixed(1)}°` : "--", x(p.color)) : r.smallButton(v, p, p.role === "plus" ? "mdi:plus" : "mdi:minus", N.circle_bg, N.icon_on, N.radius);
       break;
     }
     case "slider": {
       E();
       const u = _s(i, I), f = ["input_number", "number"].includes((i.entity ?? "").split(".")[0]), g = f ? Number(c.min ?? 0) : 0, m = f ? Number(c.max ?? 100) : 100, b = f ? String(c.unit ?? "") : "%";
       for (const p of _(i.type, s.w, s.h, Z(), l, d))
-        p.role === "label" ? M(p, String(c.label || ie(i.entity)), x(p.color)) : p.role === "value" ? M(p, u === null ? "--" : `${Math.round(u)}${b ? ` ${b}` : ""}`, x(p.color)) : r.slider(v, p, u === null ? 0 : (u - g) / Math.max(m - g, 1), N.circle_bg, N.icon_on, N.text);
+        p.role === "label" ? C(p, String(c.label || ie(i.entity)), x(p.color)) : p.role === "value" ? C(p, u === null ? "--" : `${Math.round(u)}${b ? ` ${b}` : ""}`, x(p.color)) : r.slider(v, p, u === null ? 0 : (u - g) / Math.max(m - g, 1), N.circle_bg, N.icon_on, N.text);
       break;
     }
     case "gauge": {
       E();
       const u = Number(c.min ?? 0), f = Math.max(Number(c.max ?? 100), u + 1), g = w !== void 0 ? Number.parseFloat(w) : Number.NaN, m = String(c.unit ?? ""), b = Math.max(0, Math.min(Number(c.decimals ?? 0), 2));
       for (const p of _(i.type, s.w, s.h, Z(), l, d))
-        p.kind === "arc" ? r.arc(v, p, Number.isNaN(g) ? 0 : (Math.round(Math.min(f, Math.max(u, g))) - u) / (f - u), N.circle_bg, N.icon_on) : p.role === "value" ? M(p, Number.isNaN(g) ? "--" : `${g.toFixed(b)}${m ? ` ${m}` : ""}`, x(p.color)) : p.role === "label" && M(p, String(c.label || ie(i.entity)), x(p.color));
+        p.kind === "arc" ? r.arc(v, p, Number.isNaN(g) ? 0 : (Math.round(Math.min(f, Math.max(u, g))) - u) / (f - u), N.circle_bg, N.icon_on) : p.role === "value" ? C(p, Number.isNaN(g) ? "--" : `${g.toFixed(b)}${m ? ` ${m}` : ""}`, x(p.color)) : p.role === "label" && C(p, String(c.label || ie(i.entity)), x(p.color));
       break;
     }
     case "weather": {
       E();
-      const u = a.settings?.language === "en" ? "en" : "de", f = at.weather, g = w && f[w] || at.weather_unknown, m = Ce(I, "temperature"), b = c.show_humidity ?? !0 ? Ce(I, "humidity") : null, p = b !== null ? `${g[u]} · ${Math.round(b)} %` : g[u];
+      const u = a.settings?.language === "en" ? "en" : "de", f = at.weather, g = w && f[w] || at.weather_unknown, m = Me(I, "temperature"), b = c.show_humidity ?? !0 ? Me(I, "humidity") : null, p = b !== null ? `${g[u]} · ${Math.round(b)} %` : g[u];
       for (const B of _(i.type, s.w, s.h, Z(), l, d))
-        B.role === "icon" ? M(B, g.icon, x(B.color)) : B.role === "value" ? M(B, m !== null ? `${m.toFixed(0)}°` : "--", x(B.color)) : B.role === "state" && M(B, p, x(B.color));
+        B.role === "icon" ? C(B, g.icon, x(B.color)) : B.role === "value" ? C(B, m !== null ? `${m.toFixed(0)}°` : "--", x(B.color)) : B.role === "state" && C(B, p, x(B.color));
       break;
     }
     case "multi_value": {
@@ -2875,10 +2875,10 @@ function Jt(r, e, t, i, s) {
       for (const g of _(i.type, s.w, s.h, Z({ _count: u.length }), l, d)) {
         const m = u[Number(g.role.slice(-1))];
         if (m)
-          if (g.role.startsWith("label")) M(g, m.label || ie(m.entity), x(g.color));
+          if (g.role.startsWith("label")) C(g, m.label || ie(m.entity), x(g.color));
           else {
             const b = Number.parseFloat(e.state(m.entity)?.state ?? "");
-            M(g, Number.isNaN(b) ? "--" : `${b.toFixed(f)}${m.unit ? ` ${m.unit}` : ""}`, x(g.color));
+            C(g, Number.isNaN(b) ? "--" : `${b.toFixed(f)}${m.unit ? ` ${m.unit}` : ""}`, x(g.color));
           }
       }
       break;
@@ -2887,34 +2887,34 @@ function Jt(r, e, t, i, s) {
       E();
       const u = w !== void 0 ? Number.parseFloat(w) : Number.NaN, f = String(c.unit ?? ""), g = Math.max(0, Math.min(Number(c.decimals ?? 0), 2));
       for (const m of _(i.type, s.w, s.h, Z(), l, d))
-        m.role === "label" ? M(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" ? M(m, Number.isNaN(u) ? "--" : `${u.toFixed(g)}${f ? ` ${f}` : ""}`, x(m.color)) : m.kind === "button" && r.smallButton(v, m, m.role === "plus" ? "mdi:plus" : "mdi:minus", N.circle_bg, N.icon_on, N.radius);
+        m.role === "label" ? C(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" ? C(m, Number.isNaN(u) ? "--" : `${u.toFixed(g)}${f ? ` ${f}` : ""}`, x(m.color)) : m.kind === "button" && r.smallButton(v, m, m.role === "plus" ? "mdi:plus" : "mdi:minus", N.circle_bg, N.icon_on, N.radius);
       break;
     }
     case "select": {
       E();
       const u = !w || w === "unknown" || w === "unavailable" ? "--" : w;
       for (const f of _(i.type, s.w, s.h, Z(), l, d))
-        f.role === "label" ? M(f, String(c.label || ie(i.entity)), x(f.color)) : f.role === "value" ? M(f, u, x(f.color)) : f.kind === "button" && r.smallButton(v, f, f.role === "plus" ? "mdi:chevron-right" : "mdi:chevron-left", N.circle_bg, N.icon_on, N.radius);
+        f.role === "label" ? C(f, String(c.label || ie(i.entity)), x(f.color)) : f.role === "value" ? C(f, u, x(f.color)) : f.kind === "button" && r.smallButton(v, f, f.role === "plus" ? "mdi:chevron-right" : "mdi:chevron-left", N.circle_bg, N.icon_on, N.radius);
       break;
     }
     case "countdown": {
       E();
       const { remaining: u, total: f } = sn(i, I, e.now), g = u < 0 ? "–" : u >= 3600 ? `${Math.floor(u / 3600)}:${le(Math.floor(u / 60) % 60)}:${le(u % 60)}` : `${le(Math.floor(u / 60))}:${le(u % 60)}`;
       for (const m of _(i.type, s.w, s.h, Z(), l, d))
-        m.role === "label" ? M(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" ? M(m, g, x(m.color)) : m.kind === "bar" && r.bar(v, m, u < 0 || f <= 0 ? 0 : (f - u) / f, N.circle_bg, N.icon_on);
+        m.role === "label" ? C(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "value" ? C(m, g, x(m.color)) : m.kind === "bar" && r.bar(v, m, u < 0 || f <= 0 ? 0 : (f - u) / f, N.circle_bg, N.icon_on);
       break;
     }
     case "person_presence": {
       E();
       const u = w === "home", f = String(c.text_on || (a.settings?.language === "en" ? "Home" : "Zuhause")), g = String(c.text_off || (a.settings?.language === "en" ? "Away" : "Unterwegs"));
       for (const m of _(i.type, s.w, s.h, Z(), l, d))
-        m.role === "icon" ? M(m, String(c.icon || "mdi:account"), u ? N.icon_on : N.icon, u) : m.role === "label" ? M(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "state" && M(m, w === void 0 ? o.unknown : u ? f : g, x(m.color));
+        m.role === "icon" ? C(m, String(c.icon || "mdi:account"), u ? N.icon_on : N.icon, u) : m.role === "label" ? C(m, String(c.label || ie(i.entity)), x(m.color)) : m.role === "state" && C(m, w === void 0 ? o.unknown : u ? f : g, x(m.color));
       break;
     }
     case "qr_code": {
       const u = i.entity && w || String(c.text || " ");
       for (const f of _(i.type, s.w, s.h, Z(), l, d))
-        f.kind === "qr" ? r.qr(v, f, u) : M(f, String(c.label ?? ""), x(f.color));
+        f.kind === "qr" ? r.qr(v, f, u) : C(f, String(c.label ?? ""), x(f.color));
       break;
     }
     case "divider": {
@@ -2930,7 +2930,7 @@ function Jt(r, e, t, i, s) {
       E();
       const u = e.message, f = String(c.empty_text || (a.settings?.language === "en" ? "No messages" : "Keine Meldungen"));
       for (const g of _(i.type, s.w, s.h, Z(), l, d))
-        g.role === "icon" ? M(g, String(c.icon || "mdi:bell-outline"), x(g.color)) : g.role === "label" ? M(g, u?.title || f, x(g.color)) : g.role === "state" && M(g, u?.text ?? "", x(g.color));
+        g.role === "icon" ? C(g, String(c.icon || "mdi:bell-outline"), x(g.color)) : g.role === "label" ? C(g, u?.title || f, x(g.color)) : g.role === "state" && C(g, u?.text ?? "", x(g.color));
       break;
     }
     case "button_grid": {
@@ -3027,7 +3027,7 @@ function Xs(r, e, t, i) {
   n.fillStyle = "rgba(0,0,0,0.6)", n.fillRect(0, 0, s.width, s.height), i.push({ kind: "overlay-close", id: "backdrop", rect: { x: 0, y: 0, w: s.width, h: s.height } });
   const { panel: c, elements: o } = fs(s.width, s.height, a.font_sizes, a.icon_sizes);
   r.box(c, r.color("tile"), r.color("border"), a.radius ?? 8, a.border_width ?? 0), i.push({ kind: "overlay-panel", id: "panel", rect: c });
-  const l = Ct(c, se), d = Math.max(0, Math.min(100, Math.round(t.value)));
+  const l = Mt(c, se), d = Math.max(0, Math.min(100, Math.round(t.value)));
   for (const v of o)
     if (v.role === "title") r.element(l, v, t.title, r.color(v.color));
     else if (v.role === "close") {
@@ -3048,7 +3048,7 @@ function Vs(r, e, t, i, s, a) {
   o.fillStyle = "rgba(0,0,0,0.6)", o.fillRect(0, 0, n.width, n.height), a.push({ kind: "overlay-close", id: "backdrop", rect: { x: 0, y: 0, w: n.width, h: n.height } });
   const { panel: l, elements: d } = xs(n.width, n.height, c.font_sizes, c.icon_sizes);
   r.box(l, r.color("tile"), r.color("border"), c.radius ?? 8, c.border_width ?? 0), a.push({ kind: "overlay-panel", id: "panel", rect: l });
-  const v = Ct(l, se), I = Object.fromEntries(ut), w = { brightness: i, ct: s.ct, hue: s.hue }, G = (W) => W === "ct" ? s.hasCt : W === "hue" ? s.hasHs : !0;
+  const v = Mt(l, se), I = Object.fromEntries(ut), w = { brightness: i, ct: s.ct, hue: s.hue }, G = (W) => W === "ct" ? s.hasCt : W === "hue" ? s.hasHs : !0;
   for (const W of d) {
     const F = W.role.replace(/_(icon|value)$/, "");
     if (W.role === "title") r.element(v, W, t, r.color(W.color));
@@ -3058,24 +3058,24 @@ function Vs(r, e, t, i, s, a) {
     } else if (G(F)) {
       if (W.role.endsWith("_icon")) r.element(v, W, I[F], r.color(W.color));
       else if (W.role.endsWith("_value")) {
-        const [N, Z, x] = gt[F], M = Math.round(Math.max(N, Math.min(Z, w[F])));
-        r.element(v, W, F === "hue" ? `${M}${x}` : `${M} ${x}`, r.color(W.color));
+        const [N, Z, x] = gt[F], C = Math.round(Math.max(N, Math.min(Z, w[F])));
+        r.element(v, W, F === "hue" ? `${C}${x}` : `${C} ${x}`, r.color(W.color));
       } else if (W.kind === "slider") {
-        const [N, Z] = gt[F], x = W.width ?? 100, M = W.height ?? 18, E = ne(v, x, M, W.align, W.x, W.y), z = { x: E.x, y: E.y, w: x, h: M }, u = Math.floor(M / 2), f = Math.max(0, Math.min(1, (w[F] - N) / (Z - N))), g = Math.round(x * f);
+        const [N, Z] = gt[F], x = W.width ?? 100, C = W.height ?? 18, E = ne(v, x, C, W.align, W.x, W.y), S = { x: E.x, y: E.y, w: x, h: C }, u = Math.floor(C / 2), f = Math.max(0, Math.min(1, (w[F] - N) / (Z - N))), g = Math.round(x * f);
         if (F === "brightness")
-          r.box(z, r.color("border"), null, u, 0), g > 0 && r.box({ ...z, w: Math.max(g, M) }, r.color("accent"), null, u, 0);
+          r.box(S, r.color("border"), null, u, 0), g > 0 && r.box({ ...S, w: Math.max(g, C) }, r.color("accent"), null, u, 0);
         else {
-          const b = F === "ct" ? Qs : Rs, p = o.createLinearGradient(z.x, 0, z.x + x, 0);
-          b.forEach((B, O) => p.addColorStop(Math.floor(O * 100 / (b.length - 1)) / 100, B)), o.save(), o.beginPath(), o.roundRect(z.x, z.y, x, M, u), o.clip(), o.fillStyle = p, o.fillRect(z.x, z.y, x, M), o.restore();
+          const b = F === "ct" ? Qs : Rs, p = o.createLinearGradient(S.x, 0, S.x + x, 0);
+          b.forEach((B, O) => p.addColorStop(Math.floor(O * 100 / (b.length - 1)) / 100, B)), o.save(), o.beginPath(), o.roundRect(S.x, S.y, x, C, u), o.clip(), o.fillStyle = p, o.fillRect(S.x, S.y, x, C), o.restore();
         }
-        const m = M + 8;
-        r.box({ x: E.x + g - Math.floor(m / 2), y: E.y - 4, w: m, h: m }, r.color("text"), null, m, 0), a.push({ kind: "overlay-slider", id: F, rect: z });
+        const m = C + 8;
+        r.box({ x: E.x + g - Math.floor(m / 2), y: E.y - 4, w: m, h: m }, r.color("text"), null, m, 0), a.push({ kind: "overlay-slider", id: F, rect: S });
       }
     } else continue;
   }
 }
 const at = Ws;
-function Ce(r, e) {
+function Me(r, e) {
   const t = r?.attributes[e];
   if (t == null || t === "") return null;
   const i = Number(t);
@@ -3093,7 +3093,7 @@ function _s(r, e) {
     cover: ["current_position", 2],
     fan: ["percentage", 2],
     media_player: ["volume_level", 3]
-  }, [s, a] = i[t] ?? ["", 2], n = Ce(e, s);
+  }, [s, a] = i[t] ?? ["", 2], n = Me(e, s);
   return n === null || (a === 1 || a === 3) && e.state === "off" ? 0 : a === 1 ? n * 100 / 255 : a === 3 ? n * 100 : n;
 }
 function $s(r) {
@@ -3533,7 +3533,7 @@ class hn extends ae {
       const e = this.template?.project ?? { pages: [] }, t = ns(e, this._mapping), i = It({
         ...t,
         name: this._name || "CYD",
-        device_name: this._device || Me(this._name || "cyd"),
+        device_name: this._device || Ce(this._name || "cyd"),
         board: this._board,
         board_variant: this._variant || null,
         orientation: this._orientation,
@@ -3600,11 +3600,11 @@ class hn extends ae {
     return A`
       <label class="field"><span>${h("project_name")}</span>
         <input .value=${this._name} @input=${(e) => {
-      const t = e.target.value, i = !this._device || this._device === Me(this._name);
-      this._name = t, i && (this._device = Me(t));
+      const t = e.target.value, i = !this._device || this._device === Ce(this._name);
+      this._name = t, i && (this._device = Ce(t));
     }} /></label>
       <label class="field"><span>${h("device_name")} – ${h("device_name_hint")}</span>
-        <input .value=${this._device} @change=${(e) => this._device = Me(e.target.value)} /></label>`;
+        <input .value=${this._device} @change=${(e) => this._device = Ce(e.target.value)} /></label>`;
   }
 }
 customElements.define("cyd-wizard", hn);
@@ -3988,6 +3988,7 @@ class fn extends ae {
     _selected: { state: !0 },
     _mode: { state: !0 },
     _zoom: { state: !0 },
+    _avail: { state: !0 },
     _sample: { state: !0 },
     _night: { state: !0 },
     _realActions: { state: !0 },
@@ -4001,6 +4002,7 @@ class fn extends ae {
     _showExport: { state: !0 },
     _now: { state: !0 }
   };
+  resizeObserver;
   undoStack = [];
   redoStack = [];
   saveTimer;
@@ -4009,13 +4011,13 @@ class fn extends ae {
   clipboard = [];
   keyHandler = (e) => this.onKey(e);
   constructor() {
-    super(), this._project = null, this._pageId = "", this._selected = [], this._mode = "edit", this._zoom = "fit", this._sample = !1, this._night = !1, this._realActions = !1, this._sim = {}, this._simAttr = {}, this._overlay = null, this._images = {}, this._message = null, this._saveState = "saved", this._issues = [], this._showExport = !1, this._now = /* @__PURE__ */ new Date();
+    super(), this._project = null, this._pageId = "", this._selected = [], this._mode = "edit", this._zoom = "fit", this._avail = null, this._sample = !1, this._night = !1, this._realActions = !1, this._sim = {}, this._simAttr = {}, this._overlay = null, this._images = {}, this._message = null, this._saveState = "saved", this._issues = [], this._showExport = !1, this._now = /* @__PURE__ */ new Date();
   }
   connectedCallback() {
     super.connectedCallback(), window.addEventListener("keydown", this.keyHandler), this.clockTimer = window.setInterval(() => this._now = /* @__PURE__ */ new Date(), 1e3);
   }
   disconnectedCallback() {
-    super.disconnectedCallback(), window.removeEventListener("keydown", this.keyHandler), window.clearInterval(this.clockTimer), this._saveState === "dirty" && this.flushSave();
+    super.disconnectedCallback(), window.removeEventListener("keydown", this.keyHandler), window.clearInterval(this.clockTimer), this.resizeObserver?.disconnect(), this.resizeObserver = void 0, this._saveState === "dirty" && this.flushSave();
   }
   willUpdate(e) {
     e.has("projectId") && this.projectId && this.load();
@@ -4275,7 +4277,7 @@ class fn extends ae {
     button.on { border-color: var(--primary-color); color: var(--primary-color); }
     button:disabled { opacity: .4; cursor: default; }
     button.small { padding: 2px 6px; font-size: 12px; }
-    .main { flex: 1; display: grid; grid-template-columns: 240px 1fr 320px; min-height: 0; }
+    .main { flex: 1; display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; min-height: 0; }
     .main.narrow { grid-template-columns: 1fr; grid-template-rows: auto auto auto; overflow: auto; }
     .col { overflow: auto; padding: 12px; min-height: 0; }
     .left { border-right: 1px solid var(--divider-color); }
@@ -4320,8 +4322,15 @@ class fn extends ae {
     const e = this.resolved();
     if (!e) return 2;
     if (this._zoom !== "fit") return this._zoom;
-    const t = Math.max(320, this.narrow ? window.innerWidth - 40 : window.innerWidth - 640);
-    return Math.max(1, Math.min(3, Math.floor(t / e.width * 4) / 4));
+    const t = this._avail ?? { w: window.innerWidth - 640, h: window.innerHeight - 200 }, i = t.w - 24 - 8, s = this.narrow ? 1 / 0 : t.h - 48 - 40, a = Math.min(i / e.width, s / e.height);
+    return Math.max(1, Math.min(3, Math.floor(a * 4) / 4));
+  }
+  updated() {
+    const e = this.renderRoot.querySelector(".col.center");
+    !e || this.resizeObserver || (this.resizeObserver = new ResizeObserver(([t]) => {
+      const { width: i, height: s } = t.contentRect, a = { w: Math.round(i + 24), h: Math.round(s + 48) };
+      (!this._avail || Math.abs(this._avail.w - a.w) > 4 || Math.abs(this._avail.h - a.h) > 4) && (this._avail = a);
+    }), this.resizeObserver.observe(e));
   }
   resolved() {
     const e = this._project, t = this.boards[e.board];
@@ -4710,7 +4719,7 @@ class fn extends ae {
       l.name = o || l.name;
     }))}
       ${this.text(h("device_name"), e.device_name, (o) => i((l) => {
-      l.device_name = Me(o);
+      l.device_name = Ce(o);
     }))}
       ${this.select(h("board"), e.board, Object.values(this.boards).map((o) => [o.id, re(o, "name")]), (o) => i((l) => {
       l.board = o, l.board_variant = null;

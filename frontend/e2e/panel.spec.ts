@@ -16,6 +16,11 @@ test("create a project and add a widget", async ({ page }) => {
   await page.locator("cyd-wizard input").first().fill("Küche");
   await page.getByRole("button", { name: "Anlegen" }).click();
   await expect(page.locator("cyd-screen")).toBeVisible();
+  // "fit" zoom: the whole display fits into the preview column (width and height)
+  const screen = (await page.locator("cyd-screen canvas").first().boundingBox())!;
+  const column = (await page.locator("cyd-editor .col.center").boundingBox())!;
+  expect(screen.width).toBeLessThanOrEqual(column.width);
+  expect(screen.y + screen.height).toBeLessThanOrEqual(column.y + column.height);
   await page.getByText("Schalter-Kachel").click();
   await expect(page.locator("cyd-screen .w")).toHaveCount(1);
   await page.keyboard.press("Control+z");

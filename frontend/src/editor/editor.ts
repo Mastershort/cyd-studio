@@ -44,6 +44,7 @@ export class CydEditor extends LitElement {
     _selected: { state: true },
     _mode: { state: true },
     _zoom: { state: true },
+    _avail: { state: true },
     _sample: { state: true },
     _night: { state: true },
     _realActions: { state: true },
@@ -71,6 +72,9 @@ export class CydEditor extends LitElement {
   declare _selected: string[];
   declare _mode: "edit" | "preview";
   declare _zoom: number | "fit";
+  /** free space of the preview column (measured, so the HA sidebar and the height count) */
+  declare _avail: { w: number; h: number } | null;
+  private resizeObserver?: ResizeObserver;
   declare _sample: boolean;
   declare _night: boolean;
   declare _realActions: boolean;
@@ -99,6 +103,7 @@ export class CydEditor extends LitElement {
     this._selected = [];
     this._mode = "edit";
     this._zoom = "fit";
+    this._avail = null;
     this._sample = false;
     this._night = false;
     this._realActions = false;
@@ -123,6 +128,8 @@ export class CydEditor extends LitElement {
     super.disconnectedCallback();
     window.removeEventListener("keydown", this.keyHandler);
     window.clearInterval(this.clockTimer);
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
     if (this._saveState === "dirty") void this.flushSave();
   }
 
@@ -477,7 +484,7 @@ export class CydEditor extends LitElement {
     button.on { border-color: var(--primary-color); color: var(--primary-color); }
     button:disabled { opacity: .4; cursor: default; }
     button.small { padding: 2px 6px; font-size: 12px; }
-    .main { flex: 1; display: grid; grid-template-columns: 240px 1fr 320px; min-height: 0; }
+    .main { flex: 1; display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; min-height: 0; }
     .main.narrow { grid-template-columns: 1fr; grid-template-rows: auto auto auto; overflow: auto; }
     .col { overflow: auto; padding: 12px; min-height: 0; }
     .left { border-right: 1px solid var(--divider-color); }
@@ -523,8 +530,23 @@ export class CydEditor extends LitElement {
     const board = this.resolved();
     if (!board) return 2;
     if (this._zoom !== "fit") return this._zoom;
-    const avail = Math.max(320, (this.narrow ? window.innerWidth - 40 : window.innerWidth - 640));
-    return Math.max(1, Math.min(3, Math.floor((avail / board.width) * 4) / 4));
+    const a = this._avail ?? { w: window.innerWidth - 640, h: window.innerHeight - 200 };
+    // center column padding 24/12 px; keep room below the screen for the first hint line
+    const w = a.w - 2 * 12 - 8;
+    const h = this.narrow ? Infinity : a.h - 2 * 24 - 40;
+    const fit = Math.min(w / board.width, h / board.height);
+    return Math.max(1, Math.min(3, Math.floor(fit * 4) / 4));
+  }
+
+  protected updated(): void {
+    const center = this.renderRoot.querySelector<HTMLElement>(".col.center");
+    if (!center || this.resizeObserver) return;
+    this.resizeObserver = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      const next = { w: Math.round(width + 2 * 12), h: Math.round(height + 2 * 24) };
+      if (!this._avail || Math.abs(this._avail.w - next.w) > 4 || Math.abs(this._avail.h - next.h) > 4) this._avail = next;
+    });
+    this.resizeObserver.observe(center);
   }
 
   private resolved() {
