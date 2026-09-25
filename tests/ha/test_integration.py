@@ -330,6 +330,7 @@ async def test_apply_design_duplicate_and_embedded_images(
     for key in ("id", "name", "device_name", "board"):
         assert applied[key] == target[key]
     assert applied["settings"]["api_key"] == target["settings"]["api_key"]
+
     def widgets(project: dict[str, Any]) -> list[tuple[str, list[str]]]:
         return [(p["id"], [w["id"] for w in p["widgets"]]) for p in project["pages"]]
 
