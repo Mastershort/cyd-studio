@@ -61,6 +61,38 @@ def used_assets(project: dict[str, Any]) -> list[str]:
     return ids
 
 
+def copy_assets(config_dir: str, source_id: str, target_id: str, asset_ids: list[str]) -> list[str]:
+    """Copy images between projects (same ids); returns the ids missing at the source."""
+    missing = []
+    for asset_id in asset_ids:
+        src = asset_dir(config_dir, source_id) / f"{asset_id}.png"
+        if not ASSET_ID_RE.match(asset_id) or not src.is_file():
+            missing.append(asset_id)
+            continue
+        target = asset_dir(config_dir, target_id)
+        target.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, target / f"{asset_id}.png")
+    return missing
+
+
+def store_embedded(config_dir: str, project_id: str, images: dict[str, str]) -> None:
+    """Store images embedded in a project file (id -> PNG data URL) under their ids."""
+    for asset_id, data_url in images.items():
+        if not ASSET_ID_RE.match(asset_id) or not isinstance(data_url, str):
+            continue
+        raw = base64.b64decode(data_url.split(",", 1)[-1], validate=False)
+        if len(raw) > MAX_UPLOAD_BYTES:
+            continue
+        try:
+            with Image.open(io.BytesIO(raw)) as img:
+                img.verify()  # a real image, not arbitrary bytes
+        except (OSError, ValueError):
+            continue
+        target = asset_dir(config_dir, project_id)
+        target.mkdir(parents=True, exist_ok=True)
+        (target / f"{asset_id}.png").write_bytes(raw)
+
+
 def copy_assets_to_esphome(config_dir: str, esphome_dir: str, project: dict[str, Any]) -> list[str]:
     """Copy the images a project uses to <esphome>/cyd_studio/<device_name>/; returns missing ids."""
     target = Path(esphome_dir) / "cyd_studio" / project["device_name"]

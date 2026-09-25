@@ -215,3 +215,22 @@ def test_hidden_label(studio_data: dict[str, Any]) -> None:
     tile["style"] = {**(tile.get("style") or {}), "show_label": False}
     text = generate(project, studio_data).yaml
     assert "id: w_home_l1_label" not in text and "id: w_home_l1_icon" in text
+
+
+def test_apply_design() -> None:
+    """Design moves over, the identity (name, device, board, WiFi, key) of the target stays."""
+    from generator.model import apply_design
+
+    source = golden("styled")
+    target = golden("multipage")
+    target["settings"]["api_key"] = "KEY"
+    target["settings"]["wifi"] = {"ssid": "x"}
+    source["settings"]["brightness_day"] = 42
+    out = apply_design(target, source)
+    for key in ("id", "name", "device_name", "board", "orientation"):
+        assert out.get(key) == target.get(key)
+    assert out["settings"]["api_key"] == "KEY" and out["settings"]["wifi"] == {"ssid": "x"}
+    assert out["settings"]["brightness_day"] == 42
+    assert out["pages"] == source["pages"] and out["theme"] == source["theme"]
+    assert out.get("tile_style") == source.get("tile_style")
+    assert target["pages"] != source["pages"]  # the input is not modified

@@ -292,3 +292,66 @@ async def test_assets_and_save_to_esphome(
     assert "other_key: keep" in secrets
     assert 'wifi_ssid: "Mein WLAN"' in secrets
     assert 'wifi_password: "p\\"w"' in secrets
+
+
+async def test_apply_design_duplicate_and_embedded_images(
+    hass: HomeAssistant, setup_studio: MockConfigEntry, hass_ws_client: Any, tmp_path: Path
+) -> None:
+    """Design from a project or a file (with images) replaces pages and theme; identity stays; undo via history."""
+    import base64
+    import io
+
+    from PIL import Image
+
+    hass.config.config_dir = str(tmp_path)
+    client = await hass_ws_client(hass)
+
+    async def call(type_: str, **data: Any) -> Any:
+        await client.send_json_auto_id({"type": f"cyd_studio/{type_}", **data})
+        msg = await client.receive_json()
+        assert msg["success"], msg
+        return msg["result"]
+
+    source = json.loads((GOLDEN / "styled.json").read_text(encoding="utf-8"))
+    source["id"] = ""
+    source = await call("projects/save", project=source)
+    buf = io.BytesIO()
+    Image.new("RGB", (320, 240), (200, 40, 90)).save(buf, format="PNG")
+    png = base64.b64encode(buf.getvalue()).decode()
+    asset_id = (await call("assets/upload", project_id=source["id"], data=png, width=320, height=240))["asset_id"]
+    source["background"] = {"image": asset_id}
+    source = await call("projects/save", project=source)
+
+    target = json.loads((GOLDEN / "multipage.json").read_text(encoding="utf-8"))
+    target["id"] = ""
+    target = await call("projects/save", project=target)
+
+    applied = await call("projects/apply_design", project_id=target["id"], source_project_id=source["id"])
+    for key in ("id", "name", "device_name", "board"):
+        assert applied[key] == target[key]
+    assert applied["settings"]["api_key"] == target["settings"]["api_key"]
+    assert applied["pages"] == source["pages"] and applied["theme"] == source["theme"]
+    assert (await call("assets/get", project_id=target["id"], asset_id=asset_id))["data_url"]
+
+    # undo: the state before is the newest history entry
+    latest = (await call("projects/history", project_id=target["id"]))[0]
+    restored = await call("projects/restore", project_id=target["id"], index=latest["index"])
+    assert restored["pages"] == target["pages"]
+
+    # from a file: images embedded as data URLs
+    data_url = (await call("assets/get", project_id=source["id"], asset_id=asset_id))["data_url"]
+    file_project = {k: v for k, v in source.items() if k != "id"}
+    await call("projects/apply_design", project_id=target["id"], project=file_project, assets={asset_id: data_url})
+    assert (await call("projects/get", project_id=target["id"]))["background"] == {"image": asset_id}
+
+    # duplicate and import carry the images too
+    dup = await call("projects/duplicate", project_id=source["id"])
+    assert (await call("assets/get", project_id=dup["id"], asset_id=asset_id))["data_url"]
+    imported = await call("projects/import", project=file_project, assets={asset_id: data_url})
+    assert (await call("assets/get", project_id=imported["id"], asset_id=asset_id))["data_url"]
+
+    # a project cannot take its own design, unknown sources are rejected
+    await client.send_json_auto_id(
+        {"type": "cyd_studio/projects/apply_design", "project_id": target["id"], "source_project_id": target["id"]}
+    )
+    assert not (await client.receive_json())["success"]

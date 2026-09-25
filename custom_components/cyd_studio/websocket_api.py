@@ -59,6 +59,7 @@ def async_register(hass: HomeAssistant) -> None:
         ws_projects_save,
         ws_projects_delete,
         ws_projects_duplicate,
+        ws_projects_apply_design,
         ws_projects_history,
         ws_projects_restore,
         ws_projects_import,
@@ -201,12 +202,15 @@ async def ws_projects_delete(
 async def ws_projects_duplicate(
     hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
 ) -> None:
-    """Duplicate a project."""
+    """Duplicate a project (with its images)."""
     try:
         project = await runtime.store.async_duplicate(msg["project_id"])
     except KeyError:
         connection.send_error(msg["id"], "not_found", "Project not found")
         return
+    await hass.async_add_executor_job(
+        assets.copy_assets, hass.config.config_dir, msg["project_id"], project["id"], assets.used_assets(project)
+    )
     async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], project)
 
@@ -241,9 +245,50 @@ async def ws_projects_restore(
 
 @websocket_api.websocket_command(
     {
+        vol.Required("type"): "cyd_studio/projects/apply_design",
+        vol.Required("project_id"): str,
+        vol.Exclusive("source_project_id", "source"): str,
+        vol.Exclusive("project", "source"): dict,
+        vol.Optional("assets"): {str: str},
+    }
+)
+@websocket_api.async_response
+@_guarded
+async def ws_projects_apply_design(
+    hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
+) -> None:
+    """Take pages, widgets, theme and styles from another project or a project file; the identity stays."""
+    source = msg.get("project")
+    if msg.get("source_project_id"):
+        source = runtime.store.get(msg["source_project_id"])
+    if source is None or msg.get("source_project_id") == msg["project_id"]:
+        connection.send_error(msg["id"], "not_found", "Source project not found")
+        return
+    try:
+        stored = await runtime.store.async_apply_design(msg["project_id"], source)
+    except KeyError:
+        connection.send_error(msg["id"], "not_found", "Project not found")
+        return
+    except ValueError as err:
+        connection.send_error(msg["id"], "invalid", str(err))
+        return
+    if msg.get("source_project_id"):
+        await hass.async_add_executor_job(
+            assets.copy_assets, hass.config.config_dir, msg["source_project_id"], stored["id"],
+            assets.used_assets(stored),
+        )  # fmt: skip
+    elif msg.get("assets"):
+        await hass.async_add_executor_job(assets.store_embedded, hass.config.config_dir, stored["id"], msg["assets"])
+    async_update_issues(hass, runtime.store.all())
+    connection.send_result(msg["id"], stored)
+
+
+@websocket_api.websocket_command(
+    {
         vol.Required("type"): "cyd_studio/projects/import",
         vol.Exclusive("project", "source"): dict,
         vol.Exclusive("yaml", "source"): str,
+        vol.Optional("assets"): {str: str},
     }
 )
 @websocket_api.async_response
@@ -266,6 +311,8 @@ async def ws_projects_import(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid", str(err))
         return
+    if msg.get("assets"):
+        await hass.async_add_executor_job(assets.store_embedded, hass.config.config_dir, stored["id"], msg["assets"])
     async_update_issues(hass, runtime.store.all())
     connection.send_result(msg["id"], stored)
 

@@ -4,7 +4,7 @@ import type { Api } from "../api";
 import { loc, t } from "../i18n";
 import { normalize, resolveBoard } from "../model";
 import { renderScreen, sampleState } from "../preview/renderer";
-import { loadProjectImages } from "../images";
+import { loadProjectImages, usedAssets } from "../images";
 import "./device-status";
 import type { Board, DeviceStatus, Project, ProjectSummary, Theme } from "../types";
 
@@ -16,6 +16,8 @@ export class CydProjectList extends LitElement {
     _projects: { state: true },
     _thumbs: { state: true },
     _devices: { state: true },
+    _design: { state: true },
+    _undo: { state: true },
   };
 
   declare api: Api;
@@ -24,12 +26,18 @@ export class CydProjectList extends LitElement {
   declare _projects: ProjectSummary[] | null;
   declare _thumbs: Record<string, string>;
   declare _devices: Record<string, DeviceStatus>;
+  /** "Design übernehmen" dialog: target project and chosen source (project id or a loaded file) */
+  declare _design: { target: ProjectSummary; source: string; file: ProjectFile | null; busy: boolean } | null;
+  /** last design change, can be undone from the history */
+  declare _undo: { id: string; name: string } | null;
 
   constructor() {
     super();
     this._projects = null;
     this._thumbs = {};
     this._devices = {};
+    this._design = null;
+    this._undo = null;
   }
 
   static styles = css`
@@ -49,7 +57,7 @@ export class CydProjectList extends LitElement {
       background: rgba(127,127,127,.15); color: var(--secondary-text-color); }
     .badge.changed { background: color-mix(in srgb, var(--warning-color, #f59e0b) 18%, transparent); color: var(--warning-color, #f59e0b); }
     .badge.ok { background: color-mix(in srgb, var(--success-color, #22c55e) 18%, transparent); color: var(--success-color, #22c55e); }
-    .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 12px 12px; margin-top: auto; }
+    .actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 0 12px 12px; margin-top: auto; }
     .actions .open { grid-column: 1 / -1; }
     button.quiet { border-color: transparent; background: transparent; font-size: 12px; padding: 6px 4px; white-space: nowrap; color: var(--secondary-text-color); }
     button.quiet:hover { color: var(--primary-text-color); background: rgba(127,127,127,.12); }
@@ -57,6 +65,18 @@ export class CydProjectList extends LitElement {
     .card { transition: border-color .15s, transform .15s; }
     .card:hover { border-color: var(--primary-color); }
     .info { flex: 1; }
+    .notice { display: flex; gap: 12px; align-items: center; padding: 10px 14px; margin-bottom: 16px; border-radius: 10px;
+      background: color-mix(in srgb, var(--success-color, #22c55e) 14%, transparent); }
+    .notice span { flex: 1; }
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
+    .dialog { background: var(--card-background-color); border: 1px solid var(--divider-color); border-radius: 12px; padding: 20px;
+      width: min(480px, 100%); display: flex; flex-direction: column; gap: 12px; }
+    .dialog h2 { margin: 0; font-size: 18px; font-weight: 500; }
+    .dialog p { margin: 0; font-size: 13px; color: var(--secondary-text-color); line-height: 1.45; }
+    .dialog select { font: inherit; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--divider-color);
+      background: var(--card-background-color); color: var(--primary-text-color); }
+    .dialog .warn { color: var(--warning-color, #f59e0b); }
+    .dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; }
     .empty { padding: 48px; text-align: center; color: var(--secondary-text-color); border: 2px dashed var(--divider-color); border-radius: 12px; }
   `;
 
@@ -103,7 +123,16 @@ export class CydProjectList extends LitElement {
 
   private async exportFile(id: string) {
     const project = await this.api.project(id);
-    const clean: Project = { ...project, settings: { ...project.settings, api_key: null } };
+    // images travel inside the file (id -> PNG data URL), the API key never does
+    const images: Record<string, string> = {};
+    for (const assetId of usedAssets(project)) {
+      try {
+        images[assetId] = (await this.api.getAsset(id, assetId)).data_url;
+      } catch {
+        /* missing image: exported without it */
+      }
+    }
+    const clean: ProjectFile = { ...project, settings: { ...project.settings, api_key: null }, _assets: images };
     const blob = new Blob([JSON.stringify(clean, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -112,22 +141,115 @@ export class CydProjectList extends LitElement {
     URL.revokeObjectURL(a.href);
   }
 
-  private importFile() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json,.yaml,.yml";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const text = await file.text();
-      try {
-        const project = file.name.endsWith(".json") ? await this.api.importProject(JSON.parse(text) as Project) : await this.api.importYaml(text);
-        this.open(project.id);
-      } catch (err) {
-        alert(String((err as { message?: string }).message ?? err));
+  /** Let the user pick a file; resolves with its name and text (null when cancelled). */
+  private pickFile(accept: string): Promise<{ name: string; text: string } | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = accept;
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        resolve(file ? { name: file.name, text: await file.text() } : null);
+      };
+      input.click();
+    });
+  }
+
+  private async importFile() {
+    const file = await this.pickFile(".json,.yaml,.yml");
+    if (!file) return;
+    try {
+      let project: Project;
+      if (file.name.endsWith(".json")) {
+        const { _assets, ...data } = JSON.parse(file.text) as ProjectFile;
+        project = await this.api.importProject(data as Project, _assets);
+      } else project = await this.api.importYaml(file.text);
+      this.open(project.id);
+    } catch (err) {
+      alert(String((err as { message?: string }).message ?? err));
+    }
+  }
+
+  private async loadDesignFile() {
+    const file = await this.pickFile(".json");
+    const d = this._design;
+    if (!d) return;
+    if (!file) {
+      this._design = { ...d };  // re-render: the select falls back to the previous choice
+      return;
+    }
+    try {
+      const data = JSON.parse(file.text) as ProjectFile;
+      if (!Array.isArray(data.pages)) throw new Error(t("design_file_invalid"));
+      this._design = { ...d, source: "file", file: data };
+    } catch (err) {
+      this._design = { ...d };
+      alert(String((err as { message?: string }).message ?? err));
+    }
+  }
+
+  private async applyDesign() {
+    const d = this._design;
+    if (!d || !d.source || (d.source === "file" && !d.file)) return;
+    this._design = { ...d, busy: true };
+    try {
+      if (d.source === "file") {
+        const { _assets, ...project } = d.file!;
+        await this.api.applyDesign(d.target.id, { project: project as Project, assets: _assets });
+      } else {
+        await this.api.applyDesign(d.target.id, { source_project_id: d.source });
       }
-    };
-    input.click();
+      this._undo = { id: d.target.id, name: d.target.name };
+      this._design = null;
+      await this.refresh();
+    } catch (err) {
+      this._design = { ...d, busy: false };
+      alert(String((err as { message?: string }).message ?? err));
+    }
+  }
+
+  private async undoDesign() {
+    const u = this._undo;
+    if (!u) return;
+    const [latest] = await this.api.history(u.id);
+    if (latest) await this.api.restore(u.id, latest.index);
+    this._undo = null;
+    await this.refresh();
+  }
+
+  /** Source differs in board or orientation from the target: the grid may not fit the same way. */
+  private designMismatch(): boolean {
+    const d = this._design;
+    if (!d) return false;
+    const src = d.source === "file" ? d.file : this._projects?.find((p) => p.id === d.source);
+    if (!src) return false;
+    const portrait = (o: string | undefined) => (o ?? "landscape").startsWith("portrait");  // flipped = same size
+    return src.board !== d.target.board || portrait(src.orientation) !== portrait(d.target.orientation);
+  }
+
+  private renderDesignDialog() {
+    const d = this._design!;
+    const others = (this._projects ?? []).filter((p) => p.id !== d.target.id);
+    return html`<div class="backdrop" @click=${(e: Event) => { if (e.target === e.currentTarget && !d.busy) this._design = null; }}>
+      <div class="dialog">
+        <h2>${t("design_apply_title", { name: d.target.name })}</h2>
+        <p>${t("design_apply_text")}</p>
+        <select @change=${(e: Event) => {
+          const v = (e.target as HTMLSelectElement).value;
+          if (v === "file") void this.loadDesignFile();
+          else this._design = { ...d, source: v, file: null };
+        }}>
+          <option value="" ?selected=${!d.source}>${t("design_choose_source")}</option>
+          ${others.map((p) => html`<option value=${p.id} ?selected=${d.source === p.id}>${p.name} (${p.device_name})</option>`)}
+          <option value="file" ?selected=${d.source === "file"}>${d.file ? `${t("design_from_file")}: ${d.file.name}` : `${t("design_from_file")}…`}</option>
+        </select>
+        ${this.designMismatch() ? html`<p class="warn">${t("design_mismatch")}</p>` : nothing}
+        <div class="buttons">
+          <button ?disabled=${d.busy} @click=${() => { this._design = null; }}>${t("cancel")}</button>
+          <button class="primary" ?disabled=${d.busy || !d.source || (d.source === "file" && !d.file)} @click=${() => this.applyDesign()}>${t("design_apply")}</button>
+        </div>
+      </div>
+    </div>`;
   }
 
   render() {
@@ -138,6 +260,10 @@ export class CydProjectList extends LitElement {
         <button @click=${() => this.importFile()}>⤒ ${t("import_file")}</button>
         <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: true, composed: true }))}>+ ${t("new_project")}</button>
       </div>
+      ${this._undo ? html`<div class="notice"><span>${t("design_applied", { name: this._undo.name })}</span>
+        <button @click=${() => this.undoDesign()}>${t("undo")}</button>
+        <button class="quiet" @click=${() => { this._undo = null; }}>✕</button></div>` : nothing}
+      ${this._design ? this.renderDesignDialog() : nothing}
       ${list === null ? html`…` : !list.length ? html`<div class="empty">${t("no_projects")}<br /><br />
         <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: true, composed: true }))}>+ ${t("new_project")}</button></div>`
         : html`<div class="grid">${list.map((s) => html`<div class="card">
@@ -154,10 +280,14 @@ export class CydProjectList extends LitElement {
             <button class="primary open" @click=${() => this.open(s.id)}>${t("open")}</button>
             <button class="quiet" title=${t("duplicate")} @click=${() => this.duplicate(s.id)}>${t("duplicate")}</button>
             <button class="quiet" title=${t("export_file")} @click=${() => this.exportFile(s.id)}>${t("export_file")}</button>
+            <button class="quiet" title=${t("design_apply_hint")} @click=${() => { this._design = { target: s, source: "", file: null, busy: false }; }}>${t("design_apply_button")}</button>
             <button class="quiet danger" title=${t("delete")} @click=${() => this.removeProject(s)}>${t("delete")}</button>
           </div>
         </div>`)}</div>`}`;
   }
 }
+
+/** Project file as exported: the project plus its images (asset id -> PNG data URL). */
+type ProjectFile = Project & { _assets?: Record<string, string> };
 
 customElements.define("cyd-project-list", CydProjectList);

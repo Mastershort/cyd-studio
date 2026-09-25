@@ -42,6 +42,16 @@ Voraussetzungen: Home Assistant 2026.x, für die Installation aufs Display der *
 5. **Wichtig:** In Home Assistant beim neuen ESPHome-Gerät *„Dem Gerät erlauben,
    Home-Assistant-Aktionen auszuführen“* aktivieren – sonst reagieren die Schalter nicht.
 
+## Design auf ein anderes Display übertragen
+
+In der Projektliste beim Ziel-Projekt **„Design übernehmen“** wählen und als Quelle ein anderes
+Projekt oder eine exportierte `.cydstudio.json` angeben. Übernommen werden Seiten mit Widgets,
+Popups, Kopfzeile, Navigation, Raster, Theme, Farben, Kachel-Stil, Hintergrundbilder sowie
+Helligkeit, Nachtmodus und Bildschirmschoner. Name, Gerätename, API-Schlüssel, WLAN und Board des
+Ziels bleiben – das Display muss in Home Assistant also nicht neu eingerichtet werden. Direkt danach
+lässt sich der Schritt mit **„Rückgängig“** zurücknehmen. Exportierte Dateien enthalten die
+Hintergrundbilder, aber nie den API-Schlüssel.
+
 ## Unterstützte Hardware
 
 | Board | Status |

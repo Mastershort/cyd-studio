@@ -24,7 +24,13 @@ export class Api {
   save = (project: Project) => this.ws<Project>("projects/save", { project });
   remove = (projectId: string) => this.ws<null>("projects/delete", { project_id: projectId });
   duplicate = (projectId: string) => this.ws<Project>("projects/duplicate", { project_id: projectId });
-  importProject = (project: Project) => this.ws<Project>("projects/import", { project });
+  importProject = (project: Project, assets?: Record<string, string>) =>
+    this.ws<Project>("projects/import", { project, ...(assets ? { assets } : {}) });
+  /** Take the design (pages, widgets, theme, styles) of another project or a project file; the identity stays. */
+  applyDesign = (projectId: string, source: { source_project_id: string } | { project: Project; assets?: Record<string, string> }) =>
+    this.ws<Project>("projects/apply_design", { project_id: projectId, ...source });
+  history = (projectId: string) => this.ws<{ index: number; saved: string; name: string }[]>("projects/history", { project_id: projectId });
+  restore = (projectId: string, index: number) => this.ws<Project>("projects/restore", { project_id: projectId, index });
   importYaml = (yaml: string) => this.ws<Project>("projects/import", { yaml });
   devices = () => this.ws<Record<string, DeviceStatus>>("esphome/devices");
   allowActions = (projectId: string) => this.ws<DeviceStatus>("esphome/allow_actions", { project_id: projectId });

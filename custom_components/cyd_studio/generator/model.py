@@ -126,6 +126,31 @@ def normalize(project: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+# "Design übernehmen": what moves from one project to another; the identity of the target
+# (name, device name, board, orientation, WiFi, API key) stays
+DESIGN_KEYS = ("grid", "theme", "theme_overrides", "tile_style", "global", "pages", "navigation", "popups",
+               "background")  # fmt: skip
+DESIGN_SETTINGS = ("brightness_day", "brightness_night", "night_mode", "screensaver", "return_home_after_s",
+                   "rgb_led", "language")  # fmt: skip
+
+
+def apply_design(target: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+    """Target project with the design of ``source`` (copy; missing source keys are removed)."""
+    out = copy.deepcopy(target)
+    for key in DESIGN_KEYS:
+        if key in source:
+            out[key] = copy.deepcopy(source[key])
+        else:
+            out.pop(key, None)
+    settings = out.setdefault("settings", {})
+    for key in DESIGN_SETTINGS:
+        if key in source.get("settings", {}):
+            settings[key] = copy.deepcopy(source["settings"][key])
+        else:
+            settings.pop(key, None)
+    return out
+
+
 def safe_id(text: str) -> str:
     """Turn an arbitrary id into a C++/ESPHome identifier fragment."""
     s = re.sub(r"[^a-z0-9_]", "_", text.lower())

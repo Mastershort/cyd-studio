@@ -14,7 +14,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import HISTORY_LIMIT, HISTORY_MIN_INTERVAL_S, STORAGE_KEY, STORAGE_VERSION
-from .generator.model import SCHEMA_VERSION, normalize
+from .generator.model import SCHEMA_VERSION, apply_design, normalize
 
 
 class _MigratingStore(Store[dict[str, Any]]):
@@ -100,7 +100,7 @@ class ProjectStore:
         ]
 
     # -- mutations ---------------------------------------------------------
-    async def async_save(self, project: dict[str, Any]) -> dict[str, Any]:
+    async def async_save(self, project: dict[str, Any], history: bool = True) -> dict[str, Any]:
         """Create or update a project; returns the stored project."""
         project = migrate_project(copy.deepcopy(project))
         now = dt_util.utcnow().isoformat(timespec="seconds")
@@ -113,16 +113,16 @@ class ProjectStore:
         if not project["settings"].get("api_key"):
             project["settings"]["api_key"] = new_api_key()
         old = self._data["projects"].get(project["id"])
-        if old is not None:
+        if old is not None and history:
             self._push_history(project["id"], old)
         self._data["projects"][project["id"]] = project
         await self._async_save()
         return copy.deepcopy(project)
 
-    def _push_history(self, project_id: str, old: dict[str, Any]) -> None:
+    def _push_history(self, project_id: str, old: dict[str, Any], force: bool = False) -> None:
         entries: list[dict[str, Any]] = self._data["history"].setdefault(project_id, [])
         now = dt_util.utcnow()
-        if entries:
+        if entries and not force:
             last = datetime.fromisoformat(entries[-1]["saved"])
             if (now - last).total_seconds() < HISTORY_MIN_INTERVAL_S:
                 return
@@ -162,6 +162,16 @@ class ProjectStore:
         project["settings"]["api_key"] = None
         project["meta"] = {}
         return await self.async_save(project)
+
+    async def async_apply_design(self, target_id: str, source: dict[str, Any]) -> dict[str, Any]:
+        """Replace the design of a project (see ``apply_design``); the old state always goes into the history."""
+        target = self._data["projects"].get(target_id)
+        if target is None:
+            raise KeyError(target_id)
+        self._push_history(target_id, target, force=True)
+        project = normalize(apply_design(target, migrate_project(copy.deepcopy(source)))) | {"id": target_id}
+        project["meta"] = copy.deepcopy(target.get("meta", {}))
+        return await self.async_save(project, history=False)
 
     async def async_import(self, project: dict[str, Any]) -> dict[str, Any]:
         """Import a project; keeps the id unless it already exists."""
