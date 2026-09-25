@@ -6,6 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/Mastershort/cyd-studio)](https://github.com/Mastershort/cyd-studio/releases)
 [![Tests](https://github.com/Mastershort/cyd-studio/actions/workflows/tests.yml/badge.svg)](https://github.com/Mastershort/cyd-studio/actions/workflows/tests.yml)
 [![Validate](https://github.com/Mastershort/cyd-studio/actions/workflows/validate.yml/badge.svg)](https://github.com/Mastershort/cyd-studio/actions/workflows/validate.yml)
+[![Spenden / Donate](https://img.shields.io/badge/PayPal-Spenden%20%2F%20Donate-00457C?logo=paypal)](https://www.paypal.com/donate/?hosted_button_id=Z3G2VWKSK5VJL)
 
 **Dein Touch-Display-Dashboard für Home Assistant – zusammengeklickt statt programmiert.**
 *[English below](#english)*
@@ -55,6 +56,25 @@ geänderte Displays zeigen in der Projektliste „geändert seit letztem Export�
 Voraussetzungen: Home Assistant 2026.x, für die Installation aufs Display der **ESPHome Device Builder**
 (Add-on) oder eine andere ESPHome-Installation ≥ 2026.9.
 
+## Hardware
+
+| Was / What | Wo / Where | Hinweis / Note |
+|---|---|---|
+| ESP32-2432S028R (CYD 2,8″) | [AliExpress – weltweit / worldwide](https://s.click.aliexpress.com/e/_mOQ7lGP) | günstig, 2–3 Wochen, Variante mit Touch wählen / cheapest, 2–3 weeks, choose the touch version |
+| ESP32-2432S028R (CYD 2,8″) | [Amazon.de](https://www.amazon.de/dp/B0GS5P1Z95?tag=mastershortgh-21) | schnell in DE/EU / fast within Germany/EU |
+| USB-Netzteil 5 V / USB power supply | [Amazon.de](https://www.amazon.de/dp/B0CWXXWJ3W?tag=mastershortgh-21) | jedes Handy-Netzteil geht / any phone charger works |
+| Gehäuse zum Selbstdrucken / Printable case | [MakerWorld – kostenlos / free](https://makerworld.com/de/models/799188-home-assistant-desk-mount-cheap-yellow-display-cyd) | CC0-Design von / by akuehlewind |
+
+Affiliate-Links: Als Amazon-Partner und AliExpress-Partner verdiene ich an qualifizierten Verkäufen.
+Für dich ändert sich der Preis nicht.
+
+Fertig gedruckte Gehäuse gibt es bald auf mastershort.de. Nicht in Deutschland? Nimm AliExpress –
+liefert in dein Land. Alles auf einer Seite:
+[mastershort.de/cyd-studio/hardware](https://mastershort.de/cyd-studio/hardware/?src=cyd-studio)
+
+Unterstützt und getestet: ESP32-2432S028R (Display ILI9341, Varianten ST7789 / ILI9342). Geplant:
+ESP32-2432S028C, ESP32-3248S035R/C, ESP32-8048S043.
+
 ## Code aufs Display bringen
 
 1. Im Export-Dialog **Kopieren** (oder Herunterladen).
@@ -74,13 +94,6 @@ Helligkeit, Nachtmodus und Bildschirmschoner. Name, Gerätename, API-Schlüssel,
 Ziels bleiben – das Display muss in Home Assistant also nicht neu eingerichtet werden. Direkt danach
 lässt sich der Schritt mit **„Rückgängig“** zurücknehmen. Exportierte Dateien enthalten die
 Hintergrundbilder, aber nie den API-Schlüssel.
-
-## Unterstützte Hardware
-
-| Board | Status |
-|---|---|
-| ESP32-2432S028R (ILI9341, Varianten ST7789 / ILI9342) | unterstützt, auf Hardware getestet |
-| ESP32-2432S028C, ESP32-3248S035R/C, ESP32-8048S043 | geplant (Phase 3) |
 
 ## Entwicklung
 
@@ -105,12 +118,11 @@ Boards: [docs/BOARDS.md](docs/BOARDS.md) · Annahmen: [docs/ASSUMPTIONS.md](docs
 
 ## Unterstützen
 
-CYD Studio ist kostenlos und Open Source. Wenn es dir Zeit spart, freue ich mich über eine kleine
-Spende: **[CYD Studio unterstützen](https://mastershort.de/cyd-studio/unterstuetzen)** – oder über einen Stern ⭐ auf GitHub, Feedback
-und Screenshots deiner Dashboards in den [Issues](https://github.com/Mastershort/cyd-studio/issues).
+CYD Studio ist kostenlos und Open Source – und bleibt es. Wenn es dir Zeit spart:
 
-Passende Displays und Gehäuse: [mastershort.de/cyd-studio/hardware](https://mastershort.de/cyd-studio/hardware)
-(teils Affiliate-Links – für dich kostet es nichts extra, ich bekomme eine kleine Provision).
+- ☕ [Spende per PayPal](https://www.paypal.com/donate/?hosted_button_id=Z3G2VWKSK5VJL) (auch ohne PayPal-Konto per Karte)
+- 🛒 Hardware über die Links oben kaufen – kostet dich nichts extra
+- ⭐ Stern auf GitHub und Screenshots deiner Dashboards in den [Issues](https://github.com/Mastershort/cyd-studio/issues)
 
 ## Danke & Hinweise
 
@@ -118,9 +130,8 @@ Passende Displays und Gehäuse: [mastershort.de/cyd-studio/hardware](https://mas
   [akuehlewind/ESPHome-touch-display-mount](https://github.com/akuehlewind/ESPHome-touch-display-mount)
   (MIT, © 2023 Adrian Kuehlewind) – passend dazu das CC0-Gehäuse
   „Home Assistant Desk Mount – Cheap Yellow Display“. Siehe [NOTICE](NOTICE).
-- Links zu Hardware und Gehäusen führen zu einer Übersichtsseite auf mastershort.de, dort teils
-  Affiliate-Links. Die Hinweise lassen sich in den Optionen der Integration abschalten.
-  Kein Tracking außer dem neutralen Parameter `?src=cyd-studio`.
+- Die Hardware- und Unterstützungs-Hinweise im Panel lassen sich in den Optionen der Integration
+  abschalten. Kein Tracking außer dem neutralen Parameter `?src=cyd-studio`.
 - Schriften: Montserrat (SIL OFL 1.1), Material Design Icons (Apache 2.0).
 
 Lizenz: MIT
@@ -128,6 +139,27 @@ Lizenz: MIT
 ---
 
 ## English
+
+### Hardware
+
+| Was / What | Wo / Where | Hinweis / Note |
+|---|---|---|
+| ESP32-2432S028R (CYD 2,8″) | [AliExpress – weltweit / worldwide](https://s.click.aliexpress.com/e/_mOQ7lGP) | günstig, 2–3 Wochen, Variante mit Touch wählen / cheapest, 2–3 weeks, choose the touch version |
+| ESP32-2432S028R (CYD 2,8″) | [Amazon.de](https://www.amazon.de/dp/B0GS5P1Z95?tag=mastershortgh-21) | schnell in DE/EU / fast within Germany/EU |
+| USB-Netzteil 5 V / USB power supply | [Amazon.de](https://www.amazon.de/dp/B0CWXXWJ3W?tag=mastershortgh-21) | jedes Handy-Netzteil geht / any phone charger works |
+| Gehäuse zum Selbstdrucken / Printable case | [MakerWorld – kostenlos / free](https://makerworld.com/de/models/799188-home-assistant-desk-mount-cheap-yellow-display-cyd) | CC0-Design von / by akuehlewind |
+
+Affiliate links: As an Amazon Associate and AliExpress affiliate I earn from qualifying purchases.
+The price stays the same for you.
+
+Ready-printed cases coming soon on mastershort.de. Outside Germany? Use AliExpress – it ships to
+your country. Everything on one page:
+[mastershort.de/cyd-studio/hardware](https://mastershort.de/cyd-studio/hardware/?lang=en&src=cyd-studio)
+
+Supported and tested: ESP32-2432S028R (display ILI9341, variants ST7789 / ILI9342). Planned:
+ESP32-2432S028C, ESP32-3248S035R/C, ESP32-8048S043.
+
+### About
 
 CYD Studio is a Home Assistant custom integration (installable via HACS) that adds a **visual
 designer for the "Cheap Yellow Display"** (ESP32-2432S028R) to your sidebar: drag tiles onto the
@@ -150,10 +182,15 @@ and get **ready-to-flash ESPHome code**.
 
 Install via HACS (button above or custom repository, type *Integration*), restart, add the
 "CYD Studio" integration. After flashing, enable *"Allow the device to perform Home Assistant
-actions"* for the new ESPHome device. Changes: [CHANGELOG.md](CHANGELOG.md). Links to hardware point to an overview page on mastershort.de (partly affiliate links);
-they can be switched off in the integration options.
+actions"* for the new ESPHome device. Changes: [CHANGELOG.md](CHANGELOG.md). The hardware and
+support hints in the panel can be switched off in the integration options.
 
-Support the project: [https://mastershort.de/cyd-studio/unterstuetzen](https://mastershort.de/cyd-studio/unterstuetzen) · Hardware: https://mastershort.de/cyd-studio/hardware
-(partly affiliate links).
+### Support the project
+
+CYD Studio is free and open source – and will stay that way. If it saves you time:
+
+- ☕ [Donate via PayPal](https://www.paypal.com/donate/?hosted_button_id=Z3G2VWKSK5VJL) (card works without a PayPal account)
+- 🛒 Buy hardware through the links above – no extra cost for you
+- ⭐ Star the repo and share screenshots of your dashboards in the [issues](https://github.com/Mastershort/cyd-studio/issues)
 
 License: MIT
