@@ -28,6 +28,7 @@ const handlers: Record<string, (msg: Record<string, unknown>) => unknown> = {
   "cyd_studio/info": () => ({
     version: "dev", generator_version: "dev", esphome_min_version: "2026.9.0", icons_url: iconsUrl,
     hardware_hints: true, hardware_info_url: "https://mastershort.de/cyd-studio/hardware?src=cyd-studio",
+    support_url: "https://mastershort.de/cyd-studio/unterstuetzen?src=cyd-studio",
     default_theme: "mastershort_dark", preview_real_actions: true,
   }),
   "cyd_studio/boards/list": () => boards,

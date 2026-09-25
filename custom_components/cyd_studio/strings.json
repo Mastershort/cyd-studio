@@ -22,7 +22,7 @@
           "require_admin": "Panel for administrators only",
           "sidebar_title": "Sidebar title",
           "sidebar_icon": "Sidebar icon",
-          "hardware_hints": "Show hints about hardware and cases",
+          "hardware_hints": "Show hints about hardware, cases and support",
           "esphome_path": "ESPHome directory (relative to the configuration)",
           "default_theme": "Default theme for new projects",
           "preview_real_actions": "Allow real actions from the preview"

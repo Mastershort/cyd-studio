@@ -228,6 +228,7 @@ export interface StudioInfo {
   icons_url: string;
   hardware_hints: boolean;
   hardware_info_url: string;
+  support_url: string;
   default_theme: string;
   preview_real_actions: boolean;
 }

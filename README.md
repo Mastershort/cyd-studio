@@ -103,6 +103,15 @@ tools/validate_esphome.sh compile  # zusätzlich kompilieren
 Architektur: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Widgets: [docs/WIDGETS.md](docs/WIDGETS.md) ·
 Boards: [docs/BOARDS.md](docs/BOARDS.md) · Annahmen: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md)
 
+## Unterstützen
+
+CYD Studio ist kostenlos und Open Source. Wenn es dir Zeit spart, freue ich mich über eine kleine
+Spende: **[CYD Studio unterstützen](https://mastershort.de/cyd-studio/unterstuetzen)** – oder über einen Stern ⭐ auf GitHub, Feedback
+und Screenshots deiner Dashboards in den [Issues](https://github.com/Mastershort/cyd-studio/issues).
+
+Passende Displays und Gehäuse: [mastershort.de/cyd-studio/hardware](https://mastershort.de/cyd-studio/hardware)
+(teils Affiliate-Links – für dich kostet es nichts extra, ich bekomme eine kleine Provision).
+
 ## Danke & Hinweise
 
 - Hardware-Grundkonfiguration und Interaktionsmuster nach
@@ -143,5 +152,8 @@ Install via HACS (button above or custom repository, type *Integration*), restar
 "CYD Studio" integration. After flashing, enable *"Allow the device to perform Home Assistant
 actions"* for the new ESPHome device. Changes: [CHANGELOG.md](CHANGELOG.md). Links to hardware point to an overview page on mastershort.de (partly affiliate links);
 they can be switched off in the integration options.
+
+Support the project: [https://mastershort.de/cyd-studio/unterstuetzen](https://mastershort.de/cyd-studio/unterstuetzen) · Hardware: https://mastershort.de/cyd-studio/hardware
+(partly affiliate links).
 
 License: MIT

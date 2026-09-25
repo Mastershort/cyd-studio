@@ -7,7 +7,7 @@ from typing import Final
 from .generator import ESPHOME_MIN_VERSION, GENERATOR_VERSION
 
 DOMAIN: Final = "cyd_studio"
-VERSION: Final = "1.0.0"
+VERSION: Final = "1.0.1"
 
 __all__ = ["ESPHOME_MIN_VERSION", "GENERATOR_VERSION"]
 
@@ -41,3 +41,5 @@ DEFAULT_OPTIONS: Final = {
 }
 
 HARDWARE_INFO_URL: Final = "https://mastershort.de/cyd-studio/hardware?src=cyd-studio"
+# donation page (PayPal etc. live on the website, so they can change without a release)
+SUPPORT_URL: Final = "https://mastershort.de/cyd-studio/unterstuetzen?src=cyd-studio"

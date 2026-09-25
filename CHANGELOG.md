@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an CYD Studio. Versionen folgen [SemVer](https://semver.org/lang/de/);
 jede Version ist ein GitHub-Release, das HACS als Update anbietet.
 
+## 1.0.1 – 2026-09-25
+
+- Projektliste: Links „Wo bekomme ich das Board?“ und „♥ CYD Studio unterstützen“ (abschaltbar über
+  die Option „Hinweise auf Hardware, Gehäuse & Unterstützung anzeigen“)
+- README: Abschnitt „Unterstützen“, Hinweis auf Affiliate-Links; GitHub zeigt einen „Sponsor“-Knopf
+
 ## 1.0.0 – 2026-09-25
 
 Erste offizielle Veröffentlichung über HACS – auf echter Hardware (ESP32-2432S028R) getestet.

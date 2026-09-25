@@ -14,6 +14,7 @@ from .const import (
     HARDWARE_INFO_URL,
     ICONS_URL,
     STATIC_URL,
+    SUPPORT_URL,
     VERSION,
 )
 from .data import StudioData
@@ -40,6 +41,7 @@ class StudioRuntime:
             "static_url": STATIC_URL,
             "hardware_hints": self.options.get(CONF_HARDWARE_HINTS, True),
             "hardware_info_url": HARDWARE_INFO_URL,
+            "support_url": SUPPORT_URL,
             "default_theme": self.options.get(CONF_DEFAULT_THEME, "mastershort_dark"),
             "preview_real_actions": self.options.get(CONF_PREVIEW_REAL_ACTIONS, False),
         }

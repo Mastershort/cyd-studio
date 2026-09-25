@@ -6,11 +6,12 @@ import { normalize, resolveBoard } from "../model";
 import { renderScreen, sampleState } from "../preview/renderer";
 import { loadProjectImages, usedAssets } from "../images";
 import "./device-status";
-import type { Board, DeviceStatus, Project, ProjectSummary, Theme } from "../types";
+import type { Board, DeviceStatus, Project, ProjectSummary, StudioInfo, Theme } from "../types";
 
 export class CydProjectList extends LitElement {
   static properties = {
     api: { attribute: false },
+    info: { attribute: false },
     boards: { attribute: false },
     themes: { attribute: false },
     _projects: { state: true },
@@ -21,6 +22,7 @@ export class CydProjectList extends LitElement {
   };
 
   declare api: Api;
+  declare info: StudioInfo | undefined;
   declare boards: Record<string, Board>;
   declare themes: Record<string, Theme>;
   declare _projects: ProjectSummary[] | null;
@@ -77,6 +79,9 @@ export class CydProjectList extends LitElement {
       background: var(--card-background-color); color: var(--primary-text-color); }
     .dialog .warn { color: var(--warning-color, #f59e0b); }
     .dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; }
+    .foot { margin-top: 24px; text-align: center; font-size: 13px; color: var(--secondary-text-color); }
+    .foot a { color: var(--secondary-text-color); }
+    .foot a:hover { color: var(--primary-color); }
     .empty { padding: 48px; text-align: center; color: var(--secondary-text-color); border: 2px dashed var(--divider-color); border-radius: 12px; }
   `;
 
@@ -283,7 +288,11 @@ export class CydProjectList extends LitElement {
             <button class="quiet" title=${t("design_apply_hint")} @click=${() => { this._design = { target: s, source: "", file: null, busy: false }; }}>${t("design_apply_button")}</button>
             <button class="quiet danger" title=${t("delete")} @click=${() => this.removeProject(s)}>${t("delete")}</button>
           </div>
-        </div>`)}</div>`}`;
+        </div>`)}</div>`}
+      ${this.info?.hardware_hints ? html`<div class="foot">
+        <a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${t("where_to_buy")}</a> ·
+        <a href=${this.info.support_url} target="_blank" rel="noopener">♥ ${t("support_project")}</a>
+      </div>` : nothing}`;
   }
 }
 

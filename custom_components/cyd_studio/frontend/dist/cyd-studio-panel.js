@@ -605,6 +605,7 @@ const Ct = {
   variant_default: "Standard",
   where_to_buy: "Wo bekomme ich das Board?",
   matching_case: "Passendes Gehäuse",
+  support_project: "CYD Studio unterstützen",
   landscape: "Querformat",
   portrait: "Hochformat",
   landscape_flipped: "Querformat (gedreht)",
@@ -892,6 +893,7 @@ const Ct = {
   variant_default: "Default",
   where_to_buy: "Where do I get the board?",
   matching_case: "Matching case",
+  support_project: "Support CYD Studio",
   landscape: "Landscape",
   portrait: "Portrait",
   landscape_flipped: "Landscape (flipped)",
@@ -3466,6 +3468,7 @@ customElements.define("cyd-device-status", xn);
 class En extends ae {
   static properties = {
     api: { attribute: !1 },
+    info: { attribute: !1 },
     boards: { attribute: !1 },
     themes: { attribute: !1 },
     _projects: { state: !0 },
@@ -3514,6 +3517,9 @@ class En extends ae {
       background: var(--card-background-color); color: var(--primary-text-color); }
     .dialog .warn { color: var(--warning-color, #f59e0b); }
     .dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; }
+    .foot { margin-top: 24px; text-align: center; font-size: 13px; color: var(--secondary-text-color); }
+    .foot a { color: var(--secondary-text-color); }
+    .foot a:hover { color: var(--primary-color); }
     .empty { padding: 48px; text-align: center; color: var(--secondary-text-color); border: 2px dashed var(--divider-color); border-radius: 12px; }
   `;
   connectedCallback() {
@@ -3687,7 +3693,11 @@ class En extends ae {
             <button class="quiet danger" title=${d("delete")} @click=${() => this.removeProject(t)}>${d("delete")}</button>
           </div>
         </div>`)}</div>` : y`<div class="empty">${d("no_projects")}<br /><br />
-        <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: !0, composed: !0 }))}>+ ${d("new_project")}</button></div>`}`;
+        <button class="primary" @click=${() => this.dispatchEvent(new CustomEvent("new-project", { bubbles: !0, composed: !0 }))}>+ ${d("new_project")}</button></div>`}
+      ${this.info?.hardware_hints ? y`<div class="foot">
+        <a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${d("where_to_buy")}</a> ·
+        <a href=${this.info.support_url} target="_blank" rel="noopener">♥ ${d("support_project")}</a>
+      </div>` : Y}`;
   }
 }
 customElements.define("cyd-project-list", En);
@@ -5389,7 +5399,7 @@ class jn extends ae {
         @cancel=${() => this.go({ name: "list" })}
         @open-project=${(t) => this.go({ name: "editor", id: t.detail.id })}></cyd-wizard>` : e.name === "editor" ? y`<cyd-editor .hass=${this.hass} .api=${this.api} .info=${this.info} .boards=${this.boards}
         .widgetDefs=${this.widgetDefs} .themes=${this.themes} .projectId=${e.id} .narrow=${this.narrow}
-        @close-editor=${() => this.go({ name: "list" })}></cyd-editor>` : y`${Y}<cyd-project-list .api=${this.api} .boards=${this.boards} .themes=${this.themes}
+        @close-editor=${() => this.go({ name: "list" })}></cyd-editor>` : y`${Y}<cyd-project-list .api=${this.api} .info=${this.info} .boards=${this.boards} .themes=${this.themes}
       @new-project=${() => this.go({ name: "wizard" })}
       @open-project=${(t) => this.go({ name: "editor", id: t.detail.id })}></cyd-project-list>`;
   }

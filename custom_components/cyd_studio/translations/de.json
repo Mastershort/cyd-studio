@@ -22,7 +22,7 @@
           "require_admin": "Panel nur für Administratoren",
           "sidebar_title": "Titel in der Seitenleiste",
           "sidebar_icon": "Icon in der Seitenleiste",
-          "hardware_hints": "Hinweise auf Hardware & Gehäuse anzeigen",
+          "hardware_hints": "Hinweise auf Hardware, Gehäuse & Unterstützung anzeigen",
           "esphome_path": "ESPHome-Verzeichnis (relativ zur Konfiguration)",
           "default_theme": "Standard-Theme für neue Projekte",
           "preview_real_actions": "Echte Aktionen aus der Vorschau erlauben"

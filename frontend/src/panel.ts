@@ -100,7 +100,7 @@ class CydStudioPanel extends LitElement {
         .widgetDefs=${this.widgetDefs} .themes=${this.themes} .projectId=${v.id} .narrow=${this.narrow}
         @close-editor=${() => this.go({ name: "list" })}></cyd-editor>`;
     }
-    return html`${nothing}<cyd-project-list .api=${this.api} .boards=${this.boards} .themes=${this.themes}
+    return html`${nothing}<cyd-project-list .api=${this.api} .info=${this.info} .boards=${this.boards} .themes=${this.themes}
       @new-project=${() => this.go({ name: "wizard" })}
       @open-project=${(e: CustomEvent<{ id: string }>) => this.go({ name: "editor", id: e.detail.id })}></cyd-project-list>`;
   }
