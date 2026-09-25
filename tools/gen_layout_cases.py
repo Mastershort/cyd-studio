@@ -172,6 +172,7 @@ def main() -> None:
         {"preset": "flat", "text_size": "xl", "icon_size": "none", "text_weight": "bold", "value_size": "m"},
         {"text_size": "huge", "icon_size": "x", "text_weight": "black", "value_size": "?"},
         {"preset": "nope", "border_width": 3, "text_on": "#ABCDEF"},
+        {"preset": "solid", "track": "#112233", "fill": "accent", "knob": "warning", "icon_on": "#445566"},
     ]
     for theme in load_themes().values():
         for ov in overrides:

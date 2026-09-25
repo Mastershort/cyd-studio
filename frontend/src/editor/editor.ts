@@ -1103,10 +1103,19 @@ export class CydEditor extends LitElement {
       else next[key] = value;
       x.style = next;
     });
-    const color = (key: keyof typeof resolved, label: string) => html`<label class="field color"><span>${label}</span>
-      <span class="swatch ${st[key] ? "own" : ""}"><input type="color" .value=${String(resolved[key])} @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)} />
-      <code>${String(resolved[key])}</code>
+    // `shown`: what the device uses while the key is not set (e.g. the alert colors of a binary indicator)
+    const color = (key: keyof typeof resolved, label: string, shown?: string) => {
+      const value = String((st[key] || shown === undefined) ? resolved[key] : shown);
+      return html`<label class="field color"><span>${label}</span>
+      <span class="swatch ${st[key] ? "own" : ""}"><input type="color" .value=${value} @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)} />
+      <code>${value}</code>
       ${st[key] ? html`<button class="small icon" title=${t("reset")} @click=${(e: Event) => { e.preventDefault(); set(key, null); }}>↺</button>` : nothing}</span></label>`;
+    };
+    const colors = this.themed().colors;
+    const binary = w.type === "binary_indicator";
+    const alert = binary ? colors[w.props.alert_on ?? true ? "error" : "accent"] : undefined;
+    const knob = ["slider", "media_player"].includes(w.type);
+    const parts = knob || ["gauge", "countdown"].includes(w.type);
     const range = (key: keyof typeof resolved, label: string, max: number) => html`<label class="field"><span>${label}: ${resolved[key]}</span>
       <input type="range" min="0" max=${max} .value=${String(resolved[key])} @change=${(e: Event) => set(key, Number((e.target as HTMLInputElement).value))} /></label>`;
     const isTile = ["toggle_tile", "sensor_value", "binary_indicator", "scene_button", "page_button"].includes(w.type) || (w.type === "label" && w.props.background);
@@ -1114,8 +1123,11 @@ export class CydEditor extends LitElement {
       <h3>${t("appearance")}</h3>
       ${this.select(t("style_preset"), st.preset ?? "", this.presetOptions(t("style_project_default")), (v) => set("preset", v || null))}
       ${isTile ? html`<div class="row2">${color("bg", t("color_bg"))}${w.type === "toggle_tile" ? color("bg_on", t("color_bg_on")) : color("border", t("color_border"))}</div>` : nothing}
-      <div class="row2">${color("text", t("color_text"))}${color("icon_on", t("color_icon"))}</div>
+      <div class="row2">${color("text", t("color_text"))}${color("icon_on", t("color_icon"), alert)}</div>
       ${w.type === "toggle_tile" ? html`<div class="row2">${color("text_on", t("color_text_on"))}${color("icon", t("color_icon_off"))}</div>` : nothing}
+      ${binary ? html`<div class="row2">${color("icon", t("color_icon_off"), colors.on)}</div>` : nothing}
+      ${parts ? html`<div class="row2">${color("track", t("color_track"))}${color("fill", t("color_fill"))}</div>
+        ${knob ? html`<div class="row2">${color("knob", t("color_knob"))}</div>` : nothing}` : nothing}
       ${isTile ? html`${range("bg_opa", t("opacity"), 100)}${range("radius", t("corners"), 40)}${range("border_width", t("border_width"), 4)}` : nothing}
       <h4>${t("icon_and_font")}</h4>
       <div class="row2">

@@ -17,6 +17,9 @@ export interface TileStyle {
   icon_on: string;
   circle_bg: string;
   circle_bg_on: string;
+  track: string;
+  fill: string;
+  knob: string;
   bg_opa: number;
   bg_opa_on: number;
   border_width: number;
@@ -33,6 +36,8 @@ export const PRESETS = presetsData as unknown as PresetData;
 
 const COLOR_KEYS = ["bg", "bg_on", "border", "border_on", "text", "text_on", "sub", "sub_on",
   "icon", "icon_on", "circle_bg", "circle_bg_on"] as const;
+// slider/bar/arc colors: optional, fall back to the tile colors they used before (track, fill, knob)
+const PART_KEYS = { track: "circle_bg", fill: "icon_on", knob: "text" } as const;
 const NUMBER_KEYS = ["bg_opa", "bg_opa_on", "border_width", "radius"] as const;
 export const TEXT_SIZES = ["xs", "s", "m", "l", "xl"];
 export const ICON_SIZES = ["auto", "none", "s", "m", "l"];
@@ -54,6 +59,9 @@ export function resolveTileStyle(theme: Theme, style: Record<string, unknown> | 
   const colors = theme.colors ?? {};
   const out: Record<string, unknown> = { preset: name in data.presets ? name : "card" };
   for (const key of COLOR_KEYS) out[key] = color(merged[key], colors, data.role_defaults ?? {});
+  for (const [key, fallback] of Object.entries(PART_KEYS)) {
+    out[key] = merged[key] ? color(merged[key], colors, data.role_defaults ?? {}) : out[fallback];
+  }
   for (const key of NUMBER_KEYS) {
     let value = merged[key];
     if (value === "theme") value = (theme as unknown as Record<string, unknown>)[key] ?? 0;

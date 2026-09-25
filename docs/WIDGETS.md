@@ -16,7 +16,7 @@ Emitter und Renderer holen die Positionen der Innenelemente aus `widget_elements
 |---|---|---|---|
 | `toggle_tile` | light, switch, input_boolean, fan, cover | `button`, `checked` bei an/offen, `disabled` bei nicht verfügbar; Tippen → `homeassistant.toggle`; **lange drücken → Regler** (Licht: Helligkeit – bei Lampen mit Farbtemperatur/Farbe laut `supported_color_modes` zusätzlich Regler für Farbtemperatur 2000–6500 K und Farbton, abschaltbar mit `color_controls`; Rollladen: Position, Lüfter: Stufe) | Icon grün/grau; Zustandstext An/Aus/…, bei Licht/Rollladen/Lüfter wahlweise der Wert in % |
 | `sensor_value` | sensor, input_number, number | `obj` mit Wert (Nachkommastellen, Einheit); optional Tippen → Seite | `--` bei unbekannt/nicht verfügbar (NaN) |
-| `binary_indicator` | binary_sensor u. a. | `obj`, Icon rot (Warnung) bzw. Akzent wenn an, grün wenn aus | eigene Texte für an/aus |
+| `binary_indicator` | binary_sensor u. a. | `obj`, Icon rot (Warnung) bzw. Akzent wenn an, grün wenn aus; ab 0.13 per `icon_on`/`icon` im Widget-Stil änderbar | eigene Texte für an/aus |
 | `clock` | – | Uhrzeit (HH:mm, HH:mm:ss, h:mm a) + Datum (DE/EN), Zeit von HA | `--:--` bis zur Zeitsynchronisierung |
 | `label` | – | freier Text, Größe, Ausrichtung, optional Kachelhintergrund | – |
 | `scene_button` | scene, script, button, input_button, automation | `button`; Tippen → `homeassistant.action` mit `action` + `data` | – |
@@ -132,6 +132,7 @@ Theme-Standard (`default_tile_style`) < Projekt-Stil < Widget-Stil. Die Vorlagen
 | `text`, `text_on`, `sub`, `sub_on` | Farbe von Name und Zustand/Beschriftung aus/an |
 | `icon`, `icon_on` | Icon-Farbe aus/an |
 | `circle`, `circle_bg`, `circle_bg_on` | Icon im runden Hintergrund und dessen Farben |
+| `track`, `fill`, `knob` | Slider/Balken/Bogen: Spur, Füllung, Knopf (ab 0.13; ohne Wert wie bisher `circle_bg`, `icon_on`, `text`) |
 | `text_size` | `xs`, `s`, `m`, `l`, `xl` für den Namen (ab 0.10: auch `xs`/`xl`) |
 | `value_size` | Sensor-Wert: `auto` oder `xs` … `xl` (ab 0.10) |
 | `icon_size` | `auto`, `none` (Icon ausblenden), `s`, `m`, `l` (ab 0.10) |

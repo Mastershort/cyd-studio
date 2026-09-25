@@ -215,7 +215,7 @@ def sensor_value(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rec
 
 
 def binary_indicator(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect) -> list[dict[str, Any]]:
-    """Icon + text colored by an on/off state (on = alert red or accent, off = green)."""
+    """Icon + text colored by an on/off state (on = alert red or accent, off = green; widget icon colors win)."""
     wid = widget_id(page, widget)
     props = widget.get("props", {})
     entity = widget["entity"]
@@ -226,8 +226,11 @@ def binary_indicator(ctx: Context, page: dict[str, Any], widget: dict[str, Any],
     children, parts = _tile_children(ctx, widget, rect, style, wid, label_text, (text_on, text_off))
     parts.title = None  # the title color does not change with the state
     colors_map = ctx.theme["colors"]
+    own = widget.get("style") or {}
     alert = colors_map["error"] if props.get("alert_on", True) else colors_map["accent"]
-    colors = color_array(ctx, [(alert, colors_map["on"]), (style["text"], style["text"]),
+    icon_on = style["icon_on"] if own.get("icon_on") else alert
+    icon_off = style["icon"] if own.get("icon") else colors_map["on"]
+    colors = color_array(ctx, [(icon_on, icon_off), (style["text"], style["text"]),
                                (style["sub"], style["sub"]), (style["circle_bg"], style["circle_bg"])])  # fmt: skip
     _wire_state(ctx, entity, parts, 0, None, text_on, text_off, colors, wid)
     return [box(ctx, "obj", wid, rect, children, clickable=False, tile_style=style)]

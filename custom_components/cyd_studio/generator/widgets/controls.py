@@ -198,9 +198,9 @@ def slider(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rec
                 conf["y"] = el["y"]
             conf.update({
                 "width": el["width"], "height": el["height"], "min_value": vmin, "max_value": vmax, "value": vmin,
-                "bg_color": ctx.hex(style["circle_bg"]), "bg_opa": "COVER",
-                "indicator": {"bg_color": ctx.hex(style["icon_on"]), "bg_opa": "COVER"},
-                "knob": {"bg_color": ctx.hex(style["text"]), "bg_opa": "COVER", "pad_all": 3},
+                "bg_color": ctx.hex(style["track"]), "bg_opa": "COVER",
+                "indicator": {"bg_color": ctx.hex(style["fill"]), "bg_opa": "COVER"},
+                "knob": {"bg_color": ctx.hex(style["knob"]), "bg_opa": "COVER", "pad_all": 3},
                 "on_release": [_action(action, entity, ctx, **{key: Lambda(send_value)})],
             })  # fmt: skip
             if any(c and "label" in c and c["label"].get("id") == f"{wid}_value" for c in children):
@@ -240,8 +240,8 @@ def gauge(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: Rect
             conf.update({
                 "min_value": vmin, "max_value": vmax, "value": vmin, "start_angle": 135, "end_angle": 45,
                 "adjustable": False, "clickable": False,
-                "arc_width": el["size"], "arc_color": ctx.hex(style["circle_bg"]), "arc_rounded": True,
-                "indicator": {"arc_width": el["size"], "arc_color": ctx.hex(style["icon_on"]), "arc_rounded": True},
+                "arc_width": el["size"], "arc_color": ctx.hex(style["track"]), "arc_rounded": True,
+                "indicator": {"arc_width": el["size"], "arc_color": ctx.hex(style["fill"]), "arc_rounded": True},
                 "knob": {"bg_opa": "TRANSP", "pad_all": 0},
             })  # fmt: skip
             children.append({"arc": conf})

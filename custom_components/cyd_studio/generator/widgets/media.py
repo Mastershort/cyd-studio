@@ -67,9 +67,9 @@ def media_player(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rec
                 conf["y"] = el["y"]
             conf.update({
                 "width": el["width"], "height": el["height"], "min_value": 0, "max_value": 100, "value": 0,
-                "bg_color": ctx.hex(style["circle_bg"]), "bg_opa": "COVER",
-                "indicator": {"bg_color": ctx.hex(style["icon_on"]), "bg_opa": "COVER"},
-                "knob": {"bg_color": ctx.hex(style["text"]), "bg_opa": "COVER", "pad_all": 3},
+                "bg_color": ctx.hex(style["track"]), "bg_opa": "COVER",
+                "indicator": {"bg_color": ctx.hex(style["fill"]), "bg_opa": "COVER"},
+                "knob": {"bg_color": ctx.hex(style["knob"]), "bg_opa": "COVER", "pad_all": 3},
                 "on_release": [_action("media_player.volume_set", entity, ctx, volume_level=Lambda(
                     'char buf[8];\nsnprintf(buf, sizeof(buf), "%.2f", x / 100.0f);\nreturn std::string(buf);'))],
             })  # fmt: skip

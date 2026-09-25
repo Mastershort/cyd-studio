@@ -573,6 +573,18 @@
           "type": "string",
           "pattern": "^(#[0-9a-fA-F]{6}|[a-z_]+)$"
         },
+        "track": {
+          "type": "string",
+          "pattern": "^(#[0-9a-fA-F]{6}|[a-z_]+)$"
+        },
+        "fill": {
+          "type": "string",
+          "pattern": "^(#[0-9a-fA-F]{6}|[a-z_]+)$"
+        },
+        "knob": {
+          "type": "string",
+          "pattern": "^(#[0-9a-fA-F]{6}|[a-z_]+)$"
+        },
         "bg_opa": {
           "type": "integer",
           "minimum": 0,

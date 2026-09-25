@@ -151,9 +151,9 @@ def countdown(ctx: Context, page: dict[str, Any], widget: dict[str, Any], rect: 
                 "min_value": 0,
                 "max_value": 100,
                 "value": 0,
-                "bg_color": ctx.hex(style["circle_bg"]),
+                "bg_color": ctx.hex(style["track"]),
                 "bg_opa": "COVER",
-                "indicator": {"bg_color": ctx.hex(style["icon_on"]), "bg_opa": "COVER"},
+                "indicator": {"bg_color": ctx.hex(style["fill"]), "bg_opa": "COVER"},
             }
             children.append({"bar": conf})
             ctx.time_updates.append({"lvgl.bar.update": {"id": f"{wid}_bar", "value": Lambda(

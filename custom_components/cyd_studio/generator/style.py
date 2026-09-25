@@ -14,6 +14,8 @@ from typing import Any
 PRESETS_FILE = Path(__file__).parent.parent / "styles" / "tile_presets.json"
 COLOR_KEYS = ("bg", "bg_on", "border", "border_on", "text", "text_on", "sub", "sub_on",
               "icon", "icon_on", "circle_bg", "circle_bg_on")  # fmt: skip
+# slider/bar/arc colors: optional, fall back to the tile colors they used before (track, fill, knob)
+PART_KEYS = {"track": "circle_bg", "fill": "icon_on", "knob": "text"}
 NUMBER_KEYS = ("bg_opa", "bg_opa_on", "border_width", "radius")
 TEXT_SIZES = ("xs", "s", "m", "l", "xl")
 ICON_SIZES = ("auto", "none", "s", "m", "l")
@@ -49,6 +51,8 @@ def resolve_tile_style(
     out: dict[str, Any] = {"preset": name if name in data["presets"] else "card"}
     for key in COLOR_KEYS:
         out[key] = _color(merged[key], colors, role_defaults)
+    for key, fallback in PART_KEYS.items():
+        out[key] = _color(merged[key], colors, role_defaults) if merged.get(key) else out[fallback]
     for key in NUMBER_KEYS:
         value = merged[key]
         if value == "theme":

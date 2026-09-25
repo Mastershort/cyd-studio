@@ -425,7 +425,10 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       const on = isOn(st);
       const textOn = String(props.text_on || strings.on);
       const textOff = String(props.text_off || strings.off);
-      const iconColor = st === undefined ? style.icon : on ? (props.alert_on ?? true ? p.color("error") : p.color("accent")) : p.color("on");
+      const own = w.style ?? {};
+      const iconColor = st === undefined ? style.icon
+        : on ? (own.icon_on ? style.icon_on : p.color(props.alert_on ?? true ? "error" : "accent"))
+        : own.icon ? style.icon : p.color("on");
       for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
         if (el.role === "icon") draw(el, String(props.icon ?? ""), iconColor);
         else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
@@ -496,7 +499,7 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
         if (el.role === "title") draw(el, title, col(el.color));
         else if (el.role === "artist") draw(el, artist, col(el.color));
-        else if (el.role === "volume") p.slider(content, el, vol === null ? 0 : vol, style.circle_bg, style.icon_on, style.text);
+        else if (el.role === "volume") p.slider(content, el, vol === null ? 0 : vol, style.track, style.fill, style.knob);
         else p.smallButton(content, el, icons[el.role], style.circle_bg, style.icon_on, style.radius);
       }
       break;
@@ -526,7 +529,7 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
         if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
         else if (el.role === "value") draw(el, v === null ? "--" : `${Math.round(v)}${unit ? ` ${unit}` : ""}`, col(el.color));
-        else p.slider(content, el, v === null ? 0 : (v - vmin) / Math.max(vmax - vmin, 1), style.circle_bg, style.icon_on, style.text);
+        else p.slider(content, el, v === null ? 0 : (v - vmin) / Math.max(vmax - vmin, 1), style.track, style.fill, style.knob);
       }
       break;
     }
@@ -538,7 +541,7 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       const unit = String(props.unit ?? "");
       const decimals = Math.max(0, Math.min(Number(props.decimals ?? 0), 2));
       for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
-        if (el.kind === "arc") p.arc(content, el, Number.isNaN(n) ? 0 : (Math.round(Math.min(vmax, Math.max(vmin, n))) - vmin) / (vmax - vmin), style.circle_bg, style.icon_on);
+        if (el.kind === "arc") p.arc(content, el, Number.isNaN(n) ? 0 : (Math.round(Math.min(vmax, Math.max(vmin, n))) - vmin) / (vmax - vmin), style.track, style.fill);
         else if (el.role === "value") draw(el, Number.isNaN(n) ? "--" : `${n.toFixed(decimals)}${unit ? ` ${unit}` : ""}`, col(el.color));
         else if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
       }
@@ -605,7 +608,7 @@ function renderWidget(p: Painter, input: RenderInput, page: Page, w: Widget, rec
       for (const el of widgetElements(w.type, rect.w, rect.h, lp(), fs, ics)) {
         if (el.role === "label") draw(el, String(props.label || fallbackLabel(w.entity)), col(el.color));
         else if (el.role === "value") draw(el, text, col(el.color));
-        else if (el.kind === "bar") p.bar(content, el, remaining < 0 || total <= 0 ? 0 : (total - remaining) / total, style.circle_bg, style.icon_on);
+        else if (el.kind === "bar") p.bar(content, el, remaining < 0 || total <= 0 ? 0 : (total - remaining) / total, style.track, style.fill);
       }
       break;
     }

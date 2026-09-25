@@ -188,3 +188,20 @@ def test_action_builder(studio_data: dict[str, Any]) -> None:
     sensor = tiles["w_home_t"]
     assert [next(iter(a)) for a in sensor["on_short_click"]] == ["homeassistant.action", "delay", "lvgl.page.show"]
     assert "clickable" not in sensor
+
+
+def test_part_and_indicator_colors(studio_data: dict[str, Any]) -> None:
+    """Slider track/fill/knob and binary indicator icon colors come from the widget style when set."""
+    project = golden("controls")
+    slider = next(w for p in project["pages"] for w in p["widgets"] if w["type"] == "slider")
+    slider["style"] = {"track": "#112233", "fill": "#445566", "knob": "#778899"}
+    text = generate(project, studio_data).yaml
+    assert all(c in text for c in ("0x112233", "0x445566", "0x778899"))
+
+    project = golden("styled")
+    indicator = next(w for p in project["pages"] for w in p["widgets"] if w["type"] == "binary_indicator")
+    plain = generate(project, studio_data).yaml
+    assert "0xAB0000" not in plain and "0x00CD00" not in plain
+    indicator["style"] = {**(indicator.get("style") or {}), "icon_on": "#ab0000", "icon": "#00cd00"}
+    text = generate(project, studio_data).yaml
+    assert "0xAB0000" in text and "0x00CD00" in text
