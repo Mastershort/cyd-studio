@@ -19,5 +19,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # Brand assets are submitted to home-assistant/brands in phase 5
-          ignore: brands

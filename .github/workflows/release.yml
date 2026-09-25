@@ -1,0 +1,39 @@
+name: Release
+
+# Push a tag vX.Y.Z (matching manifest.json) -> GitHub release with the notes from CHANGELOG.md.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest=$(jq -r .version custom_components/cyd_studio/manifest.json)
+          package=$(jq -r .version frontend/package.json)
+          const=$(sed -n 's/^VERSION: Final = "\(.*\)"/\1/p' custom_components/cyd_studio/const.py)
+          echo "tag=$tag manifest=$manifest package=$package const=$const"
+          test "$tag" = "$manifest" && test "$tag" = "$package" && test "$tag" = "$const"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          awk -v v="$tag" '
+            /^## / { if (found) exit; if (index($0, "## " v " ") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "No CHANGELOG.md section for $tag"; exit 1; }
+          cat notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "CYD Studio $GITHUB_REF_NAME" --notes-file notes.md
