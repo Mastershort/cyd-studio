@@ -3,6 +3,11 @@
 Alle nennenswerten Änderungen an CYD Studio. Versionen folgen [SemVer](https://semver.org/lang/de/);
 jede Version ist ein GitHub-Release, das HACS als Update anbietet.
 
+## 1.0.2 – 2026-09-25
+
+- README: Hardware-Tabelle (AliExpress, Amazon, Netzteil, Gehäuse zum Selbstdrucken) in Deutsch
+  und Englisch, Affiliate-Hinweis, PayPal-Spenden; „Sponsor“-Knopf zeigt auf PayPal
+
 ## 1.0.1 – 2026-09-25
 
 - Projektliste: Links „Wo bekomme ich das Board?“ und „♥ CYD Studio unterstützen“ (abschaltbar über
