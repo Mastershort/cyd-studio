@@ -3,6 +3,11 @@
 Alle nennenswerten Änderungen an CYD Studio. Versionen folgen [SemVer](https://semver.org/lang/de/);
 jede Version ist ein GitHub-Release, das HACS als Update anbietet.
 
+## 1.0.3 – 2026-09-25
+
+- Vorlagen erzeugen bei englischer Oberfläche englische Seitennamen und Beschriftungen
+  („Home“, „Light 1“, „All off“ statt „Start“, „Licht 1“, „Alles aus“)
+
 ## 1.0.2 – 2026-09-25
 
 - README: Hardware-Tabelle (AliExpress, Amazon, Netzteil, Gehäuse zum Selbstdrucken) in Deutsch

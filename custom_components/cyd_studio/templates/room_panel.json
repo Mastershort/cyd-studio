@@ -14,13 +14,13 @@
     "grid": {"cols": 4, "rows": 3, "gap": 8, "padding": 8},
     "pages": [
       {
-        "id": "home", "name": "Start", "icon": "mdi:home", "parent": null, "in_navigation": true,
+        "id": "home", "name": "Start", "name_en": "Home", "icon": "mdi:home", "parent": null, "in_navigation": true,
         "widgets": [
           {"id": "clock", "type": "clock", "x": 0, "y": 0, "w": 2, "h": 1, "props": {"format": "HH:mm", "show_date": true, "size": "xl"}},
-          {"id": "temp", "type": "sensor_value", "x": 2, "y": 0, "w": 2, "h": 1, "entity": "{{temperature}}", "props": {"label": "Temperatur", "icon": "mdi:thermometer", "unit": "°C", "decimals": 1}},
-          {"id": "light1", "type": "toggle_tile", "x": 0, "y": 1, "w": 2, "h": 1, "entity": "{{light_1}}", "props": {"label": "Licht 1", "icon": "mdi:lightbulb"}},
-          {"id": "light2", "type": "toggle_tile", "x": 2, "y": 1, "w": 2, "h": 1, "entity": "{{light_2}}", "props": {"label": "Licht 2", "icon": "mdi:ceiling-light"}},
-          {"id": "scene", "type": "scene_button", "x": 0, "y": 2, "w": 4, "h": 1, "action": {"service": "scene.turn_on", "target": "{{scene}}"}, "props": {"label": "Alles aus", "icon": "mdi:power"}}
+          {"id": "temp", "type": "sensor_value", "x": 2, "y": 0, "w": 2, "h": 1, "entity": "{{temperature}}", "props": {"label": "Temperatur", "label_en": "Temperature", "icon": "mdi:thermometer", "unit": "°C", "decimals": 1}},
+          {"id": "light1", "type": "toggle_tile", "x": 0, "y": 1, "w": 2, "h": 1, "entity": "{{light_1}}", "props": {"label": "Licht 1", "label_en": "Light 1", "icon": "mdi:lightbulb"}},
+          {"id": "light2", "type": "toggle_tile", "x": 2, "y": 1, "w": 2, "h": 1, "entity": "{{light_2}}", "props": {"label": "Licht 2", "label_en": "Light 2", "icon": "mdi:ceiling-light"}},
+          {"id": "scene", "type": "scene_button", "x": 0, "y": 2, "w": 4, "h": 1, "action": {"service": "scene.turn_on", "target": "{{scene}}"}, "props": {"label": "Alles aus", "label_en": "All off", "icon": "mdi:power"}}
         ]
       }
     ]

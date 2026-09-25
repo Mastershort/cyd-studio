@@ -38,4 +38,16 @@ describe("model helpers", () => {
     expect(out.navigation?.home_page).toBe("home");
     expect(normalize(applyTemplate(tpl, {})).pages[0].widgets[0].entity).toBeNull();
   });
+
+  it("localizes template names and labels", () => {
+    const tpl = { pages: [{ id: "home", name: "Start", name_en: "Home", widgets: [
+      { id: "a", type: "toggle_tile", x: 0, y: 0, w: 1, h: 1, entity: null, props: { label: "Licht", label_en: "Light" } }] }] };
+    const en = applyTemplate(tpl as never, {}, "en");
+    expect(en.pages![0].name).toBe("Home");
+    expect(en.pages![0].widgets[0].props).toEqual({ label: "Light" });
+    const de = applyTemplate(tpl as never, {}, "de");
+    expect(de.pages![0].name).toBe("Start");
+    expect("name_en" in de.pages![0]).toBe(false);
+    expect(de.pages![0].widgets[0].props).toEqual({ label: "Licht" });
+  });
 });

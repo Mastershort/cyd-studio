@@ -138,11 +138,19 @@ export function rootOf(project: Project, page: Page): Page {
 }
 
 /** Apply a template: replace {{placeholder}} strings with chosen entities. */
-export function applyTemplate(tpl: Partial<Project>, mapping: Record<string, string>): Partial<Project> {
+export function applyTemplate(tpl: Partial<Project>, mapping: Record<string, string>, language: "de" | "en" = "de"): Partial<Project> {
   const text = JSON.stringify(tpl).replace(/\{\{(\w+)\}\}/g, (_, key: string) => mapping[key] ?? "");
   const out = JSON.parse(text) as Partial<Project>;
+  // templates carry English page names / labels as name_en / label_en
+  const localize = (obj: Record<string, unknown>, key: string) => {
+    const en = obj[`${key}_en`];
+    if (language === "en" && typeof en === "string") obj[key] = en;
+    delete obj[`${key}_en`];
+  };
   for (const page of out.pages ?? []) {
+    localize(page as unknown as Record<string, unknown>, "name");
     for (const w of page.widgets) {
+      localize(w.props, "label");
       if (w.entity === "") w.entity = null;
       if (w.action && w.action.target === "") w.action.target = null;
     }

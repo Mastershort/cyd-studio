@@ -7,7 +7,7 @@
   "placeholders": [],
   "project": {
     "pages": [
-      {"id": "home", "name": "Start", "icon": "mdi:home", "parent": null, "in_navigation": true, "widgets": []}
+      {"id": "home", "name": "Start", "name_en": "Home", "icon": "mdi:home", "parent": null, "in_navigation": true, "widgets": []}
     ]
   }
 }

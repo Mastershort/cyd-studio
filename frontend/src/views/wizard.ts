@@ -85,7 +85,7 @@ export class CydWizard extends LitElement {
     this._busy = true;
     try {
       const tpl = this.template?.project ?? { pages: [] };
-      const filled = applyTemplate(tpl, this._mapping);
+      const filled = applyTemplate(tpl, this._mapping, lang());
       const project: Project = normalize({
         ...filled,
         name: this._name || "CYD",

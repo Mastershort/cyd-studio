@@ -22,7 +22,7 @@ let ri = class {
     return this.cssText;
   }
 };
-const Le = (o) => new ri(typeof o == "string" ? o : o + "", void 0, xt), be = (o, ...e) => {
+const Le = (o) => new ri(typeof o == "string" ? o : o + "", void 0, xt), Ae = (o, ...e) => {
   const t = o.length === 1 ? o[0] : e.reduce((i, s, r) => i + ((n) => {
     if (n._$cssResult$ === !0) return n.cssText;
     if (typeof n == "number") return n;
@@ -263,8 +263,8 @@ ke.elementStyles = [], ke.shadowRootOptions = { mode: "open" }, ke[Ue("elementPr
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const Et = globalThis, Nt = (o) => o, $e = Et.trustedTypes, Yt = $e ? $e.createPolicy("lit-html", { createHTML: (o) => o }) : void 0, ai = "$lit$", fe = `lit$${Math.random().toFixed(9).slice(2)}$`, li = "?" + fe, Ui = `<${li}>`, Me = document, Ze = () => Me.createComment(""), Re = (o) => o === null || typeof o != "object" && typeof o != "function", Mt = Array.isArray, Li = (o) => Mt(o) || typeof o?.[Symbol.iterator] == "function", ot = `[ 	
-\f\r]`, Ye = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Ft = /-->/g, Ut = />/g, Ae = RegExp(`>|${ot}(?:([^\\s"'>=/]+)(${ot}*=${ot}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), Lt = /'/g, Zt = /"/g, ci = /^(?:script|style|textarea|title)$/i, Zi = (o) => (e, ...t) => ({ _$litType$: o, strings: e, values: t }), y = Zi(1), Be = Symbol.for("lit-noChange"), Y = Symbol.for("lit-nothing"), Rt = /* @__PURE__ */ new WeakMap(), we = Me.createTreeWalker(Me, 129);
+\f\r]`, Ye = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Ft = /-->/g, Ut = />/g, ye = RegExp(`>|${ot}(?:([^\\s"'>=/]+)(${ot}*=${ot}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g"), Lt = /'/g, Zt = /"/g, ci = /^(?:script|style|textarea|title)$/i, Zi = (o) => (e, ...t) => ({ _$litType$: o, strings: e, values: t }), y = Zi(1), Be = Symbol.for("lit-noChange"), Y = Symbol.for("lit-nothing"), Rt = /* @__PURE__ */ new WeakMap(), xe = Me.createTreeWalker(Me, 129);
 function di(o, e) {
   if (!Mt(o) || !o.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Yt !== void 0 ? Yt.createHTML(e) : e;
@@ -275,8 +275,8 @@ const Ri = (o, e) => {
   for (let l = 0; l < t; l++) {
     const a = o[l];
     let c, h, b = -1, k = 0;
-    for (; k < a.length && (n.lastIndex = k, h = n.exec(a), h !== null); ) k = n.lastIndex, n === Ye ? h[1] === "!--" ? n = Ft : h[1] !== void 0 ? n = Ut : h[2] !== void 0 ? (ci.test(h[2]) && (s = RegExp("</" + h[2], "g")), n = Ae) : h[3] !== void 0 && (n = Ae) : n === Ae ? h[0] === ">" ? (n = s ?? Ye, b = -1) : h[1] === void 0 ? b = -2 : (b = n.lastIndex - h[2].length, c = h[1], n = h[3] === void 0 ? Ae : h[3] === '"' ? Zt : Lt) : n === Zt || n === Lt ? n = Ae : n === Ft || n === Ut ? n = Ye : (n = Ae, s = void 0);
-    const A = n === Ae && o[l + 1].startsWith("/>") ? " " : "";
+    for (; k < a.length && (n.lastIndex = k, h = n.exec(a), h !== null); ) k = n.lastIndex, n === Ye ? h[1] === "!--" ? n = Ft : h[1] !== void 0 ? n = Ut : h[2] !== void 0 ? (ci.test(h[2]) && (s = RegExp("</" + h[2], "g")), n = ye) : h[3] !== void 0 && (n = ye) : n === ye ? h[0] === ">" ? (n = s ?? Ye, b = -1) : h[1] === void 0 ? b = -2 : (b = n.lastIndex - h[2].length, c = h[1], n = h[3] === void 0 ? ye : h[3] === '"' ? Zt : Lt) : n === Zt || n === Lt ? n = ye : n === Ft || n === Ut ? n = Ye : (n = ye, s = void 0);
+    const A = n === ye && o[l + 1].startsWith("/>") ? " " : "";
     r += n === Ye ? a + Ui : b >= 0 ? (i.push(c), a.slice(0, b) + ai + a.slice(b) + fe + A) : a + fe + (b === -2 ? l : A);
   }
   return [di(o, r + (o[t] || "<?>") + (e === 2 ? "</svg>" : e === 3 ? "</math>" : "")), i];
@@ -287,11 +287,11 @@ class Ge {
     this.parts = [];
     let r = 0, n = 0;
     const l = e.length - 1, a = this.parts, [c, h] = Ri(e, t);
-    if (this.el = Ge.createElement(c, i), we.currentNode = this.el.content, t === 2 || t === 3) {
+    if (this.el = Ge.createElement(c, i), xe.currentNode = this.el.content, t === 2 || t === 3) {
       const b = this.el.content.firstChild;
       b.replaceWith(...b.childNodes);
     }
-    for (; (s = we.nextNode()) !== null && a.length < l; ) {
+    for (; (s = xe.nextNode()) !== null && a.length < l; ) {
       if (s.nodeType === 1) {
         if (s.hasAttributes()) for (const b of s.getAttributeNames()) if (b.endsWith(ai)) {
           const k = h[n++], A = s.getAttribute(b).split(fe), x = /([.?@])?(.*)/.exec(k);
@@ -301,7 +301,7 @@ class Ge {
           const b = s.textContent.split(fe), k = b.length - 1;
           if (k > 0) {
             s.textContent = $e ? $e.emptyScript : "";
-            for (let A = 0; A < k; A++) s.append(b[A], Ze()), we.nextNode(), a.push({ type: 2, index: ++r });
+            for (let A = 0; A < k; A++) s.append(b[A], Ze()), xe.nextNode(), a.push({ type: 2, index: ++r });
             s.append(b[k], Ze());
           }
         }
@@ -336,16 +336,16 @@ class Gi {
   }
   u(e) {
     const { el: { content: t }, parts: i } = this._$AD, s = (e?.creationScope ?? Me).importNode(t, !0);
-    we.currentNode = s;
-    let r = we.nextNode(), n = 0, l = 0, a = i[0];
+    xe.currentNode = s;
+    let r = xe.nextNode(), n = 0, l = 0, a = i[0];
     for (; a !== void 0; ) {
       if (n === a.index) {
         let c;
         a.type === 2 ? c = new He(r, r.nextSibling, this, e) : a.type === 1 ? c = new a.ctor(r, a.name, a.strings, this, e) : a.type === 6 && (c = new Pi(r, this, e)), this._$AV.push(c), a = i[++l];
       }
-      n !== a?.index && (r = we.nextNode(), n++);
+      n !== a?.index && (r = xe.nextNode(), n++);
     }
-    return we.currentNode = Me, s;
+    return xe.currentNode = Me, s;
   }
   p(e) {
     let t = 0;
@@ -1145,7 +1145,7 @@ let ui = Ct, et = "de";
 function _i(o) {
   et = o.startsWith("de") ? "de" : "en", ui = et === "de" ? Ct : hi;
 }
-function Ee() {
+function ve() {
   return et;
 }
 function d(o, e = {}) {
@@ -1195,19 +1195,19 @@ function os(o, e = !1) {
 function as(o) {
   return `${o}px "${De}"`;
 }
-let ve = null, Ht = null;
+let be = null, Ht = null;
 function ls(o) {
-  return ve ? Promise.resolve(ve) : (Ht ??= fetch(o).then((e) => e.json()).then((e) => (ve = new Map(Object.entries(e).map(([t, i]) => [t, parseInt(i, 16)])), ve)), Ht);
+  return be ? Promise.resolve(be) : (Ht ??= fetch(o).then((e) => e.json()).then((e) => (be = new Map(Object.entries(e).map(([t, i]) => [t, parseInt(i, 16)])), be)), Ht);
 }
 function je(o) {
-  if (!o || !o.startsWith("mdi:") || !ve) return null;
-  const e = ve.get(o.slice(4));
+  if (!o || !o.startsWith("mdi:") || !be) return null;
+  const e = be.get(o.slice(4));
   return e === void 0 ? null : String.fromCodePoint(e);
 }
 function cs(o, e = 60) {
-  if (!ve) return [];
+  if (!be) return [];
   const t = o.toLowerCase().replace(/^mdi:/, "").trim(), i = [], s = [];
-  for (const r of ve.keys())
+  for (const r of be.keys())
     if (!t || r.startsWith(t) ? i.push(r) : r.includes(t) && s.push(r), i.length >= e) break;
   return [...i, ...s].slice(0, e).map((r) => `mdi:${r}`);
 }
@@ -1316,12 +1316,17 @@ function mi(o, e) {
     i.add(s.id), s = t.get(s.parent);
   return s;
 }
-function gs(o, e) {
-  const t = JSON.stringify(o).replace(/\{\{(\w+)\}\}/g, (s, r) => e[r] ?? ""), i = JSON.parse(t);
-  for (const s of i.pages ?? [])
-    for (const r of s.widgets)
-      r.entity === "" && (r.entity = null), r.action && r.action.target === "" && (r.action.target = null);
-  return i;
+function gs(o, e, t = "de") {
+  const i = JSON.stringify(o).replace(/\{\{(\w+)\}\}/g, (n, l) => e[l] ?? ""), s = JSON.parse(i), r = (n, l) => {
+    const a = n[`${l}_en`];
+    t === "en" && typeof a == "string" && (n[l] = a), delete n[`${l}_en`];
+  };
+  for (const n of s.pages ?? []) {
+    r(n, "name");
+    for (const l of n.widgets)
+      r(l.props, "label"), l.entity === "" && (l.entity = null), l.action && l.action.target === "" && (l.action.target = null);
+  }
+  return s;
 }
 const ms = 40, fs = 32, qt = 48, Pt = 6, re = 6, vs = 5, Pe = 40, me = 12, Ke = 44, lt = 6, P = 6, Kt = 968, bs = 1219, As = 875, Ne = { xs: 12, s: 14, m: 16, l: 20, xl: 28, xxl: 40 }, Ie = { s: 20, m: 28, l: 40 }, K = (o, e) => Math.floor(o / e);
 function X(o) {
@@ -1580,13 +1585,13 @@ function oe(o, e, t, i, s, r) {
   }, [c, h] = a[i] ?? [0, 0];
   return { x: o.x + c + s, y: o.y + h + r };
 }
-const ks = 240, Ss = 150, We = 16, xe = 18;
+const ks = 240, Ss = 150, We = 16, Ee = 18;
 function zs(o, e, t = {}, i = {}) {
   const s = { ...Ne, ...t }, r = { ...Ie, ...i }, n = Math.min(o - 2 * We, ks), l = Math.min(e - 2 * We, Ss), a = { x: K(o - n, 2), y: K(e - l, 2), w: n, h: l }, c = n - 2 * re, h = [
     L("text", "title", "TOP_LEFT", 0, 0, s.m, "text", Math.max(c - r.s - P, 1)),
     L("icon", "close", "TOP_RIGHT", 0, 0, r.s, "text_muted"),
-    L("text", "value", "CENTER", 0, -K(xe, 2), s.xl, "text", c, "center"),
-    { ...L("slider", "slider", "BOTTOM_MID", 0, -K(xe, 2), 0, "accent", c - 2 * xe), height: xe }
+    L("text", "value", "CENTER", 0, -K(Ee, 2), s.xl, "text", c, "center"),
+    { ...L("slider", "slider", "BOTTOM_MID", 0, -K(Ee, 2), 0, "accent", c - 2 * Ee), height: Ee }
   ];
   return { panel: a, elements: h };
 }
@@ -1601,13 +1606,13 @@ function Ds(o, e, t = {}, i = {}) {
 }
 const js = 260, Ws = 170, Xt = 56, ft = [["brightness", "mdi:brightness-6"], ["ct", "mdi:thermometer"], ["hue", "mdi:palette"]];
 function Ns(o, e, t = {}, i = {}) {
-  const s = { ...Ne, ...t }, r = { ...Ie, ...i }, n = Math.min(o - 2 * We, js), l = Math.min(e - 2 * We, Ws), a = { x: K(o - n, 2), y: K(e - l, 2), w: n, h: l }, c = n - 2 * re, h = l - 2 * re, b = Math.max(X(s.m), r.s), k = Math.max(K(h - b - P, ft.length), xe), A = r.s + P, x = Math.max(c - A - Xt - P, 1), E = [
+  const s = { ...Ne, ...t }, r = { ...Ie, ...i }, n = Math.min(o - 2 * We, js), l = Math.min(e - 2 * We, Ws), a = { x: K(o - n, 2), y: K(e - l, 2), w: n, h: l }, c = n - 2 * re, h = l - 2 * re, b = Math.max(X(s.m), r.s), k = Math.max(K(h - b - P, ft.length), Ee), A = r.s + P, x = Math.max(c - A - Xt - P, 1), E = [
     L("text", "title", "TOP_LEFT", 0, 0, s.m, "text", Math.max(c - r.s - P, 1)),
     L("icon", "close", "TOP_RIGHT", 0, 0, r.s, "text_muted")
   ];
   return ft.forEach(([F], B) => {
     const Z = b + P + B * k;
-    E.push(L("icon", `${F}_icon`, "TOP_LEFT", 0, Z + K(k - r.s, 2), r.s, "text_muted")), E.push({ ...L("slider", F, "TOP_LEFT", A, Z + K(k - xe, 2), 0, "accent", x), height: xe }), E.push(L("text", `${F}_value`, "TOP_RIGHT", 0, Z + K(k - X(s.s), 2), s.s, "text", Xt, "right"));
+    E.push(L("icon", `${F}_icon`, "TOP_LEFT", 0, Z + K(k - r.s, 2), r.s, "text_muted")), E.push({ ...L("slider", F, "TOP_LEFT", A, Z + K(k - Ee, 2), 0, "accent", x), height: Ee }), E.push(L("text", `${F}_value`, "TOP_RIGHT", 0, Z + K(k - X(s.s), 2), s.s, "text", Xt, "right"));
   }), { panel: a, elements: E };
 }
 const Ys = "Tile style presets. Color values are theme color roles or #rrggbb. Numbers: opacity 0-100, px.", Fs = { card: { name: "Karte", name_en: "Card", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "border", border_on: "accent", border_width: "theme", radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, flat: { name: "Flach", name_en: "Flat", bg: "tile", bg_opa: 100, bg_on: "tile_on", bg_opa_on: 100, border: "tile", border_on: "tile_on", border_width: 0, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, outline: { name: "Umriss", name_en: "Outline", bg: "background", bg_opa: 0, bg_on: "accent", bg_opa_on: 20, border: "border", border_on: "accent", border_width: 2, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text", icon: "off", icon_on: "accent", circle: !1, circle_bg: "tile", circle_bg_on: "accent", text_size: "s" }, glass: { name: "Glas (für Hintergrundbilder)", name_en: "Glass (for background images)", bg: "tile", bg_opa: 55, bg_on: "tile_on", bg_opa_on: 80, border: "border", border_on: "accent", border_width: 1, radius: "theme", text: "text", text_on: "text", sub: "text_muted", sub_on: "text_muted", icon: "off", icon_on: "on", circle: !1, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" }, solid: { name: "Kräftig (an = hell)", name_en: "Bold (on = light)", bg: "tile", bg_opa: 100, bg_on: "on_bg", bg_opa_on: 100, border: "tile", border_on: "on_bg", border_width: 0, radius: "theme", text: "text", text_on: "on_text", sub: "text_muted", sub_on: "on_sub", icon: "off", icon_on: "#ffffff", circle: !0, circle_bg: "tile_on", circle_bg_on: "accent", text_size: "s" } }, Us = { on_bg: "#f2f2f2", on_text: "#111111", on_sub: "#5f6b76" }, Ls = {
@@ -3018,21 +3023,21 @@ function ei(o, e, t, i, s) {
     }
     case "cover_control": {
       w();
-      const p = ye(k, "current_position"), m = p !== null ? `${Math.round(p)} %` : ht(A, a), g = { up: "mdi:arrow-up", stop: "mdi:stop", down: "mdi:arrow-down" };
+      const p = we(k, "current_position"), m = p !== null ? `${Math.round(p)} %` : ht(A, a), g = { up: "mdi:arrow-up", stop: "mdi:stop", down: "mdi:arrow-down" };
       for (const f of _(i.type, s.w, s.h, Z(), c, h))
         f.role === "label" ? C(f, String(l.label || se(i.entity)), I(f.color)) : f.role === "state" ? C(f, m, I(f.color)) : o.smallButton(b, f, g[f.role], B.circle_bg, B.icon_on, B.radius);
       break;
     }
     case "media_player": {
       w();
-      const p = r.settings?.language === "en" ? "en" : "de", m = Je.media, g = (T) => typeof T == "string" && T !== "" && T !== "unknown" && T !== "unavailable" ? T : null, f = g(k?.attributes.media_title) ?? String(l.label || se(i.entity)), v = g(k?.attributes.media_artist) ?? (m[A ?? ""] ?? m.unavailable)[p], u = ye(k, "volume_level"), j = { prev: "mdi:skip-previous", play: A === "playing" ? "mdi:pause" : "mdi:play", next: "mdi:skip-next" };
+      const p = r.settings?.language === "en" ? "en" : "de", m = Je.media, g = (T) => typeof T == "string" && T !== "" && T !== "unknown" && T !== "unavailable" ? T : null, f = g(k?.attributes.media_title) ?? String(l.label || se(i.entity)), v = g(k?.attributes.media_artist) ?? (m[A ?? ""] ?? m.unavailable)[p], u = we(k, "volume_level"), j = { prev: "mdi:skip-previous", play: A === "playing" ? "mdi:pause" : "mdi:play", next: "mdi:skip-next" };
       for (const T of _(i.type, s.w, s.h, Z(), c, h))
         T.role === "title" ? C(T, f, I(T.color)) : T.role === "artist" ? C(T, v, I(T.color)) : T.role === "volume" ? o.slider(b, T, u === null ? 0 : u, B.track, B.fill, B.knob) : o.smallButton(b, T, j[T.role], B.circle_bg, B.icon_on, B.radius);
       break;
     }
     case "climate": {
       w();
-      const p = r.settings?.language === "en" ? "en" : "de", m = Je.climate, g = A === "unavailable" ? a.unavailable : A && m[A] ? m[A][p] : a.unknown, f = ye(k, "current_temperature"), v = ye(k, "temperature");
+      const p = r.settings?.language === "en" ? "en" : "de", m = Je.climate, g = A === "unavailable" ? a.unavailable : A && m[A] ? m[A][p] : a.unknown, f = we(k, "current_temperature"), v = we(k, "temperature");
       for (const u of _(i.type, s.w, s.h, Z(), c, h))
         u.role === "label" ? C(u, String(l.label || se(i.entity)), I(u.color)) : u.role === "state" ? C(u, f !== null ? `${g} · ${f.toFixed(1)}°` : g, I(u.color)) : u.role === "value" ? C(u, v !== null ? `${v.toFixed(1)}°` : "--", I(u.color)) : o.smallButton(b, u, u.role === "plus" ? "mdi:plus" : "mdi:minus", B.circle_bg, B.icon_on, B.radius);
       break;
@@ -3053,7 +3058,7 @@ function ei(o, e, t, i, s) {
     }
     case "weather": {
       w();
-      const p = r.settings?.language === "en" ? "en" : "de", m = Je.weather, g = A && m[A] || Je.weather_unknown, f = ye(k, "temperature"), v = l.show_humidity ?? !0 ? ye(k, "humidity") : null, u = v !== null ? `${g[p]} · ${Math.round(v)} %` : g[p];
+      const p = r.settings?.language === "en" ? "en" : "de", m = Je.weather, g = A && m[A] || Je.weather_unknown, f = we(k, "temperature"), v = l.show_humidity ?? !0 ? we(k, "humidity") : null, u = v !== null ? `${g[p]} · ${Math.round(v)} %` : g[p];
       for (const j of _(i.type, s.w, s.h, Z(), c, h))
         j.role === "icon" ? C(j, g.icon, I(j.color)) : j.role === "value" ? C(j, f !== null ? `${f.toFixed(0)}°` : "--", I(j.color)) : j.role === "state" && C(j, u, I(j.color));
       break;
@@ -3264,7 +3269,7 @@ function gn(o, e, t, i, s, r) {
   }
 }
 const Je = $s;
-function ye(o, e) {
+function we(o, e) {
   const t = o?.attributes[e];
   if (t == null || t === "") return null;
   const i = Number(t);
@@ -3282,7 +3287,7 @@ function mn(o, e) {
     cover: ["current_position", 2],
     fan: ["percentage", 2],
     media_player: ["volume_level", 3]
-  }, [s, r] = i[t] ?? ["", 2], n = ye(e, s);
+  }, [s, r] = i[t] ?? ["", 2], n = we(e, s);
   return n === null || (r === 1 || r === 3) && e.state === "off" ? 0 : r === 1 ? n * 100 / 255 : r === 3 ? n * 100 : n;
 }
 function fn(o) {
@@ -3388,7 +3393,7 @@ class xn extends ae {
   constructor() {
     super(), this.compact = !1, this.collapsed = !1, this.status = null, this._busy = !1, this._done = !1, this._copied = !1;
   }
-  static styles = be`
+  static styles = Ae`
     :host { display: block; font-size: 13px; }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .warn { color: var(--warning-color, #f59e0b); }
@@ -3480,7 +3485,7 @@ class En extends ae {
   constructor() {
     super(), this._projects = null, this._thumbs = {}, this._devices = {}, this._design = null, this._undo = null;
   }
-  static styles = be`
+  static styles = Ae`
     :host { display: block; padding: 24px; max-width: 1200px; margin: 0 auto; color: var(--primary-text-color); }
     .head { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
     .head h1 { flex: 1; margin: 0; font-size: 24px; font-weight: 500; }
@@ -3701,7 +3706,7 @@ class En extends ae {
   }
 }
 customElements.define("cyd-project-list", En);
-const Ci = be`
+const Ci = Ae`
   :host { display: block; position: relative; }
   input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: 1px solid var(--divider-color, #444);
     background: var(--card-background-color, #1c1c1c); color: var(--primary-text-color, #eee); font: inherit; }
@@ -3820,7 +3825,7 @@ class Cn extends ae {
   constructor() {
     super(), this._step = 0, this._board = "", this._variant = "", this._orientation = "landscape", this._template = "room_panel", this._mapping = {}, this._name = "", this._device = "", this._busy = !1;
   }
-  static styles = be`
+  static styles = Ae`
     :host { display: block; padding: 24px; max-width: 820px; margin: 0 auto; color: var(--primary-text-color); }
     h1 { font-size: 22px; font-weight: 500; }
     .steps { display: flex; gap: 8px; margin-bottom: 20px; font-size: 13px; color: var(--secondary-text-color); }
@@ -3848,7 +3853,7 @@ class Cn extends ae {
   async create() {
     this._busy = !0;
     try {
-      const e = this.template?.project ?? { pages: [] }, t = gs(e, this._mapping), i = Tt({
+      const e = this.template?.project ?? { pages: [] }, t = gs(e, this._mapping, ve()), i = Tt({
         ...t,
         name: this._name || "CYD",
         device_name: this._device || Se(this._name || "cyd"),
@@ -3856,9 +3861,9 @@ class Cn extends ae {
         board_variant: this._variant || null,
         orientation: this._orientation,
         theme: this.info?.default_theme ?? "mastershort_dark",
-        settings: { language: Ee() }
+        settings: { language: ve() }
       });
-      i.pages.length || (i.pages = [{ id: "home", name: Ee() === "de" ? "Start" : "Home", icon: "mdi:home", parent: null, in_navigation: !0, widgets: [] }]), i.navigation.home_page = i.pages[0].id;
+      i.pages.length || (i.pages = [{ id: "home", name: ve() === "de" ? "Start" : "Home", icon: "mdi:home", parent: null, in_navigation: !0, widgets: [] }]), i.navigation.home_page = i.pages[0].id;
       const s = await this.api.save(i);
       this.dispatchEvent(new CustomEvent("open-project", { detail: { id: s.id }, bubbles: !0, composed: !0 }));
     } finally {
@@ -3884,7 +3889,7 @@ class Cn extends ae {
       this._board = t.id, this._variant = "";
     }}>
         <div class="t">${ne(t, "name")}</div>
-        <div class="d">${Ee() === "de" ? t.notes_de : t.notes_en}</div>
+        <div class="d">${ve() === "de" ? t.notes_de : t.notes_en}</div>
         ${this.info?.hardware_hints ? y`<div class="d"><a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${d("where_to_buy")}</a>
           · <a href=${this.info.hardware_info_url} target="_blank" rel="noopener">${d("matching_case")}</a></div>` : Y}
       </div>`)}</div>
@@ -3956,7 +3961,7 @@ class Tn extends ae {
   constructor() {
     super(), this.mode = "edit", this.selected = [], this.scale = 2, this.night = !1, this.now = /* @__PURE__ */ new Date(), this.overlay = null, this.images = {}, this.message = null, this._drag = null, this._dropCell = null, this._pressed = null;
   }
-  static styles = be`
+  static styles = Ae`
     :host { display: inline-block; position: relative; }
     .frame { position: relative; line-height: 0; box-shadow: 0 0 0 6px #111, 0 0 0 7px #333, 0 8px 24px rgba(0,0,0,.4); border-radius: 2px; }
     canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; touch-action: none; }
@@ -4142,7 +4147,7 @@ class Sn extends ae {
   constructor() {
     super(), this._result = null, this._copied = !1, this._error = null, this._dir = null, this._save = null, this._saving = !1, this._secretsDone = !1, this._esphomeUrl = null;
   }
-  static styles = be`
+  static styles = Ae`
     .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 100; display: flex; align-items: center; justify-content: center; }
     .dialog { background: var(--card-background-color, #1c1c1c); color: var(--primary-text-color); width: min(1000px, 96vw); max-height: 92vh;
       display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
@@ -4252,7 +4257,7 @@ class Sn extends ae {
     this.dispatchEvent(new CustomEvent("closed", { bubbles: !0, composed: !0 }));
   }
   render() {
-    const e = this._result, t = (n) => Ee() === "de" ? n.message : n.message_en, i = e?.issues.filter((n) => n.level === "error") ?? [], s = e?.issues.filter((n) => n.level === "warning") ?? [], r = e?.memory;
+    const e = this._result, t = (n) => ve() === "de" ? n.message : n.message_en, i = e?.issues.filter((n) => n.level === "error") ?? [], s = e?.issues.filter((n) => n.level === "warning") ?? [], r = e?.memory;
     return y`<div class="backdrop" @click=${(n) => n.target === n.currentTarget && this.close()}>
       <div class="dialog" role="dialog" aria-modal="true">
         <header>
@@ -4478,7 +4483,7 @@ class Dn extends ae {
   // -- pages --------------------------------------------------------------------
   addPage(e = null) {
     if (!this._project) return;
-    const t = e ? `${d("add_subpage")} ${this._project.pages.length + 1}` : `${Ee() === "de" ? "Seite" : "Page"} ${this._project.pages.length + 1}`, i = us(t, this._project.pages.map((s) => s.id));
+    const t = e ? `${d("add_subpage")} ${this._project.pages.length + 1}` : `${ve() === "de" ? "Seite" : "Page"} ${this._project.pages.length + 1}`, i = us(t, this._project.pages.map((s) => s.id));
     this.mutate((s) => s.pages.push({
       id: i,
       name: t,
@@ -4659,7 +4664,7 @@ class Dn extends ae {
     t.navigation?.wrap_around && (n = (n + s.length) % s.length), n >= 0 && n < s.length && (this._pageId = s[n].id);
   }
   // -- rendering ---------------------------------------------------------------
-  static styles = be`
+  static styles = Ae`
     :host { display: flex; flex-direction: column; height: 100%; color: var(--primary-text-color); }
     .toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); flex-wrap: wrap; }
     .toolbar .title { font-size: 18px; font-weight: 500; margin-right: auto; }
@@ -4828,7 +4833,7 @@ class Dn extends ae {
         .deviceName=${e.device_name}></cyd-device-status>` : Y}
       <div class="issues">
         ${this._issues.length ? this._issues.map((l) => y`<div class="issue ${l.level}" @click=${() => this.focusIssue(l)}>
-          ${l.level === "error" ? "⛔" : "⚠"} ${Ee() === "de" ? l.message : l.message_en}</div>`) : y`<span class="ok">✓ ${d("no_issues")}</span>`}
+          ${l.level === "error" ? "⛔" : "⚠"} ${ve() === "de" ? l.message : l.message_en}</div>`) : y`<span class="ok">✓ ${d("no_issues")}</span>`}
       </div>
       ${this._showExport ? y`<cyd-export-dialog .api=${this.api} .project=${e} .info=${this.info}
         @closed=${() => this._showExport = !1}></cyd-export-dialog>` : Y}`;
@@ -4917,7 +4922,7 @@ class Dn extends ae {
   }
   renderWidgetProps(e) {
     const t = this.widgetDefs[e.type], i = this._project, s = [["", `– ${d("none")} –`], ...i.pages.map((a) => [a.id, a.name])], r = (a) => this.editWidget(e.id, a), n = (a) => {
-      const c = Ee() === "de" ? a.label : a.label_en, h = e.props[a.key] ?? a.default, b = (k) => r((A) => {
+      const c = ve() === "de" ? a.label : a.label_en, h = e.props[a.key] ?? a.default, b = (k) => r((A) => {
         A.props[a.key] = k;
       });
       switch (a.type) {
@@ -5363,7 +5368,7 @@ class jn extends ae {
   constructor() {
     super(), this._ready = !1, this._error = null, this._view = { name: "list" };
   }
-  static styles = be`
+  static styles = Ae`
     :host { display: block; height: 100%; background: var(--primary-background-color); font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif); }
     .error { padding: 24px; color: var(--error-color); }
     .loading { padding: 24px; color: var(--secondary-text-color); }
