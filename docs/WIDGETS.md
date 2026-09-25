@@ -137,6 +137,7 @@ Theme-Standard (`default_tile_style`) < Projekt-Stil < Widget-Stil. Die Vorlagen
 | `value_size` | Sensor-Wert: `auto` oder `xs` … `xl` (ab 0.10) |
 | `icon_size` | `auto`, `none` (Icon ausblenden), `s`, `m`, `l` (ab 0.10) |
 | `text_weight` | `normal` oder `bold` – fett sind die Haupttexte (Farbrolle „text“), ab 0.10 |
+| `show_label` | `false` blendet den Namen aus (ab 0.14); ein allein übriges Icon wird zentriert, ein allein übriger Wert/Zustand einer Kachel vertikal mittig. Knöpfe ohne Icon behalten ihren Namen |
 
 `resolve_tile_style()` (Python) und `resolveTileStyle()` (TypeScript) liefern für alle Themes und
 Beispiel-Überschreibungen identische Werte (`styles` in `tests/layout_cases.json`). Auf dem Gerät

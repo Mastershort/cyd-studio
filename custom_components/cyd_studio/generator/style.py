@@ -61,6 +61,7 @@ def resolve_tile_style(
     out["bg_opa"] = min(out["bg_opa"], 100)
     out["bg_opa_on"] = min(out["bg_opa_on"], 100)
     out["circle"] = bool(merged.get("circle", False))
+    out["show_label"] = bool(merged.get("show_label", True))
     size = str(merged.get("text_size", "s"))
     out["text_size"] = size if size in TEXT_SIZES else "s"
     value_size = str(merged.get("value_size", "auto"))
@@ -81,4 +82,5 @@ def layout_props(props: dict[str, Any], style: dict[str, Any]) -> dict[str, Any]
         "value_size": style["value_size"],
         "icon_size": style["icon_size"],
         "text_weight": style["text_weight"],
+        "hide_label": not style["show_label"],
     }

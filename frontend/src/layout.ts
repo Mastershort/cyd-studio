@@ -210,9 +210,30 @@ export function widgetElements(wtype: string, w: number, h: number, props: Props
     const base = { ...DEFAULT_ICON_SIZES, ...iconSizes };
     ics = { ...base, s: base[iconSize], m: base[iconSize] };
   }
-  const els = widgetElementsInner(wtype, w, h, p, fontSizes, ics);
+  let els = widgetElementsInner(wtype, w, h, p, fontSizes, ics);
+  if (props.hide_label) els = dropLabel(wtype, els);
   if (props.text_weight === "bold") for (const e of els) if (e.kind === "text" && e.color === "text") e.bold = true;
   return els;
+}
+
+const LABEL_ROLES = ["label", "label0", "label1", "label2"];
+const STATE_TILES = ["toggle_tile", "binary_indicator", "sensor_value", "person_presence", "notification_area"];
+
+/** Without the name: a lone icon is centered, a lone text of a state tile moves to the middle row. */
+function dropLabel(wtype: string, els: Element[]): Element[] {
+  if ((wtype === "scene_button" || wtype === "page_button") && !els.some((e) => e.kind === "icon")) return els;
+  const out = els.filter((e) => !LABEL_ROLES.includes(e.role));
+  const texts = out.filter((e) => e.kind === "text");
+  const icons = out.filter((e) => e.kind === "icon");
+  if (!texts.length && icons.length === 1 && out.length === 1) Object.assign(icons[0], { align: "CENTER", x: 0, y: 0 });
+  else if ((STATE_TILES.includes(wtype) || wtype === "multi_value") && icons.every((i) => i.align === "LEFT_MID")) {
+    for (const e of texts) {
+      if ((e.align === "TOP_LEFT" || e.align === "BOTTOM_LEFT") && (wtype === "multi_value" || texts.length === 1)) {
+        Object.assign(e, { align: "LEFT_MID", y: 0 });
+      }
+    }
+  }
+  return out;
 }
 
 function widgetElementsInner(wtype: string, w: number, h: number, props: Props,
@@ -419,7 +440,7 @@ function widgetElementsInner(wtype: string, w: number, h: number, props: Props,
   }
 
   if (wtype === "gauge") {
-    const d = Math.max(Math.min(cw, ch - lhXs), 24);
+    const d = Math.max(Math.min(cw, ch - (props.hide_label ? 0 : lhXs)), 24);
     const stroke = Math.max(fdiv(d, 10), 4);
     const valueSize = d >= 90 ? fs.l : d < 60 ? fs.s : fs.m;
     els.push(sized("arc", "arc", "TOP_MID", 0, 0, d, d, stroke, "accent"));

@@ -25,6 +25,7 @@ export interface TileStyle {
   border_width: number;
   radius: number;
   circle: boolean;
+  show_label: boolean;
   text_size: string;
   value_size: string;
   icon_size: string;
@@ -70,6 +71,7 @@ export function resolveTileStyle(theme: Theme, style: Record<string, unknown> | 
   out.bg_opa = Math.min(out.bg_opa as number, 100);
   out.bg_opa_on = Math.min(out.bg_opa_on as number, 100);
   out.circle = Boolean(merged.circle ?? false);
+  out.show_label = Boolean(merged.show_label ?? true);
   const size = String(merged.text_size ?? "s");
   out.text_size = TEXT_SIZES.includes(size) ? size : "s";
   const valueSize = String(merged.value_size ?? "auto");
@@ -85,6 +87,6 @@ export function resolveTileStyle(theme: Theme, style: Record<string, unknown> | 
 export function layoutProps(props: Record<string, unknown>, style: TileStyle): Record<string, unknown> {
   return {
     ...props, icon_circle: style.circle, text_size: style.text_size, value_size: style.value_size,
-    icon_size: style.icon_size, text_weight: style.text_weight,
+    icon_size: style.icon_size, text_weight: style.text_weight, hide_label: !style.show_label,
   };
 }

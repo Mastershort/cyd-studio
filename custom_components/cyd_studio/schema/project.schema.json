@@ -629,6 +629,9 @@
             "normal",
             "bold"
           ]
+        },
+        "show_label": {
+          "type": "boolean"
         }
       }
     },

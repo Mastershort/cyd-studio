@@ -1134,6 +1134,7 @@ export class CydEditor extends LitElement {
         ${this.select(t("icon_size"), resolved.icon_size, [["auto", t("auto")], ["none", t("icon_hidden")], ["s", "S"], ["m", "M"], ["l", "L"]], (v) => set("icon_size", v === "auto" ? null : v))}
         ${this.check(t("icon_circle"), resolved.circle, (v) => set("circle", v))}
       </div>
+      ${this.check(t("show_label"), resolved.show_label, (v) => set("show_label", v ? null : false))}
       <div class="row2">
         ${this.select(t("text_size"), resolved.text_size, [["xs", "XS"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"]], (v) => set("text_size", v))}
         ${this.select(t("text_weight"), resolved.text_weight, [["normal", t("weight_normal")], ["bold", t("weight_bold")]], (v) => set("text_weight", v === "normal" ? null : v))}

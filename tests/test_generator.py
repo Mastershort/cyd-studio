@@ -205,3 +205,13 @@ def test_part_and_indicator_colors(studio_data: dict[str, Any]) -> None:
     indicator["style"] = {**(indicator.get("style") or {}), "icon_on": "#ab0000", "icon": "#00cd00"}
     text = generate(project, studio_data).yaml
     assert "0xAB0000" in text and "0x00CD00" in text
+
+
+def test_hidden_label(studio_data: dict[str, Any]) -> None:
+    """show_label false drops the name label of a tile; icon and state stay."""
+    project = golden("styled")
+    assert "id: w_home_l1_label" in generate(project, studio_data).yaml
+    tile = next(w for p in project["pages"] for w in p["widgets"] if w["id"] == "l1")
+    tile["style"] = {**(tile.get("style") or {}), "show_label": False}
+    text = generate(project, studio_data).yaml
+    assert "id: w_home_l1_label" not in text and "id: w_home_l1_icon" in text

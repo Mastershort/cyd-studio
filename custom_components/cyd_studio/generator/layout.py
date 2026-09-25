@@ -209,7 +209,8 @@ def widget_elements(
     """Inner elements of a widget of size ``w`` x ``h`` (outer box, incl. padding).
 
     Style options: ``icon_size`` none hides the icon, s/m/l fixes its size (instead of the
-    automatic choice); ``text_weight`` bold makes the primary texts (color "text") bold.
+    automatic choice); ``text_weight`` bold makes the primary texts (color "text") bold;
+    ``hide_label`` drops the name (see ``_drop_label``).
     """
     icon_size = props.get("icon_size", "auto")
     if icon_size == "none":
@@ -218,11 +219,33 @@ def widget_elements(
         base = {**DEFAULT_ICON_SIZES, **(icon_sizes or {})}
         icon_sizes = {**base, "s": base[icon_size], "m": base[icon_size]}
     els = _widget_elements(wtype, w, h, props, font_sizes, icon_sizes)
+    if props.get("hide_label"):
+        els = _drop_label(wtype, els)
     if props.get("text_weight") == "bold":
         for el in els:
             if el["kind"] == "text" and el["color"] == "text":
                 el["bold"] = True
     return els
+
+
+LABEL_ROLES = ("label", "label0", "label1", "label2")
+STATE_TILES = ("toggle_tile", "binary_indicator", "sensor_value", "person_presence", "notification_area")
+
+
+def _drop_label(wtype: str, els: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Without the name: a lone icon is centered, a lone text of a state tile moves to the middle row."""
+    if wtype in ("scene_button", "page_button") and not any(e["kind"] == "icon" for e in els):
+        return els  # the name is all a button without icon shows
+    out = [e for e in els if e["role"] not in LABEL_ROLES]
+    texts = [e for e in out if e["kind"] == "text"]
+    icons = [e for e in out if e["kind"] == "icon"]
+    if not texts and len(icons) == 1 and len(out) == 1:
+        icons[0].update(align="CENTER", x=0, y=0)
+    elif (wtype in STATE_TILES or wtype == "multi_value") and all(i["align"] == "LEFT_MID" for i in icons):
+        for e in texts:
+            if e["align"] in ("TOP_LEFT", "BOTTOM_LEFT") and (wtype == "multi_value" or len(texts) == 1):
+                e.update(align="LEFT_MID", y=0)
+    return out
 
 
 def _widget_elements(
@@ -434,7 +457,8 @@ def _widget_elements(
         return els
 
     if wtype == "gauge":
-        d = max(min(cw, ch - lh_xs), 24)
+        label_h = 0 if props.get("hide_label") else lh_xs
+        d = max(min(cw, ch - label_h), 24)
         stroke = max(d // 10, 4)
         value_size = fs["l"] if d >= 90 else fs["s"] if d < 60 else fs["m"]
         els.append(sized("arc", "arc", "TOP_MID", 0, 0, d, d, stroke, "accent"))
