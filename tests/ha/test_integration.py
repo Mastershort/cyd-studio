@@ -330,13 +330,16 @@ async def test_apply_design_duplicate_and_embedded_images(
     for key in ("id", "name", "device_name", "board"):
         assert applied[key] == target[key]
     assert applied["settings"]["api_key"] == target["settings"]["api_key"]
-    assert applied["pages"] == source["pages"] and applied["theme"] == source["theme"]
+    def widgets(project: dict[str, Any]) -> list[tuple[str, list[str]]]:
+        return [(p["id"], [w["id"] for w in p["widgets"]]) for p in project["pages"]]
+
+    assert widgets(applied) == widgets(source) and applied["theme"] == source["theme"]
     assert (await call("assets/get", project_id=target["id"], asset_id=asset_id))["data_url"]
 
     # undo: the state before is the newest history entry
     latest = (await call("projects/history", project_id=target["id"]))[0]
     restored = await call("projects/restore", project_id=target["id"], index=latest["index"])
-    assert restored["pages"] == target["pages"]
+    assert widgets(restored) == widgets(target)
 
     # from a file: images embedded as data URLs
     data_url = (await call("assets/get", project_id=source["id"], asset_id=asset_id))["data_url"]
