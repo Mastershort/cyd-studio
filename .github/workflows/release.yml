@@ -37,3 +37,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" --title "CYD Studio $GITHUB_REF_NAME" --notes-file notes.md
+
+      # HACS installs this zip (hacs.json: zip_release); its download count shows installs and updates.
+      # A release made with the workflow token starts no other workflow, so the zip is packed here.
+      - name: Attach cyd_studio.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd custom_components/cyd_studio
+          find . -name '__pycache__' -prune -o -type f -print | sed 's|^\./||' | sort > /tmp/files
+          zip -q -X ../../cyd_studio.zip -@ < /tmp/files
+          cd ../..
+          gh release upload "$GITHUB_REF_NAME" cyd_studio.zip --clobber
