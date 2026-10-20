@@ -45,6 +45,18 @@ def _guarded(func: Handler) -> Callable[[HomeAssistant, ActiveConnection, dict[s
     return wrapper
 
 
+def _for_user(connection: ActiveConnection, project: dict[str, Any]) -> dict[str, Any]:
+    """A project as this user may see it: the ESPHome API encryption key is for administrators only."""
+    if connection.user.is_admin:
+        return project
+    return {**project, "settings": {**project.get("settings", {}), "api_key": None}}
+
+
+def _without_key(project: dict[str, Any]) -> dict[str, Any]:
+    """A project with no API key, so the store keeps the one it has (a non-admin cannot set or change it)."""
+    return {**project, "settings": {**project.get("settings", {}), "api_key": None}}
+
+
 @callback
 def async_register(hass: HomeAssistant) -> None:
     """Register all commands."""
@@ -163,7 +175,7 @@ async def ws_projects_get(
     if project is None:
         connection.send_error(msg["id"], "not_found", "Project not found")
         return
-    connection.send_result(msg["id"], project)
+    connection.send_result(msg["id"], _for_user(connection, project))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "cyd_studio/projects/save", vol.Required("project"): dict})
@@ -173,13 +185,14 @@ async def ws_projects_save(
     hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any], runtime: StudioRuntime
 ) -> None:
     """Create or update a project."""
+    incoming = msg["project"] if connection.user.is_admin else _without_key(msg["project"])
     try:
-        project = await runtime.store.async_save(msg["project"])
+        project = await runtime.store.async_save(incoming)
     except ValueError as err:
         connection.send_error(msg["id"], "invalid", str(err))
         return
     async_update_issues(hass, runtime.store.all())
-    connection.send_result(msg["id"], project)
+    connection.send_result(msg["id"], _for_user(connection, project))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "cyd_studio/projects/delete", vol.Required("project_id"): str})
@@ -212,7 +225,7 @@ async def ws_projects_duplicate(
         assets.copy_assets, hass.config.config_dir, msg["project_id"], project["id"], assets.used_assets(project)
     )
     async_update_issues(hass, runtime.store.all())
-    connection.send_result(msg["id"], project)
+    connection.send_result(msg["id"], _for_user(connection, project))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "cyd_studio/projects/history", vol.Required("project_id"): str})
@@ -240,7 +253,7 @@ async def ws_projects_restore(
         connection.send_error(msg["id"], "not_found", "History entry not found")
         return
     async_update_issues(hass, runtime.store.all())
-    connection.send_result(msg["id"], project)
+    connection.send_result(msg["id"], _for_user(connection, project))
 
 
 @websocket_api.websocket_command(
@@ -280,7 +293,7 @@ async def ws_projects_apply_design(
     elif msg.get("assets"):
         await hass.async_add_executor_job(assets.store_embedded, hass.config.config_dir, stored["id"], msg["assets"])
     async_update_issues(hass, runtime.store.all())
-    connection.send_result(msg["id"], stored)
+    connection.send_result(msg["id"], _for_user(connection, stored))
 
 
 @websocket_api.websocket_command(
@@ -314,7 +327,7 @@ async def ws_projects_import(
     if msg.get("assets"):
         await hass.async_add_executor_job(assets.store_embedded, hass.config.config_dir, stored["id"], msg["assets"])
     async_update_issues(hass, runtime.store.all())
-    connection.send_result(msg["id"], stored)
+    connection.send_result(msg["id"], _for_user(connection, stored))
 
 
 # -- generator ----------------------------------------------------------------
@@ -338,11 +351,14 @@ async def ws_generate_yaml(
     if project is None:
         connection.send_error(msg["id"], "not_found", "Project not found")
         return
+    if not connection.user.is_admin:
+        # the API encryption key is for administrators: the YAML shows a placeholder instead
+        project = {**project, "settings": {**project.get("settings", {}), "api_key": "<nur-fuer-administratoren>"}}
     known = set(hass.states.async_entity_ids())
     data = runtime.data
     result = await hass.async_add_executor_job(generate_yaml, project, data.boards, data.themes, data.widgets, known)
     payload = result.as_dict()
-    if result.ok and msg["mark_exported"] and project.get("id"):
+    if result.ok and msg["mark_exported"] and project.get("id") and connection.user.is_admin:
         _, checksum = split_generated(result.yaml)
         await runtime.store.async_mark_exported(project["id"], checksum or "")
         esphome_dir = _esphome_dir(hass, runtime)
@@ -391,6 +407,7 @@ async def ws_esphome_devices(
 @websocket_api.websocket_command(
     {vol.Required("type"): "cyd_studio/esphome/allow_actions", vol.Required("project_id"): str}
 )
+@websocket_api.require_admin
 @websocket_api.async_response
 @_guarded
 async def ws_esphome_allow_actions(
@@ -464,6 +481,7 @@ async def ws_assets_get(
         vol.Optional("overwrite", default=False): bool,
     }
 )
+@websocket_api.require_admin
 @websocket_api.async_response
 @_guarded
 async def ws_esphome_save(
@@ -526,6 +544,7 @@ async def ws_esphome_save(
         vol.Required("wifi_password"): vol.All(str, vol.Length(max=128)),
     }
 )
+@websocket_api.require_admin
 @websocket_api.async_response
 @_guarded
 async def ws_esphome_secrets_set(

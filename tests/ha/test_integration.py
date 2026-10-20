@@ -359,3 +359,54 @@ async def test_apply_design_duplicate_and_embedded_images(
         {"type": "cyd_studio/projects/apply_design", "project_id": target["id"], "source_project_id": target["id"]}
     )
     assert not (await client.receive_json())["success"]
+
+
+async def test_non_admin_designs_but_cannot_touch_esphome(
+    hass: HomeAssistant, setup_studio: MockConfigEntry, hass_ws_client: Any, hass_read_only_access_token: str
+) -> None:
+    """Panel open to everyone: a user designs; ESPHome devices, files, secrets and the API key stay with admins."""
+    runtime = hass.data[DOMAIN]
+    runtime.options = {**runtime.options, "require_admin": False}
+    admin = await hass_ws_client(hass)
+    project = json.loads((GOLDEN / "multipage.json").read_text(encoding="utf-8"))
+    await admin.send_json_auto_id({"type": "cyd_studio/projects/save", "project": project})
+    msg = await admin.receive_json()
+    assert msg["success"], msg
+    stored = msg["result"]
+    key = stored["settings"]["api_key"]
+    assert key
+
+    user = await hass_ws_client(hass, hass_read_only_access_token)
+    await user.send_json_auto_id({"type": "cyd_studio/projects/list"})
+    msg = await user.receive_json()
+    assert msg["success"], msg
+    await user.send_json_auto_id({"type": "cyd_studio/projects/get", "project_id": stored["id"]})
+    msg = await user.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["settings"]["api_key"] is None
+    # saving the project back (without the key) keeps the stored key; a key sent along is ignored
+    seen = msg["result"]
+    sent = {**seen, "settings": {**seen["settings"], "api_key": "mine"}}
+    await user.send_json_auto_id({"type": "cyd_studio/projects/save", "project": sent})
+    msg = await user.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["settings"]["api_key"] is None
+    assert runtime.store.get(stored["id"])["settings"]["api_key"] == key
+    # the generated YAML shows no key to a user
+    await user.send_json_auto_id({"type": "cyd_studio/generate/yaml", "project_id": stored["id"]})
+    msg = await user.receive_json()
+    assert msg["success"], msg
+    assert key not in json.dumps(msg["result"])
+    await admin.send_json_auto_id({"type": "cyd_studio/generate/yaml", "project_id": stored["id"]})
+    msg = await admin.receive_json()
+    assert msg["success"] and key in json.dumps(msg["result"])
+    # ESPHome devices, files and secrets: administrators only, whatever the panel option says
+    for cmd in (
+        {"type": "cyd_studio/esphome/allow_actions", "project_id": stored["id"]},
+        {"type": "cyd_studio/esphome/save", "project_id": stored["id"]},
+        {"type": "cyd_studio/esphome/secrets_set", "wifi_ssid": "net", "wifi_password": "secret"},
+    ):
+        await user.send_json_auto_id(cmd)
+        msg = await user.receive_json()
+        assert not msg["success"], cmd
+        assert msg["error"]["code"] == "unauthorized", cmd

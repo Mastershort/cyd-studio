@@ -110,9 +110,10 @@ class ProjectStore:
         project["meta"].setdefault("created", now)
         project["meta"]["updated"] = now
         project.setdefault("settings", {})
-        if not project["settings"].get("api_key"):
-            project["settings"]["api_key"] = new_api_key()
         old = self._data["projects"].get(project["id"])
+        if not project["settings"].get("api_key"):
+            # a project saved without its key keeps the one it has (the key is not sent to non-admins)
+            project["settings"]["api_key"] = (old or {}).get("settings", {}).get("api_key") or new_api_key()
         if old is not None and history:
             self._push_history(project["id"], old)
         self._data["projects"][project["id"]] = project

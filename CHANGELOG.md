@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an CYD Studio. Versionen folgen [SemVer](https://semver.org/lang/de/);
 jede Version ist ein GitHub-Release, das HACS als Update anbietet.
 
+## 1.0.4 – 2026-10-20
+
+- Sicherheit: ESPHome-Geräte freischalten, YAML ins ESPHome-Verzeichnis schreiben und die WLAN-Zugangsdaten in der
+  `secrets.yaml` ändern verlangen jetzt immer Administratorrechte – auch wenn das Panel für alle Nutzer freigegeben
+  ist. Nicht-Administratoren sehen den ESPHome-API-Schlüssel eines Projekts nicht mehr (auch nicht im erzeugten
+  YAML) und können ihn nicht ändern; beim Speichern bleibt der vorhandene Schlüssel erhalten. Danke an Frenck für
+  den Hinweis bei der HACS-Prüfung.
+
 ## 1.0.3 – 2026-09-25
 
 - Vorlagen erzeugen bei englischer Oberfläche englische Seitennamen und Beschriftungen
